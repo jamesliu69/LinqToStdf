@@ -1,7 +1,9 @@
+using System;
 using System.Globalization;
+using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace WinFormsApp1
+namespace P2020
 {
 	public class CFunction
 	{

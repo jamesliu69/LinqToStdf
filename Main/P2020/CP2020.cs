@@ -1,11 +1,16 @@
 ﻿#region
 
+using P2020;
+using System;
+using System.Collections.Generic;
 using System.Data;
-using WinFormsApp1;
+using System.IO;
+using System.Linq;
+using System.Windows.Forms;
 
 #endregion
 
-namespace ChromaP2020_AnalyzeTool.Customer
+namespace P2020
 {
 	public class CP2020 : IAnalyze
 	{

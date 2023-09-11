@@ -1,4 +1,4 @@
-namespace WinFormsApp1
+namespace P2020
 {
 	public class CTestItemInfomation
 	{

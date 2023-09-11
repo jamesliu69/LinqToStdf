@@ -1,4 +1,6 @@
-namespace WinFormsApp1
+using System.Collections.Generic;
+
+namespace P2020
 {
 	public class CFunctionDecimalPoint
 	{

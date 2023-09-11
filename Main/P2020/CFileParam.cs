@@ -1,6 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
 
-namespace WinFormsApp1
+namespace P2020
 {
 	public class CFileParam
 	{
@@ -58,7 +62,7 @@ namespace WinFormsApp1
 
 			foreach(string title in files)
 			{
-				string[] str = title.Split(" :");
+				string[] str = title.Split(':');
 
 				switch(str[0].Trim())
 				{
@@ -105,13 +109,13 @@ namespace WinFormsApp1
 
 				if(str[0].Contains("Total (By Sites)"))
 				{
-					var v1 = str[0].Trim().Split(" ").Where(c => c != "");
+					var v1 = str[0].Trim().Split(' ').Where(c => c != "");
 					var v2 = v1.Skip(3);
 					SiteCount = Convert.ToInt32(v2.ElementAt(0).Substring(0, v2.ElementAt(0).IndexOf("(")));
 				}
 				else if(str[0].Contains("Pass  (By Sites)"))
 				{
-					var v1 = str[0].Trim().Split(" ").Where(c => c != "");
+					var v1 = str[0].Trim().Split(' ').Where(c => c != "");
 					var v2 = v1.Skip(4);
 
 					foreach(string VARIABLE in v2)
@@ -121,7 +125,7 @@ namespace WinFormsApp1
 				}
 				else if(str[0].Contains("Fail  (By Sites)"))
 				{
-					var v1 = str[0].Trim().Split(" ").Where(c => c != "");
+					var v1 = str[0].Trim().Split(' ').Where(c => c != "");
 					var v2 = v1.Skip(4);
 
 					foreach(string VARIABLE in v2)
@@ -140,10 +144,10 @@ namespace WinFormsApp1
 
 					foreach(string s in GetRangeString)
 					{
-						var spilts = s.Split(" ").Where(c=>c !="");
+						var spilts = s.Split(' ').Where(c=>c !="");
 						if(!string.IsNullOrEmpty(spilts.ElementAt(0)))
 						{
-							HardWareBin[spilts.ElementAt(0)] = s.Trim().Split(" ").Where(c => c != "").Skip(3).ToList();
+							HardWareBin[spilts.ElementAt(0)] = s.Trim().Split(' ').Where(c => c != "").Skip(3).ToList();
 						}
 					}
 				}
@@ -156,10 +160,10 @@ namespace WinFormsApp1
 
 					foreach(string s in GetRangeString)
 					{
-						var spilts = s.Split(" ").Where(c=>c !="");
+						var spilts = s.Split(' ').Where(c=>c !="");
 						if(!string.IsNullOrEmpty(spilts.ElementAt(0)))
 						{
-							SoftWareBin[spilts.ElementAt(0)] = s.Trim().Split(" ").Where(c => c != "").Skip(3).ToList();
+							SoftWareBin[spilts.ElementAt(0)] = s.Trim().Split(' ').Where(c => c != "").Skip(3).ToList();
 						}
 					}
 				}

@@ -1,6 +1,7 @@
+using System;
 using System.Data;
 
-namespace WinFormsApp1
+namespace P2020
 {
 	public interface IAnalyze
 	{

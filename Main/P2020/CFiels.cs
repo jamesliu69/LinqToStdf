@@ -1,4 +1,6 @@
-﻿namespace WinFormsApp1
+﻿using System;
+
+namespace WinFormsApp1
 {
 	public class CFiels
 	{
