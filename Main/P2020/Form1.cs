@@ -6,7 +6,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -25,9 +27,11 @@ namespace P2020
 
 		private void button1_Click(object sender, EventArgs e)
 		{
-			StdfFileWriter writer = new StdfFileWriter("jamesliu_test.stdf");
+			File.Delete("jamesliu_test.stdf");
+			StdfFileWriter writer = new StdfFileWriter("jamesliu_test.stdf",true);
+
 			Far            far    = new Far();
-			far.CpuType     = 0;
+			far.CpuType     = 2;
 			far.StdfVersion = 4;
 			writer.WriteRecord(far);
 			Atr atr = new Atr();
@@ -42,8 +46,8 @@ namespace P2020
 			mir.StartTime            = DateTime.Parse("2001-06-05T09:18:06Z");
 			mir.StationNumber        = 0;
 			mir.ModeCode             = "P";
-			mir.RetestCode           = "";
-			mir.ProtectionCode       = "";
+			mir.RetestCode           = "N";
+			mir.ProtectionCode       = "0";
 			mir.BurnInTime           = 65535;
 			mir.CommandModeCode      = "a";
 			mir.LotId                = "GAL-LOT";
@@ -55,27 +59,27 @@ namespace P2020
 			mir.SublotId             = "03";
 			mir.OperatorName         = "ews";
 			mir.ExecType             = "IMAGE V6.3.y2k D8 052200";
-			mir.ExecVersion          = "";
+			mir.ExecVersion          = " ";
 			mir.TestCode             = "E38";
-			mir.TestTemperature      = "";
-			mir.UserText             = "";
-			mir.AuxiliaryFile        = "";
-			mir.PackageType          = "";
-			mir.FamilyId             = "";
-			mir.DateCode             = "";
-			mir.FacilityId           = "";
-			mir.FloorId              = "";
-			mir.ProcessId            = "";
-			mir.OperationFrequency   = "";
-			mir.SpecificationName    = "";
-			mir.SpecificationVersion = "";
-			mir.FlowId               = "";
-			mir.SetupId              = "";
-			mir.DesignRevision       = "";
-			mir.EngineeringId        = "";
-			mir.RomCode              = "";
-			mir.SerialNumber         = "";
-			mir.SupervisorName       = "";
+			mir.TestTemperature      = " ";
+			mir.UserText             = " ";
+			mir.AuxiliaryFile        = " ";
+			mir.PackageType          = " ";
+			mir.FamilyId             = " ";
+			mir.DateCode             = " ";
+			mir.FacilityId           = " ";
+			mir.FloorId              = " ";
+			mir.ProcessId            = " ";
+			mir.OperationFrequency   = " ";
+			mir.SpecificationName    = " ";
+			mir.SpecificationVersion = " ";
+			mir.FlowId               = " ";
+			mir.SetupId              = " ";
+			mir.DesignRevision       = " ";
+			mir.EngineeringId        = " ";
+			mir.RomCode              = " ";
+			mir.SerialNumber         = " ";
+			mir.SupervisorName       = " ";
 			writer.WriteRecord(mir);
 
 #endregion
@@ -137,18 +141,18 @@ namespace P2020
 				CChipData chip = _P2020.lstChipData[i - 1];
 				Pir       pir  = new Pir();
 				pir.HeadNumber = 1;
-				pir.SiteNumber = Convert.ToByte(chip.Site);
+				pir.SiteNumber = Convert.ToByte(0);
 				writer.WriteRecord(pir);
 				Ptr ptr = new Ptr();
 				ptr.TestNumber      = (uint)1;
 				ptr.HeadNumber      = 1;
-				ptr.SiteNumber      = Convert.ToByte(chip.Site);
+				ptr.SiteNumber      = Convert.ToByte(0);
 				ptr.TestFlags       = chip.PassOrFail == "PASS" ? (byte)1 : (byte)0;
 				ptr.ParametricFlags = 0;
 				float? result = float.Parse(Regex.Match(chip.strMaxMeasureValue, @"\d+\.?\d*").Value);
 				ptr.Result                   = result;
 				ptr.TestText                 = chip.Comment + i.ToString();
-				ptr.AlarmId                  = "";
+				ptr.AlarmId                  = " ";
 				ptr.OptionalFlags            = 0;
 				ptr.ResultScalingExponent    = 6;
 				ptr.LowLimitScalingExponent  = 6;
@@ -230,14 +234,14 @@ namespace P2020
 			Tsr tsr = new Tsr();
 			tsr.HeadNumber       = 1;
 			tsr.SiteNumber       = 0;
-			tsr.TestType         = "";
+			tsr.TestType         = "P";
 			tsr.TestNumber       = 1000;
 			tsr.ExecutedCount    = 0;
 			tsr.FailedCount      = 0;
 			tsr.AlarmCount       = 0;
-			tsr.TestName         = "Sink out I    ";
+			tsr.TestName         = "Sink out I";
 			tsr.SequencerName    = "seqU751";
-			tsr.TestLabel        = "";
+			tsr.TestLabel        = " ";
 			tsr.TestTime         = null;
 			tsr.TestMin          = null;
 			tsr.TestMax          = null;
@@ -287,12 +291,13 @@ namespace P2020
 
 			Mrr mrr = new Mrr();
 			mrr.FinishTime      = DateTime.Parse("2001-06-06T02:48:08Z");
-			mrr.DispositionCode = "";
-			mrr.UserDescription = "";
-			mrr.ExecDescription = "";
+			mrr.DispositionCode = " ";
+			mrr.UserDescription = " ";
+			mrr.ExecDescription = " ";
 			writer.WriteRecord(mrr);
 
-#endregion
+			#endregion
+			writer.Dispose();
 		}
 
 		private void button2_Click(object sender, EventArgs e)
