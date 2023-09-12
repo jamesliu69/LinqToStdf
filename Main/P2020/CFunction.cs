@@ -9,7 +9,6 @@ namespace P2020
 	{
 		public static void CalcGroupId(ref string savePath)
 		{
-			
 		}
 
 		private static string[] CalLowCriteria(string[] splits, int MeanSub6S, int Criteria_L)
@@ -19,24 +18,24 @@ namespace P2020
 			if(((splits[0].ToUpper().Contains("PWR") || splits[0].ToUpper().Contains("POWER") || splits[0].ToUpper().Contains("GND") || splits[0].ToUpper().Contains("GROUD")) && splits[0].ToUpper().Contains("SHORT")) || IsFloat(low_diff.ToString()))
 			{
 				//LowCriteria 大於0處理
-				if(low_diff <= 0 && low_diff >= -0.05)
+				if((low_diff <= 0) && (low_diff >= -0.05))
 				{
 					splits[Criteria_L] = (Convert.ToDouble(splits[Criteria_L]) - 0.5).ToString("0.00");
 				}
 
 				//LowCriteria 小於0處理
-				if(low_diff >= 0 && low_diff <= 0.05)
+				if((low_diff >= 0) && (low_diff <= 0.05))
 				{
 					splits[Criteria_L] = (Convert.ToDouble(splits[Criteria_L]) + 0.5).ToString("0.00");
 				}
 			}
 			else
 			{
-				if(Convert.ToDouble(splits[MeanSub6S]) >= -50 && Convert.ToDouble(splits[MeanSub6S]) <= 50)
+				if((Convert.ToDouble(splits[MeanSub6S]) >= -50) && (Convert.ToDouble(splits[MeanSub6S]) <= 50))
 				{
 					splits[Criteria_L] = "-1200";
 				}
-				else if(Convert.ToDouble(splits[MeanSub6S]) <= -900 || Convert.ToDouble(splits[MeanSub6S]) >= 900)
+				else if((Convert.ToDouble(splits[MeanSub6S]) <= -900) || (Convert.ToDouble(splits[MeanSub6S]) >= 900))
 				{
 					if(Convert.ToDouble(splits[MeanSub6S]) < -1200)
 					{
@@ -50,7 +49,7 @@ namespace P2020
 				}
 
 				//LowCriteria 大於0處理
-				if(low_diff <= 0 && low_diff >= -10)
+				if((low_diff <= 0) && (low_diff >= -10))
 				{
 					splits[Criteria_L] = (Convert.ToInt32(splits[Criteria_L]) - 50).ToString();
 
@@ -65,7 +64,7 @@ namespace P2020
 				}
 
 				//LowCriteria 小於0處理
-				if(low_diff >= 0 && low_diff <= 10)
+				if((low_diff >= 0) && (low_diff <= 10))
 				{
 					splits[Criteria_L] = (Convert.ToInt32(splits[Criteria_L]) + 50).ToString();
 
@@ -155,7 +154,7 @@ namespace P2020
 				//High Criteria 小於0處理
 				else
 				{
-					if(HighDiff != 0 && HighDiff < 0.1 && HighDiff > 0.1)
+					if((HighDiff != 0) && (HighDiff < 0.1) && (HighDiff > 0.1))
 					{
 						splits[CriteriaH] = (Convert.ToInt32(splits[CriteriaH]) + 0.5).ToString(CultureInfo.InvariantCulture);
 					}

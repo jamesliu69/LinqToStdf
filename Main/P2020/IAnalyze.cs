@@ -16,23 +16,23 @@ namespace P2020
 		void GroupBySite();
 
 		/// <summary>
-		/// 計算量測值
+		///     計算量測值
 		/// </summary>
 		void CalMeasure();
 
 		/// <summary>
-		/// 輸出檔案
+		///     輸出檔案
 		/// </summary>
 		void OutputFile();
 
 		/// <summary>
-		/// 取得資料表 
+		///     取得資料表
 		/// </summary>
 		/// <returns></returns>
 		DataTable GetTable();
 
 		/// <summary>
-		/// 自動顯示項目
+		///     自動顯示項目
 		/// </summary>
 		void AutoShowItem();
 

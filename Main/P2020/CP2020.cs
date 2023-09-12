@@ -1,6 +1,5 @@
 ﻿#region
 
-using P2020;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -14,11 +13,11 @@ namespace P2020
 {
 	public class CP2020 : IAnalyze
 	{
-		private IAnalyze        _AnalyzeImplementation;
-		private int             CalOffset;
-		private DataTable?      dt;
-		private List<string>    FileName    = new List<string>();
-		public  List<CChipData> lstChipData = new List<CChipData>();
+		private          IAnalyze        _AnalyzeImplementation;
+		private          int             CalOffset;
+		private          DataTable?      dt;
+		private readonly List<string>    FileName    = new List<string>();
+		public           List<CChipData> lstChipData = new List<CChipData>();
 
 		public CP2020(string filename, int calOffset)
 		{

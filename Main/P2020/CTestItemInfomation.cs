@@ -30,7 +30,7 @@ namespace P2020
 		public float OffsetValue { get; set; }
 
 		public string PosFormat
-		{                              
+		{
 			get
 			{
 				switch(DigitalNum)

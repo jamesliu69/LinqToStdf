@@ -1,35 +1,23 @@
-﻿using LinqToStdf;
-using LinqToStdf.Records.V4;
+﻿using Stdf;
+using Stdf.Records.V4;
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Net;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace P2020
 {
 	public partial class Form1 : Form
 	{
-		private CP2020     _P2020;
 		private CFileParam _FileParam;
-		public Form1()
-		{
-			InitializeComponent();
-		}
+		private CP2020     _P2020;
+
+		public Form1() => InitializeComponent();
 
 		private void button1_Click(object sender, EventArgs e)
 		{
 			File.Delete("C:\\STDFATDF\\jamesliu_test.stdf");
 			StdfFileWriter writer = new StdfFileWriter("C:\\STDFATDF\\jamesliu_test.stdf", true);
-
 			Far            far    = new Far();
 			far.CpuType     = 2;
 			far.StdfVersion = 4;
@@ -144,14 +132,14 @@ namespace P2020
 				pir.SiteNumber = Convert.ToByte(0);
 				writer.WriteRecord(pir);
 				Ptr ptr = new Ptr();
-				ptr.TestNumber      = (uint)1;
+				ptr.TestNumber      = 1;
 				ptr.HeadNumber      = 1;
 				ptr.SiteNumber      = Convert.ToByte(0);
 				ptr.TestFlags       = chip.PassOrFail == "PASS" ? (byte)1 : (byte)0;
 				ptr.ParametricFlags = 0;
 				float? result = float.Parse(Regex.Match(chip.strMaxMeasureValue, @"\d+\.?\d*").Value);
 				ptr.Result                   = result;
-				ptr.TestText                 = chip.Comment + i.ToString();
+				ptr.TestText                 = chip.Comment + i;
 				ptr.AlarmId                  = " ";
 				ptr.OptionalFlags            = 0;
 				ptr.ResultScalingExponent    = 6;
@@ -256,8 +244,8 @@ namespace P2020
 			Hbr hbr = new Hbr();
 			hbr.HeadNumber  = 1;
 			hbr.SiteNumber  = 0;
-			hbr.BinNumber   = (ushort)2;
-			hbr.BinCount    = (uint)2;
+			hbr.BinNumber   = 2;
+			hbr.BinCount    = 2;
 			hbr.BinPassFail = "P";
 			hbr.BinName     = 2.ToString();
 			writer.WriteRecord(hbr);
@@ -267,10 +255,10 @@ namespace P2020
 #region NO SBR
 
 			Sbr sbr = new Sbr();
-			sbr.HeadNumber = 1;
-			sbr.SiteNumber = 0;
-			sbr.BinNumber   = (ushort)2;
-			sbr.BinCount    = (uint)2;
+			sbr.HeadNumber  = 1;
+			sbr.SiteNumber  = 0;
+			sbr.BinNumber   = 2;
+			sbr.BinCount    = 2;
 			sbr.BinPassFail = "P";
 			sbr.BinName     = 2.ToString();
 			writer.WriteRecord(sbr);
@@ -282,7 +270,6 @@ namespace P2020
 			Pcr pcr = new Pcr();
 			pcr.HeadNumber = 1;
 			pcr.SiteNumber = 8;
-
 			writer.WriteRecord(pcr);
 
 #endregion
@@ -296,7 +283,8 @@ namespace P2020
 			mrr.ExecDescription = " ";
 			writer.WriteRecord(mrr);
 
-			#endregion
+#endregion
+
 			writer.Dispose();
 		}
 

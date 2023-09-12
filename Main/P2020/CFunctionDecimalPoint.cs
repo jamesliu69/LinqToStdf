@@ -46,8 +46,7 @@ namespace P2020
 
 		public string PosFormat
 		{
-			get => CalDigitalNum switch
-				   {
+			get => CalDigitalNum switch {
 					   0 => "0",
 					   1 => "0.0",
 					   2 => "0.00",
