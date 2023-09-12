@@ -27,8 +27,8 @@ namespace P2020
 
 		private void button1_Click(object sender, EventArgs e)
 		{
-			File.Delete("jamesliu_test.stdf");
-			StdfFileWriter writer = new StdfFileWriter("jamesliu_test.stdf",true);
+			File.Delete("C:\\STDFATDF\\jamesliu_test.stdf");
+			StdfFileWriter writer = new StdfFileWriter("C:\\STDFATDF\\jamesliu_test.stdf", true);
 
 			Far            far    = new Far();
 			far.CpuType     = 2;
@@ -194,7 +194,7 @@ namespace P2020
 				writer.WriteRecord(ptr);
 				Prr prr = new Prr();
 				prr.HeadNumber = 1;
-				prr.SiteNumber = 8;
+				prr.SiteNumber = 0;
 				writer.WriteRecord(prr);
 			}
 
