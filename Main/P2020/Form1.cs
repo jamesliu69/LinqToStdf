@@ -59,7 +59,7 @@ namespace P2020
 			mir.FloorId              = "";
 			mir.ProcessId            = "";
 			mir.OperationFrequency   = "";
-			mir.SpecificationName    = "";
+			mir.SpecificationName    = _FileParam.TestProgramName;
 			mir.SpecificationVersion = "";
 			mir.FlowId               = "";
 			mir.SetupId              = "";
@@ -102,10 +102,10 @@ namespace P2020
 
 			Pmr pmr = new Pmr();
 			pmr.PinIndex     = 1;
-			pmr.ChannelType  = 4;
-			pmr.ChannelName  = "D9";
-			pmr.PhysicalName = "4";
-			pmr.LogicalName  = "U_D9";
+			pmr.ChannelType  = 0;
+			pmr.ChannelName  = "";
+			pmr.PhysicalName = "";
+			pmr.LogicalName  = "";
 			pmr.HeadNumber   = 1;
 			pmr.SiteNumber   = 0;
 			writer.WriteRecord(pmr);
@@ -129,12 +129,12 @@ namespace P2020
 				CChipData chip = _P2020.lstChipData[i - 1];
 				Pir       pir  = new Pir();
 				pir.HeadNumber = 1;
-				pir.SiteNumber = Convert.ToByte(0);
+				pir.SiteNumber = Convert.ToByte(chip.Site);
 				writer.WriteRecord(pir);
 				Ptr ptr = new Ptr();
 				ptr.TestNumber      = 1;
 				ptr.HeadNumber      = 1;
-				ptr.SiteNumber      = Convert.ToByte(0);
+				ptr.SiteNumber      = Convert.ToByte(chip.Site);
 				ptr.TestFlags       = chip.PassOrFail == "PASS" ? (byte)1 : (byte)0;
 				ptr.ParametricFlags = 0;
 				float? result = float.Parse(Regex.Match(chip.strMaxMeasureValue, @"\d+\.?\d*").Value);
@@ -182,46 +182,20 @@ namespace P2020
 				writer.WriteRecord(ptr);
 				Prr prr = new Prr();
 				prr.HeadNumber = 1;
-				prr.SiteNumber = 0;
+				prr.SiteNumber = Convert.ToByte(chip.Site);
 				writer.WriteRecord(prr);
 			}
-
-			// PRR prr = new PRR();
-			// prr.HEAD_NUM = 1;
-			// prr.SITE_NUM = 8;
-			// StdfRecords.Add(prr);
+			
 
 #endregion
 
-#region PRR
 
-			// PRR prr = new PRR();
-			// prr.HEAD_NUM = 1;
-			// prr.SITE_NUM = 8;
-			// StdfRecords.Add(prr);
-
-			// prr          = new PRR();
-			// prr.HEAD_NUM = 1;
-			// prr.SITE_NUM = 0;
-			// prr.PART_FLG = 8;
-			// prr.NUM_TEST = 1;
-			// prr.HARD_BIN = 5;
-			// prr.SOFT_BIN = 5;
-			// prr.X_COORD  = 19;
-			// prr.Y_COORD  = -3;
-			// prr.TEST_T   = 0;
-			// prr.PART_ID  = "1";
-			// prr.PART_TXT = "";
-			// prr.PART_FIX = null;
-			// StdfRecords.Add(prr);
-
-#endregion
 
 #region NO TSR
 
 			Tsr tsr = new Tsr();
 			tsr.HeadNumber       = 1;
-			tsr.SiteNumber       = 0;
+			tsr.SiteNumber       = (byte?)_FileParam.SiteCount;
 			tsr.TestType         = "P";
 			tsr.TestNumber       = 1000;
 			tsr.ExecutedCount    = 0;
@@ -243,7 +217,7 @@ namespace P2020
 
 			Hbr hbr = new Hbr();
 			hbr.HeadNumber  = 1;
-			hbr.SiteNumber  = 0;
+			hbr.SiteNumber  = (byte?)_FileParam.SiteCount;
 			hbr.BinNumber   = 2;
 			hbr.BinCount    = 2;
 			hbr.BinPassFail = "P";
@@ -256,7 +230,7 @@ namespace P2020
 
 			Sbr sbr = new Sbr();
 			sbr.HeadNumber  = 1;
-			sbr.SiteNumber  = 0;
+			sbr.SiteNumber  = (byte?)_FileParam.SiteCount;
 			sbr.BinNumber   = 2;
 			sbr.BinCount    = 2;
 			sbr.BinPassFail = "P";
@@ -269,7 +243,7 @@ namespace P2020
 
 			Pcr pcr = new Pcr();
 			pcr.HeadNumber = 1;
-			pcr.SiteNumber = 8;
+			pcr.SiteNumber = (byte?)_FileParam.SiteCount;
 			writer.WriteRecord(pcr);
 
 #endregion
@@ -277,7 +251,7 @@ namespace P2020
 #region MRR
 
 			Mrr mrr = new Mrr();
-			mrr.FinishTime      = DateTime.Parse("2001-06-06T02:48:08Z");
+			mrr.FinishTime      = DateTime.Parse(_FileParam.LotEND);
 			mrr.DispositionCode = " ";
 			mrr.UserDescription = " ";
 			mrr.ExecDescription = " ";
