@@ -30,25 +30,25 @@ namespace P2020
 #region MIR
 
 			Mir mir = new Mir();
-			mir.SetupTime            = DateTime.Parse("2001-06-05T09:18:06Z");
-			mir.StartTime            = DateTime.Parse("2001-06-05T09:18:06Z");
+			mir.SetupTime            = DateTime.Parse(_FileParam.LotSTART);
+			mir.StartTime            = DateTime.Parse(_FileParam.LotSTART);
 			mir.StationNumber        = 0;
 			mir.ModeCode             = "P";
 			mir.RetestCode           = "N";
 			mir.ProtectionCode       = "0";
-			mir.BurnInTime           = 65535;
-			mir.CommandModeCode      = "a";
-			mir.LotId                = "GAL-LOT";
-			mir.PartType             = "GOLD8BAR";
-			mir.NodeName             = "galaxy-t";
-			mir.TesterType           = "A530";
-			mir.JobName              = "mobile-05";
-			mir.JobRevision          = "16";
-			mir.SublotId             = "03";
-			mir.OperatorName         = "ews";
-			mir.ExecType             = "IMAGE V6.3.y2k D8 052200";
+			mir.BurnInTime           = 0;
+			mir.CommandModeCode      = "0";
+			mir.LotId                = _FileParam.LotNumber;
+			mir.PartType             = "";
+			mir.NodeName             = "";
+			mir.TesterType           = "";
+			mir.JobName              = "";
+			mir.JobRevision          = "";
+			mir.SublotId             = "";
+			mir.OperatorName         = "";
+			mir.ExecType             = "";
 			mir.ExecVersion          = "";
-			mir.TestCode             = "E38";
+			mir.TestCode             = "";
 			mir.TestTemperature      = "";
 			mir.UserText             = "";
 			mir.AuxiliaryFile        = "";
@@ -278,9 +278,9 @@ namespace P2020
 
 			Mrr mrr = new Mrr();
 			mrr.FinishTime      = DateTime.Parse("2001-06-06T02:48:08Z");
-			mrr.DispositionCode = "";
-			mrr.UserDescription = "";
-			mrr.ExecDescription = "";
+			mrr.DispositionCode = " ";
+			mrr.UserDescription = " ";
+			mrr.ExecDescription = " ";
 			writer.WriteRecord(mrr);
 
 #endregion

@@ -95,10 +95,10 @@ namespace P2020
 						HandlerID = str[1].Trim().Replace("----------", "");
 						break;
 					case "Lot START":
-						LotSTART = str[1].Trim().Replace("----------", "");
+						LotSTART = title.Remove(0, title.IndexOf(":")+1).Trim();
 						break;
 					case "Lot END":
-						LotEND = str[1].Trim().Replace("----------", "");
+						LotEND = title.Remove(0, title.IndexOf(":")+1).Trim();
 						break;
 				}
 

@@ -35,6 +35,8 @@ namespace P2020
 
 		public int DictCount { get; set; }
 
+		public DataTable GetTable() => null;
+
 		public void AutoShowItem()
 		{
 		}
@@ -113,7 +115,7 @@ namespace P2020
 		{
 		}
 
-		public DataTable GetTable() => null;
+		
 
 		private CChipData EnumerableConvert(string name, string Title, string[] StrArray)
 		{
@@ -129,15 +131,6 @@ namespace P2020
 			ChipData.strMinMeasureValue = StrArray[7].Trim();
 			ChipData.strMaxMeasureValue = StrArray[8].Trim();
 			ChipData.Comment            = Title.Trim();
-
-			// if(Title.ToUpper().Contains("OPEN"))
-			// {
-			// 	ChipData.LowLimit = StrArray[4].Trim();
-			// }
-			// else
-			// {
-			// 	ChipData.HighLimit = StrArray[4].Trim();
-			// }
 			return ChipData;
 		}
 
