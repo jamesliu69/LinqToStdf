@@ -47,27 +47,27 @@ namespace P2020
 			mir.SublotId             = "03";
 			mir.OperatorName         = "ews";
 			mir.ExecType             = "IMAGE V6.3.y2k D8 052200";
-			mir.ExecVersion          = " ";
+			mir.ExecVersion          = "";
 			mir.TestCode             = "E38";
-			mir.TestTemperature      = " ";
-			mir.UserText             = " ";
-			mir.AuxiliaryFile        = " ";
-			mir.PackageType          = " ";
-			mir.FamilyId             = " ";
-			mir.DateCode             = " ";
-			mir.FacilityId           = " ";
-			mir.FloorId              = " ";
-			mir.ProcessId            = " ";
-			mir.OperationFrequency   = " ";
-			mir.SpecificationName    = " ";
-			mir.SpecificationVersion = " ";
-			mir.FlowId               = " ";
-			mir.SetupId              = " ";
-			mir.DesignRevision       = " ";
-			mir.EngineeringId        = " ";
-			mir.RomCode              = " ";
-			mir.SerialNumber         = " ";
-			mir.SupervisorName       = " ";
+			mir.TestTemperature      = "";
+			mir.UserText             = "";
+			mir.AuxiliaryFile        = "";
+			mir.PackageType          = "";
+			mir.FamilyId             = "";
+			mir.DateCode             = "";
+			mir.FacilityId           = "";
+			mir.FloorId              = "";
+			mir.ProcessId            = "";
+			mir.OperationFrequency   = "";
+			mir.SpecificationName    = "";
+			mir.SpecificationVersion = "";
+			mir.FlowId               = "";
+			mir.SetupId              = "";
+			mir.DesignRevision       = "";
+			mir.EngineeringId        = "";
+			mir.RomCode              = "";
+			mir.SerialNumber         = "";
+			mir.SupervisorName       = "";
 			writer.WriteRecord(mir);
 
 #endregion
@@ -229,7 +229,7 @@ namespace P2020
 			tsr.AlarmCount       = 0;
 			tsr.TestName         = "Sink out I";
 			tsr.SequencerName    = "seqU751";
-			tsr.TestLabel        = " ";
+			tsr.TestLabel        = "";
 			tsr.TestTime         = null;
 			tsr.TestMin          = null;
 			tsr.TestMax          = null;
@@ -278,9 +278,9 @@ namespace P2020
 
 			Mrr mrr = new Mrr();
 			mrr.FinishTime      = DateTime.Parse("2001-06-06T02:48:08Z");
-			mrr.DispositionCode = " ";
-			mrr.UserDescription = " ";
-			mrr.ExecDescription = " ";
+			mrr.DispositionCode = "";
+			mrr.UserDescription = "";
+			mrr.ExecDescription = "";
 			writer.WriteRecord(mrr);
 
 #endregion
@@ -290,9 +290,9 @@ namespace P2020
 
 		private void button2_Click(object sender, EventArgs e)
 		{
-			_P2020 = CP2020.CreateInstance(@"C:\Users\USER1\Documents\Pti_Doc\Project\Tester STDF\STDF 8Site\P2020_8site_datalog.txt", 0);
+			_P2020 = CP2020.CreateInstance(@"C:\Users\USER1\Documents\Pti_Doc\Project\Tester STDF\P2020 8 Site\P2020_8site_datalog.txt", 0);
 			_P2020.AnalyzeFile();
-			_FileParam = new CFileParam(@"C:\Users\USER1\Documents\Pti_Doc\Project\Tester STDF\STDF 8Site\2023-09-06-14-06-02.txt");
+			_FileParam = new CFileParam(@"C:\Users\USER1\Documents\Pti_Doc\Project\Tester STDF\P2020 8 Site\2023-09-06-14-06-02.txt");
 			_FileParam.AnnalyzeFile();
 		}
 	}
