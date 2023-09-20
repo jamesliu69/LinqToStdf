@@ -153,12 +153,12 @@ namespace P2020
 						}
 					}
 				}
-
+				
 				if(str[0].Contains("[SOFTWARE BIN]"))
 				{
 					bool IsSoftWareBinTitle = files.Contains("[SOFTWARE BIN]");
 					int  IdxString1         = files.ToList().IndexOf("[SOFTWARE BIN]");
-
+                              
 					var AssignItemAndIdx = files.Select((item, index) => new {
 													Item  = item,
 													Index = index,

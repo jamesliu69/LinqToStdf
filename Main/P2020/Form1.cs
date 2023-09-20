@@ -137,9 +137,14 @@ namespace P2020
 				ptr.SiteNumber      = Convert.ToByte(chip.Site);
 				ptr.TestFlags       = chip.PassOrFail == "PASS" ? (byte)1 : (byte)0;
 				ptr.ParametricFlags = 0;
-				float? result = float.Parse(Regex.Match(chip.strMaxMeasureValue, @"\d+\.?\d*").Value);
+				float? result = float.Parse(Regex.Match(chip.strMaxMeasureValue, @"[-+]?\d+\.?\d*").Value);
+
+				if(result < 0)
+				{
+					
+				}
 				ptr.Result                   = result;
-				ptr.TestText                 = chip.Comment + i;
+				ptr.TestText                 = chip.Comment;
 				ptr.AlarmId                  = " ";
 				ptr.OptionalFlags            = 0;
 				ptr.ResultScalingExponent    = 6;
@@ -150,7 +155,7 @@ namespace P2020
 
 				if(LO_LIMIT != null)
 				{
-					float? f = float.Parse(Regex.Match(LO_LIMIT, @"\d+\.?\d*").Value);
+					float? f = float.Parse(Regex.Match(LO_LIMIT, @"[-+]?\d+\.?\d*").Value);
 					ptr.LowLimit = f;
 				}
 				else
@@ -160,7 +165,7 @@ namespace P2020
 
 				if(HI_LIMIT != null)
 				{
-					float? h = float.Parse(Regex.Match(HI_LIMIT, @"\d+\.?\d*").Value);
+					float? h = float.Parse(Regex.Match(HI_LIMIT, @"[-+]?\d+\.?\d*").Value);
 					ptr.HighLimit = h;
 				}
 				else
@@ -184,6 +189,9 @@ namespace P2020
 				prr.HeadNumber = 1;
 				prr.SiteNumber = Convert.ToByte(chip.Site);
 				writer.WriteRecord(prr);
+
+				
+
 			}
 			
 
@@ -264,10 +272,15 @@ namespace P2020
 
 		private void button2_Click(object sender, EventArgs e)
 		{
-			_P2020 = CP2020.CreateInstance(@"C:\Users\USER1\Documents\Pti_Doc\Project\Tester STDF\P2020 8 Site\P2020_8site_datalog.txt", 0);
+			// _P2020 = CP2020.CreateInstance(@"C:\Users\USER1\Documents\Pti_Doc\Project\Tester STDF\P2020 8 Site\P2020_8site_datalog.txt", 0);
+			// _P2020.AnalyzeFile();
+			
+			_P2020 = CP2020.CreateInstance(Directory.GetFiles(@"C:\Users\USER1\Documents\Pti_Doc\Project\Jerry\P2020\P2020_Data Log\Data Log\","*.txt"), 0);
 			_P2020.AnalyzeFile();
+			
 			_FileParam = new CFileParam(@"C:\Users\USER1\Documents\Pti_Doc\Project\Tester STDF\P2020 8 Site\2023-09-06-14-06-02.txt");
 			_FileParam.AnnalyzeFile();
+			//C:\Users\USER1\Documents\Pti_Doc\Project\Jerry\P2020\P2020_Data Log\Data Log
 		}
 	}
 }
