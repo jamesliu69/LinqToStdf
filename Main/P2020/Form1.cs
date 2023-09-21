@@ -275,9 +275,14 @@ namespace P2020
 			// _P2020 = CP2020.CreateInstance(@"C:\Users\USER1\Documents\Pti_Doc\Project\Tester STDF\P2020 8 Site\P2020_8site_datalog.txt", 0);
 			// _P2020.AnalyzeFile();
 			
-			_P2020 = CP2020.CreateInstance(Directory.GetFiles(@"C:\Users\USER1\Documents\Pti_Doc\Project\Jerry\P2020\P2020_Data Log\Data Log\","*.txt"), 0);
+			//_P2020 = CP2020.CreateInstance(Directory.GetFiles(@"C:\Users\USER1\Documents\Pti_Doc\Project\Jerry\P2020\P2020_Data Log\Data Log\","*.txt"), 0);
+			//_P2020.AnalyzeFile();
+
+			_P2020 = CP2020.CreateInstance(Directory.GetFiles(@"C:\STDFATDF\2023-09-18-02-59-16\", "*.txt"), 0);
 			_P2020.AnalyzeFile();
-			
+
+
+
 			_FileParam = new CFileParam(@"C:\Users\USER1\Documents\Pti_Doc\Project\Tester STDF\P2020 8 Site\2023-09-06-14-06-02.txt");
 			_FileParam.AnnalyzeFile();
 			//C:\Users\USER1\Documents\Pti_Doc\Project\Jerry\P2020\P2020_Data Log\Data Log

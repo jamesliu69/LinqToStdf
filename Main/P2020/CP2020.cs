@@ -20,13 +20,13 @@ namespace P2020
 		private readonly List<string>    FileName    = new List<string>();
 		public           List<CChipData> lstChipData = new List<CChipData>();
 
-		public CP2020(string filename, int calOffset)
+		public CP2020(string filename)
 		{
 			FileName.Clear();
 			FileName.Add(filename);
 		}
 		
-		public CP2020(string[] filename, int calOffset)
+		public CP2020(string[] filename)
 		{
 			FileName.Clear();
 			FileName.AddRange(filename);
@@ -67,8 +67,8 @@ namespace P2020
 			try
 			{
 				lstChip.Clear();
-
-				foreach(string file in FileName)
+				lstChipData = new List<CChipData>();
+				foreach (string file in FileName)
 				{
 					//ReadFileAsync
 					string[] files = File.ReadAllLines(file); //以指定的編碼方式讀取檔案
@@ -76,7 +76,7 @@ namespace P2020
 					files = files.Where(file => !string.IsNullOrEmpty(file)).ToArray();
 					string[] boundedLines = files.SkipWhile(line => !line.Trim().StartsWith("==> Test Start")).Skip(1).TakeWhile(line => !line.Trim().StartsWith("==> Test End")).Where(line => /*!line.Contains("JUDGE_V:") &&*/ !line.Contains("P/F   Site              Pin_name        Force      L-Limit      H-Limit      Measure   Min Measure   Max Measure")).ToArray();
 					int      idx          = 0;
-					lstChipData = new List<CChipData>();
+					
 					string Title = string.Empty;
 
 					foreach(string word in boundedLines)
@@ -185,7 +185,7 @@ namespace P2020
 		{
 		}
 
-		public static CP2020 CreateInstance(string filename, int calOffset) => new CP2020(filename, calOffset);
-		public static CP2020 CreateInstance(string[] filename, int calOffset) => new CP2020(filename, calOffset);
+		public static CP2020 CreateInstance(string filename, int calOffset) => new CP2020(filename);
+		public static CP2020 CreateInstance(string[] filename, int calOffset) => new CP2020(filename);
 	}
 }
