@@ -1,6 +1,7 @@
 ﻿using Stdf;
 using Stdf.Records.V4;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
@@ -141,7 +142,6 @@ namespace P2020
 
 				if(result < 0)
 				{
-					
 				}
 				ptr.Result                   = result;
 				ptr.TestText                 = chip.Comment;
@@ -189,15 +189,9 @@ namespace P2020
 				prr.HeadNumber = 1;
 				prr.SiteNumber = Convert.ToByte(chip.Site);
 				writer.WriteRecord(prr);
-
-				
-
 			}
-			
 
 #endregion
-
-
 
 #region NO TSR
 
@@ -274,17 +268,18 @@ namespace P2020
 		{
 			// _P2020 = CP2020.CreateInstance(@"C:\Users\USER1\Documents\Pti_Doc\Project\Tester STDF\P2020 8 Site\P2020_8site_datalog.txt", 0);
 			// _P2020.AnalyzeFile();
-			
+
 			//_P2020 = CP2020.CreateInstance(Directory.GetFiles(@"C:\Users\USER1\Documents\Pti_Doc\Project\Jerry\P2020\P2020_Data Log\Data Log\","*.txt"), 0);
 			//_P2020.AnalyzeFile();
-
+			Stopwatch s = new Stopwatch();
+			s.Start();
 			_P2020 = CP2020.CreateInstance(Directory.GetFiles(@"C:\STDFATDF\2023-09-18-02-59-16\", "*.txt"), 0);
 			_P2020.AnalyzeFile();
-
-
-
+			s.Stop();
+			Console.WriteLine(s.ElapsedMilliseconds);
 			_FileParam = new CFileParam(@"C:\Users\USER1\Documents\Pti_Doc\Project\Tester STDF\P2020 8 Site\2023-09-06-14-06-02.txt");
 			_FileParam.AnnalyzeFile();
+
 			//C:\Users\USER1\Documents\Pti_Doc\Project\Jerry\P2020\P2020_Data Log\Data Log
 		}
 	}
