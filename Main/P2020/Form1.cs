@@ -273,10 +273,12 @@ namespace P2020
 			//_P2020.AnalyzeFile();
 			Stopwatch s = new Stopwatch();
 			s.Start();
-			_P2020 = CP2020.CreateInstance(Directory.GetFiles(@"C:\STDFATDF\2023-09-18-02-59-16\", "*.txt"), 0);
+			_P2020 = CP2020.CreateInstance(Directory.GetFiles(@"C:\STDFATDF\2023-09-18-02-59-16\New", "*.txt"), 0);
 			_P2020.AnalyzeFile();
 			s.Stop();
 			Console.WriteLine(s.ElapsedMilliseconds);
+			//49s
+			//32s
 			_FileParam = new CFileParam(@"C:\Users\USER1\Documents\Pti_Doc\Project\Tester STDF\P2020 8 Site\2023-09-06-14-06-02.txt");
 			_FileParam.AnnalyzeFile();
 
