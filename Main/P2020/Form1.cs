@@ -284,5 +284,10 @@ namespace P2020
 
 			//C:\Users\USER1\Documents\Pti_Doc\Project\Jerry\P2020\P2020_Data Log\Data Log
 		}
+
+		private void textBox1_KeyDown(object sender, KeyEventArgs e)
+		{
+			//throw new System.NotImplementedException();
+		}
 	}
 }
