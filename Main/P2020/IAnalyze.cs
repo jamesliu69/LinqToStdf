@@ -1,7 +1,7 @@
 using System;
 using System.Data;
 
-namespace CSTDF
+namespace STDF
 {
 	public interface IAnalyze
 	{

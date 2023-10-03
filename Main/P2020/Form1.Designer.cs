@@ -1,4 +1,4 @@
-﻿namespace CSTDF
+﻿namespace STDF
 {
 	partial class Form1
 	{

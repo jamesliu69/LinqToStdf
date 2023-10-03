@@ -10,7 +10,7 @@ using System.Windows.Forms;
 
 #endregion
 
-namespace CSTDF
+namespace STDF
 {
 	public class CP2020 : IAnalyze
 	{

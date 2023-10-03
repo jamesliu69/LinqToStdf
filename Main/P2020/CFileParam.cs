@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace CSTDF
+namespace STDF
 {
 	public class CFileParam
 	{

@@ -1,4 +1,4 @@
-namespace CSTDF
+namespace STDF
 {
 	public class CChipData
 	{

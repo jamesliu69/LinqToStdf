@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 
-namespace CSTDF
+namespace STDF
 {
 	internal static class Program
 	{

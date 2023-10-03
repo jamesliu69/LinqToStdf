@@ -6,7 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 
-namespace CSTDF
+namespace STDF
 {
 	public class CStdf
 	{
@@ -23,12 +23,11 @@ namespace CSTDF
 		/// <param name="LogPath"> Log 存在路徑位置</param>
 		/// <param name="SummaryLog">Summary 存在路徑位置</param>
 		/// <param name="Output">輸出路徑</param>
-		public CStdf(string LogPath, string SummaryLog, string Output)
+		public CStdf(string LogPath,  string Output)
 		{
 			Debug.Assert(LogPath != null, nameof(LogPath) + " != null");
 			_LogPath = LogPath;
-			Debug.Assert(SummaryLog != null, nameof(SummaryLog) + " != null");
-			_SummaryLog = SummaryLog;
+			_SummaryLog = LogPath;
 			Debug.Assert(Output != null, nameof(Output) + " != null");
 			_Output = Output;
 			writer  = new StdfFileWriter(_Output, true);
@@ -38,9 +37,9 @@ namespace CSTDF
 		{
 			try
 			{
-				_P2020 = CP2020.CreateInstance(Directory.GetFiles(_LogPath, "*.txt"), 0);
+				_P2020 = CP2020.CreateInstance(Directory.GetFiles(_LogPath, "*.log"), 0);
 				_P2020.AnalyzeFile();
-				_FileParam = new CFileParam(_SummaryLog);
+				_FileParam = new CFileParam(Directory.GetFiles(_LogPath, "*.txt")[0]);
 				_FileParam.AnalyzeFile();
 			}
 			catch(Exception e)
