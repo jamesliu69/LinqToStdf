@@ -7,17 +7,17 @@ using System;
 
 namespace Stdf
 {
-    /// <summary>
-    ///     Indicates there was a problem with the format of the file.
-    /// </summary>
-    /// <remarks>
-    ///     By default, this exception is thrown when format errors are encountered.
-    ///     Alternatively, <see cref="StdfFile.ThrowOnFormatError" /> can be set to false,
-    ///     which will cause a <see cref="FormatErrorRecord" /> to be pushed through the
-    ///     STDF stream instead.  This would allow an application to be more tolerant
-    ///     of corrupted data.
-    /// </remarks>
-    public class StdfFormatException : StdfException
+	/// <summary>
+	///     Indicates there was a problem with the format of the file.
+	/// </summary>
+	/// <remarks>
+	///     By default, this exception is thrown when format errors are encountered.
+	///     Alternatively, <see cref="StdfFile.ThrowOnFormatError" /> can be set to false,
+	///     which will cause a <see cref="FormatErrorRecord" /> to be pushed through the
+	///     STDF stream instead.  This would allow an application to be more tolerant
+	///     of corrupted data.
+	/// </remarks>
+	public class StdfFormatException : StdfException
 	{
 		//
 		// For guidelines regarding the creation of new exception types, see

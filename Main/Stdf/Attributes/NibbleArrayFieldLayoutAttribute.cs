@@ -6,17 +6,17 @@ using System;
 
 namespace Stdf.Attributes
 {
-    /// <summary>
-    ///     This indicates that the field to be parsed is a nibble array.
-    ///     The result will be a byte[] that has been expanded so that each nibble
-    ///     is represented by a separate byte.
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
+	/// <summary>
+	///     This indicates that the field to be parsed is a nibble array.
+	///     The result will be a byte[] that has been expanded so that each nibble
+	///     is represented by a separate byte.
+	/// </summary>
+	[AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
 	public class NibbleArrayFieldLayoutAttribute : ArrayFieldLayoutAttribute
 	{
-        /// <summary>
-        ///     Overridden to be hard-coded to byte.  Setting will throw.
-        /// </summary>
-        public override Type FieldType { get => typeof(byte); set => throw new NotSupportedException(); }
+		/// <summary>
+		///     Overridden to be hard-coded to byte.  Setting will throw.
+		/// </summary>
+		public override Type FieldType { get => typeof(byte); set => throw new NotSupportedException(); }
 	}
 }

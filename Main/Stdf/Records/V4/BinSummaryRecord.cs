@@ -10,15 +10,15 @@ namespace Stdf.Records.V4
 	public abstract class BinSummaryRecord : StdfRecord, IHeadSiteIndexable
 	{
 		public abstract BinType BinType { get; }
-        /// <summary>
-        ///     While ushort, valid bins must be 0 - 32,767
-        /// </summary>
-        public ushort BinNumber { get; set; }
+		/// <summary>
+		///     While ushort, valid bins must be 0 - 32,767
+		/// </summary>
+		public ushort BinNumber { get; set; }
 		public uint BinCount { get;    set; }
-        /// <summary>
-        ///     Known values are P, F
-        /// </summary>
-        public string BinPassFail { get; set; }
+		/// <summary>
+		///     Known values are P, F
+		/// </summary>
+		public string BinPassFail { get; set; }
 		public string BinName    { get;  set; }
 		public byte?  HeadNumber { get;  set; }
 		public byte?  SiteNumber { get;  set; }

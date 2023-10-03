@@ -18,18 +18,18 @@ namespace Stdf.Records.V4
 		public string TestText        { get; set; }
 		public string AlarmId         { get; set; }
 		public byte?  OptionalFlags   { get; set; }
-        /// <summary>
-        ///     Known values are: 15, 12, 9, 6, 3, 2, 0, -3, -6, -9, -12
-        /// </summary>
-        public sbyte? ResultScalingExponent { get; set; }
-        /// <summary>
-        ///     Known values are: 15, 12, 9, 6, 3, 2, 0, -3, -6, -9, -12
-        /// </summary>
-        public sbyte? LowLimitScalingExponent { get; set; }
-        /// <summary>
-        ///     Known values are: 15, 12, 9, 6, 3, 2, 0, -3, -6, -9, -12
-        /// </summary>
-        public sbyte? HighLimitScalingExponent { get; set; }
+		/// <summary>
+		///     Known values are: 15, 12, 9, 6, 3, 2, 0, -3, -6, -9, -12
+		/// </summary>
+		public sbyte? ResultScalingExponent { get; set; }
+		/// <summary>
+		///     Known values are: 15, 12, 9, 6, 3, 2, 0, -3, -6, -9, -12
+		/// </summary>
+		public sbyte? LowLimitScalingExponent { get; set; }
+		/// <summary>
+		///     Known values are: 15, 12, 9, 6, 3, 2, 0, -3, -6, -9, -12
+		/// </summary>
+		public sbyte? HighLimitScalingExponent { get; set; }
 		public float? LowLimit              { get;    set; }
 		public float? HighLimit             { get;    set; }
 		public string Units                 { get;    set; }

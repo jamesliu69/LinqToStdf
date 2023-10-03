@@ -11,10 +11,10 @@ namespace Stdf.Records.V4
 	{
 		public override RecordType RecordType { get => new RecordType(10, 30); }
 
-        /// <summary>
-        ///     Known values are: P, F, M
-        /// </summary>
-        public string TestType { get;         set; }
+		/// <summary>
+		///     Known values are: P, F, M
+		/// </summary>
+		public string TestType { get;         set; }
 		public uint   TestNumber       { get; set; }
 		public uint?  ExecutedCount    { get; set; }
 		public uint?  FailedCount      { get; set; }

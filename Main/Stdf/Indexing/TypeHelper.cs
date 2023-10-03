@@ -7,18 +7,18 @@ using System.Collections.Generic;
 
 namespace Stdf.Indexing
 {
-    /// <summary>
-    ///     Helper to find types for Linq stuff.  Most of this was yanked from System.Core code.
-    /// </summary>
-    internal static class TypeHelper
+	/// <summary>
+	///     Helper to find types for Linq stuff.  Most of this was yanked from System.Core code.
+	/// </summary>
+	internal static class TypeHelper
 	{
-        /// <summary>
-        ///     Finds a generic type
-        /// </summary>
-        /// <param name="definition">The open generic definition we're looking for.</param>
-        /// <param name="type">The type we're inspecting</param>
-        /// <returns></returns>
-        internal static Type FindGenericType(Type definition, Type type)
+		/// <summary>
+		///     Finds a generic type
+		/// </summary>
+		/// <param name="definition">The open generic definition we're looking for.</param>
+		/// <param name="type">The type we're inspecting</param>
+		/// <returns></returns>
+		internal static Type FindGenericType(Type definition, Type type)
 		{
 			//while the type isn't null and not object, keep looking up the type hierarchy
 			while((type != null) && (type != typeof(object)))
@@ -48,10 +48,10 @@ namespace Stdf.Indexing
 			return null;
 		}
 
-        /// <summary>
-        ///     Attempts to find the "element type" of a query (T in IEnumerable of T)
-        /// </summary>
-        internal static Type GetElementType(Type enumerableType)
+		/// <summary>
+		///     Attempts to find the "element type" of a query (T in IEnumerable of T)
+		/// </summary>
+		internal static Type GetElementType(Type enumerableType)
 		{
 			//Find the IEnumerable
 			Type type = FindGenericType(typeof(IEnumerable<>), enumerableType);
@@ -66,10 +66,10 @@ namespace Stdf.Indexing
 			return enumerableType;
 		}
 
-        /// <summary>
-        ///     Strips off the nullable
-        /// </summary>
-        internal static Type GetNonNullableType(Type type)
+		/// <summary>
+		///     Strips off the nullable
+		/// </summary>
+		internal static Type GetNonNullableType(Type type)
 		{
 			if(IsNullableType(type))
 			{

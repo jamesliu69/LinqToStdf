@@ -7,10 +7,10 @@ using System;
 
 namespace Stdf
 {
-    /// <summary>
-    ///     Base exception type for exceptions resulting from the parsing of an STDF file.
-    /// </summary>
-    public class StdfException : Exception
+	/// <summary>
+	///     Base exception type for exceptions resulting from the parsing of an STDF file.
+	/// </summary>
+	public class StdfException : Exception
 	{
 		//
 		// For guidelines regarding the creation of new exception types, see
@@ -31,9 +31,9 @@ namespace Stdf
 		{
 		}
 
-        /// <summary>
-        ///     If applicable, the <see cref="ErrorRecord" /> associated with the record.
-        /// </summary>
-        public ErrorRecord ErrorRecord { get; set; }
+		/// <summary>
+		///     If applicable, the <see cref="ErrorRecord" /> associated with the record.
+		/// </summary>
+		public ErrorRecord ErrorRecord { get; set; }
 	}
 }

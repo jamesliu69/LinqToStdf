@@ -6,12 +6,12 @@ using System;
 
 namespace Stdf.Records
 {
-    /// <summary>
-    ///     This record represents a record that was skipped.
-    ///     Currently, records can be skipped as a result of
-    ///     compiled queries.
-    /// </summary>
-    public class SkippedRecord : StdfRecord
+	/// <summary>
+	///     This record represents a record that was skipped.
+	///     Currently, records can be skipped as a result of
+	///     compiled queries.
+	/// </summary>
+	public class SkippedRecord : StdfRecord
 	{
 		public SkippedRecord(Type skippedType) => SkippedType = skippedType;
 

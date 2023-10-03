@@ -14,14 +14,14 @@ namespace Stdf.Records.V4
 		public override RecordType RecordType { get => new RecordType(1, 63); }
 
 		public ushort[] GroupIndexes { get; set; }
-        /// <summary>
-        ///     Known values are: 0, 10, 20, 21, 22, 23, 30, 31, 32, 33
-        /// </summary>
-        public ushort[] GroupModes { get; set; }
-        /// <summary>
-        ///     Known values are: 0, 2, 8, 10, 16, 20
-        /// </summary>
-        public byte[] GroupRadixes { get;         set; }
+		/// <summary>
+		///     Known values are: 0, 10, 20, 21, 22, 23, 30, 31, 32, 33
+		/// </summary>
+		public ushort[] GroupModes { get; set; }
+		/// <summary>
+		///     Known values are: 0, 2, 8, 10, 16, 20
+		/// </summary>
+		public byte[] GroupRadixes { get;         set; }
 		public string[] ProgramStatesRight { get; set; }
 		public string[] ReturnStatesRight  { get; set; }
 		public string[] ProgramStatesLeft  { get; set; }

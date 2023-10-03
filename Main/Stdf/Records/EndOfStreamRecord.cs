@@ -6,11 +6,11 @@ using System;
 
 namespace Stdf.Records
 {
-    /// <summary>
-    ///     Indicates that the end of the stream of records has been reached.
-    ///     Can be used most notably to trigger the generation of a missing Mrr.
-    /// </summary>
-    public class EndOfStreamRecord : StdfRecord
+	/// <summary>
+	///     Indicates that the end of the stream of records has been reached.
+	///     Can be used most notably to trigger the generation of a missing Mrr.
+	/// </summary>
+	public class EndOfStreamRecord : StdfRecord
 	{
 		public EndOfStreamRecord() => Synthesized = true;
 

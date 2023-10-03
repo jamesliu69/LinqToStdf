@@ -22,11 +22,8 @@ namespace CSTDF
 			_SummaryLog = SummaryLog;
 			_Output     = Output;
 			writer      = new StdfFileWriter(Output, true);
-
-			
 		}
 
-		
 		private void AnalyzeFile()
 		{
 			try
@@ -42,12 +39,11 @@ namespace CSTDF
 				throw;
 			}
 		}
-		
-		
+
 		public void DoWork()
 		{
 			AnalyzeFile();
-			Far            far    = new Far();
+			Far far = new Far();
 			far.CpuType     = 2;
 			far.StdfVersion = 4;
 			writer.WriteRecord(far);
@@ -291,7 +287,5 @@ namespace CSTDF
 
 			writer.Dispose();
 		}
-
-
 	}
 }

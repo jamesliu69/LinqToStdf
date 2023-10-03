@@ -18,30 +18,30 @@ using System.Windows.Controls;
 
 namespace Stdf
 {
-    /// <summary>
-    ///     The delegate type for methods that add filtering capability to an StdfRecord stream.
-    /// </summary>
-    /// <param name="input"></param>
-    /// <returns></returns>
-    public delegate IEnumerable<StdfRecord> RecordFilter(IEnumerable<StdfRecord> input);
+	/// <summary>
+	///     The delegate type for methods that add filtering capability to an StdfRecord stream.
+	/// </summary>
+	/// <param name="input"></param>
+	/// <returns></returns>
+	public delegate IEnumerable<StdfRecord> RecordFilter(IEnumerable<StdfRecord> input);
 
-    /// <summary>
-    ///     The main instantiation point for using the library.
-    /// </summary>
-    /// <remarks>
-    ///     <para>
-    ///         This is THE starting point for the library.
-    ///         You construct an StdfFile over a path, and then
-    ///         you get access to all the records via a basic
-    ///         IEnumerable pattern, or via some of the Linq-like
-    ///         extensions to IRecordContext.
-    ///     </para>
-    ///     <para>
-    ///         By default, StdfFile will be preloaded with converters
-    ///         suitable for parsing STDF V4 files.
-    ///     </para>
-    /// </remarks>
-    public sealed partial class StdfFile : IRecordContext
+	/// <summary>
+	///     The main instantiation point for using the library.
+	/// </summary>
+	/// <remarks>
+	///     <para>
+	///         This is THE starting point for the library.
+	///         You construct an StdfFile over a path, and then
+	///         you get access to all the records via a basic
+	///         IEnumerable pattern, or via some of the Linq-like
+	///         extensions to IRecordContext.
+	///     </para>
+	///     <para>
+	///         By default, StdfFile will be preloaded with converters
+	///         suitable for parsing STDF V4 files.
+	///     </para>
+	/// </remarks>
+	public sealed partial class StdfFile : IRecordContext
 	{
 		internal static readonly RecordConverterFactory _V4ConverterFactory = new RecordConverterFactory();
 		private readonly         object                 _ISLock             = new object();
@@ -58,53 +58,53 @@ namespace Stdf
 
 		private bool _ThrowOnFormatError = true;
 
-        /// <summary>
-        ///     Static constructor that will prepare a converter factory
-        ///     suitable for parsing STDF V4 records.
-        /// </summary>
-        static StdfFile() => StdfV4Specification.RegisterRecords(_V4ConverterFactory);
+		/// <summary>
+		///     Static constructor that will prepare a converter factory
+		///     suitable for parsing STDF V4 records.
+		/// </summary>
+		static StdfFile() => StdfV4Specification.RegisterRecords(_V4ConverterFactory);
 
-        /// <summary>
-        ///     Constructs an StdfFile for the given path, suitable
-        ///     for parsing STDF V4 files.
-        /// </summary>
-        /// <param name="path">The path the the STDF file</param>
-        public StdfFile(string path) : this(new DefaultFileStreamManager(path), false)
+		/// <summary>
+		///     Constructs an StdfFile for the given path, suitable
+		///     for parsing STDF V4 files.
+		/// </summary>
+		/// <param name="path">The path the the STDF file</param>
+		public StdfFile(string path) : this(new DefaultFileStreamManager(path), false)
 		{
 		}
 
-        /// <summary>
-        ///     Constructs an StdfFile for the given path, suitable
-        ///     for parsing STDF V4 files.
-        /// </summary>
-        /// <param name="path">The path the the STDF file</param>
-        /// <param name="debug">
-        ///     True if you want the converter factory
-        ///     to emit to a dynamic assembly suitable for debugging IL generation.
-        /// </param>
-        public StdfFile(string path, bool debug) : this(new DefaultFileStreamManager(path), debug)
+		/// <summary>
+		///     Constructs an StdfFile for the given path, suitable
+		///     for parsing STDF V4 files.
+		/// </summary>
+		/// <param name="path">The path the the STDF file</param>
+		/// <param name="debug">
+		///     True if you want the converter factory
+		///     to emit to a dynamic assembly suitable for debugging IL generation.
+		/// </param>
+		public StdfFile(string path, bool debug) : this(new DefaultFileStreamManager(path), debug)
 		{
 		}
 
-        /// <summary>
-        ///     Constructs an StdfFile for the given path, suitable
-        ///     for parsing STDF V4 files.
-        /// </summary>
-        /// <param name="streamManager">The STDF stream manager to use</param>
-        public StdfFile(IStdfStreamManager streamManager) : this(streamManager, false)
+		/// <summary>
+		///     Constructs an StdfFile for the given path, suitable
+		///     for parsing STDF V4 files.
+		/// </summary>
+		/// <param name="streamManager">The STDF stream manager to use</param>
+		public StdfFile(IStdfStreamManager streamManager) : this(streamManager, false)
 		{
 		}
 
-        /// <summary>
-        ///     Constructs an StdfFile for the given path, suitable
-        ///     for parsing STDF V4 files.
-        /// </summary>
-        /// <param name="streamManager">The STDF stream manager to use</param>
-        /// <param name="debug">
-        ///     True if you want the converter factory
-        ///     to emit to a dynamic assembly suitable for debugging IL generation.
-        /// </param>
-        public StdfFile(IStdfStreamManager streamManager, bool debug) : this(streamManager, debug, null)
+		/// <summary>
+		///     Constructs an StdfFile for the given path, suitable
+		///     for parsing STDF V4 files.
+		/// </summary>
+		/// <param name="streamManager">The STDF stream manager to use</param>
+		/// <param name="debug">
+		///     True if you want the converter factory
+		///     to emit to a dynamic assembly suitable for debugging IL generation.
+		/// </param>
+		public StdfFile(IStdfStreamManager streamManager, bool debug) : this(streamManager, debug, null)
 		{
 		}
 
@@ -114,7 +114,7 @@ namespace Stdf
 			{
 				ConverterFactory = new RecordConverterFactory(recordsAndFields) {
 					Debug = debug,
-                };
+				};
 				StdfV4Specification.RegisterRecords(ConverterFactory);
 			}
 			else
@@ -131,17 +131,17 @@ namespace Stdf
 			_RecordFilter  = BuiltInFilters.IdentityFilter;
 		}
 
-        /// <summary>
-        ///     Exposes the ConverterFactory in use for parsing.
-        ///     This allows record un/converters to be registered.
-        /// </summary>
-        public RecordConverterFactory ConverterFactory { get; }
+		/// <summary>
+		///     Exposes the ConverterFactory in use for parsing.
+		///     This allows record un/converters to be registered.
+		/// </summary>
+		public RecordConverterFactory ConverterFactory { get; }
 
-        /// <summary>
-        ///     Exposes the Endianness of the file.  Will be "uknown" until
-        ///     after parsing has begun.
-        /// </summary>
-        public Endian Endian { get; private set; } = Endian.Unknown;
+		/// <summary>
+		///     Exposes the Endianness of the file.  Will be "uknown" until
+		///     after parsing has begun.
+		/// </summary>
+		public Endian Endian { get; private set; } = Endian.Unknown;
 
 		public long? ExpectedLength { get; private set; }
 
@@ -173,26 +173,26 @@ namespace Stdf
 			}
 		}
 
-        /// <summary>
-        ///     Indicates whether the library should throw in the case of
-        ///     a format error. (default=true)
-        ///     This can only be set before parsing has begun.
-        /// </summary>
-        /// <remarks>
-        ///     <para>
-        ///         This allows both tolerant and strict applications
-        ///         to be written using the same library.
-        ///     </para>
-        ///     <para>
-        ///         If set to false, a <see cref="Records.FormatErrorRecord" /> will be
-        ///         pushed through the stream instead of throwing an exception,
-        ///         and if possible, parsing will continue.
-        ///         However, at this time, most format exceptions are unrecoverable.
-        ///         In the future, the parser might be more intelligent in the way it
-        ///         handles issues.
-        ///     </para>
-        /// </remarks>
-        public bool ThrowOnFormatError
+		/// <summary>
+		///     Indicates whether the library should throw in the case of
+		///     a format error. (default=true)
+		///     This can only be set before parsing has begun.
+		/// </summary>
+		/// <remarks>
+		///     <para>
+		///         This allows both tolerant and strict applications
+		///         to be written using the same library.
+		///     </para>
+		///     <para>
+		///         If set to false, a <see cref="Records.FormatErrorRecord" /> will be
+		///         pushed through the stream instead of throwing an exception,
+		///         and if possible, parsing will continue.
+		///         However, at this time, most format exceptions are unrecoverable.
+		///         In the future, the parser might be more intelligent in the way it
+		///         handles issues.
+		///     </para>
+		/// </remarks>
+		public bool ThrowOnFormatError
 		{
 			get => _ThrowOnFormatError;
 			set
@@ -204,11 +204,11 @@ namespace Stdf
 
 #region IRecordContext Members
 
-        /// <summary>
-        ///     Implementation of <see cref="IRecordContext.StdfFile" /> to enable
-        ///     the extension methods. (returns this)
-        /// </summary>
-        StdfFile IRecordContext.StdfFile { get => this; }
+		/// <summary>
+		///     Implementation of <see cref="IRecordContext.StdfFile" /> to enable
+		///     the extension methods. (returns this)
+		/// </summary>
+		StdfFile IRecordContext.StdfFile { get => this; }
 
 #endregion
 
@@ -220,14 +220,14 @@ namespace Stdf
 			}
 		}
 
-        /// <summary>
-        ///     Adds a record filter to the stream.
-        ///     Note, if caching is enabled, filters will only be run on the
-        ///     first time through the file.  If filtering needs to occur
-        ///     all the time, turn off caching, or apply the filter to the results
-        ///     of the call to <see cref="GetRecords" />.
-        /// </summary>
-        public void AddFilter(RecordFilter filter)
+		/// <summary>
+		///     Adds a record filter to the stream.
+		///     Note, if caching is enabled, filters will only be run on the
+		///     first time through the file.  If filtering needs to occur
+		///     all the time, turn off caching, or apply the filter to the results
+		///     of the call to <see cref="GetRecords" />.
+		/// </summary>
+		public void AddFilter(RecordFilter filter)
 		{
 			EnsureFiltersUnlocked();
 			_RecordFilter = _RecordFilter.Chain(filter);
@@ -252,10 +252,10 @@ namespace Stdf
 
 		public IQueryable<StdfRecord> GetRecords() => new Queryable<StdfRecord>(GetRecordsEnumerable(), IndexingStrategy.TransformQuery);
 
-        /// <summary>
-        ///     Gets all the records in the file as a "stream" of StdfRecord object
-        /// </summary>
-        public IEnumerable<StdfRecord> GetRecordsEnumerable()
+		/// <summary>
+		///     Gets all the records in the file as a "stream" of StdfRecord object
+		/// </summary>
+		public IEnumerable<StdfRecord> GetRecordsEnumerable()
 		{
 			_FiltersLocked = true;
 
@@ -276,15 +276,15 @@ namespace Stdf
 			}
 		}
 
-        /// <summary>
-        ///     Consumes all the records in the StdfFile
-        /// </summary>
-        /// <remarks>
-        ///     This is useful if you have a set of filters set up, but no need for iterating
-        ///     through the records themselves at the end of the chain.
-        /// </remarks>
-        /// <returns>The count of records consumed at the end of the chain.</returns>
-        public int Consume() => GetRecords().Count();
+		/// <summary>
+		///     Consumes all the records in the StdfFile
+		/// </summary>
+		/// <remarks>
+		///     This is useful if you have a set of filters set up, but no need for iterating
+		///     through the records themselves at the end of the chain.
+		/// </remarks>
+		/// <returns>The count of records consumed at the end of the chain.</returns>
+		public int Consume() => GetRecords().Count();
 
 		private IEnumerable<StdfRecord> InternalGetAllRecords()
 		{
@@ -306,7 +306,7 @@ namespace Stdf
 						yield return new StartOfStreamRecord {
 							Endian         = Endian.Unknown,
 							ExpectedLength = _Stream.Length,
-                        };
+						};
 
 						yield return new FormatErrorRecord {
 							Message     = Resources.FarReadError,
@@ -324,7 +324,7 @@ namespace Stdf
 						yield return new StartOfStreamRecord {
 							Endian         = endian,
 							ExpectedLength = _Stream.Length,
-                        };
+						};
 
 						yield return new FormatErrorRecord {
 							Message     = Resources.FarLengthError,
@@ -333,7 +333,7 @@ namespace Stdf
 
 						yield return new EndOfStreamRecord {
 							Offset = 2,
-                        };
+						};
 						yield break;
 					}
 
@@ -343,7 +343,7 @@ namespace Stdf
 						yield return new StartOfStreamRecord {
 							Endian         = endian,
 							ExpectedLength = _Stream.Length,
-                        };
+						};
 
 						yield return new FormatErrorRecord {
 							Offset      = 2,
@@ -353,7 +353,7 @@ namespace Stdf
 
 						yield return new EndOfStreamRecord {
 							Offset = 6,
-                        };
+						};
 						yield break;
 					}
 
@@ -363,7 +363,7 @@ namespace Stdf
 						yield return new StartOfStreamRecord {
 							Endian         = endian,
 							ExpectedLength = _Stream.Length,
-                        };
+						};
 
 						yield return new FormatErrorRecord {
 							Offset      = 3,
@@ -373,7 +373,7 @@ namespace Stdf
 
 						yield return new EndOfStreamRecord {
 							Offset = 3,
-                        };
+						};
 						yield break;
 					}
 
@@ -381,12 +381,12 @@ namespace Stdf
 					yield return new StartOfStreamRecord {
 						Endian         = endian,
 						ExpectedLength = _Stream.Length,
-                    };
+					};
 
 					yield return new Far {
 						CpuType     = far[4],
 						StdfVersion = far[5],
-                    };
+					};
 
 					//flush the memory
 					_Stream.Flush();
@@ -440,7 +440,7 @@ namespace Stdf
 
 								yield return new EndOfStreamRecord {
 									Offset = _Stream.Offset,
-                                };
+								};
 								yield break;
 							}
 							_InSeekMode = false;
@@ -477,7 +477,7 @@ namespace Stdf
 
 							yield return new EndOfStreamRecord {
 								Offset = _Stream.Offset,
-                            };
+							};
 							yield break;
 						}
 						byte[] contents = new byte[header.Value.Length];
@@ -504,7 +504,7 @@ namespace Stdf
 						{
 							UnknownRecord ur = new UnknownRecord(header.Value.RecordType, contents, endian) {
 								Offset = position,
-                            };
+							};
 							StdfRecord r = ConverterFactory.Convert(ur);
 
 							if(r.GetType() != typeof(UnknownRecord))
@@ -532,7 +532,7 @@ namespace Stdf
 		private enum PrivateImpl
 		{
 			None = 0,
-        }
+		}
 
 		internal abstract class Queryable
 		{
@@ -655,24 +655,24 @@ namespace Stdf
 
 		private void EnterSeekMode() => _InSeekMode = true;
 
-        /// <summary>
-        ///     Rewinds the underlying stream to the just after the last record conversion
-        ///     that yielded a known record and enters "seek" mode, where the stream will
-        ///     be assumed corrupt and searched for byte sequences that will identify the
-        ///     record boundarie. When the record stream is re-aquired, a CorruptDataRecord
-        ///     will be emitted containing the bytes between the last known good record and
-        ///     the newly-aquired record stream.
-        ///     Must be called within the context of live record reading.
-        /// </summary>
-        public void RewindAndSeek() => EnterSeekMode();
+		/// <summary>
+		///     Rewinds the underlying stream to the just after the last record conversion
+		///     that yielded a known record and enters "seek" mode, where the stream will
+		///     be assumed corrupt and searched for byte sequences that will identify the
+		///     record boundarie. When the record stream is re-aquired, a CorruptDataRecord
+		///     will be emitted containing the bytes between the last known good record and
+		///     the newly-aquired record stream.
+		///     Must be called within the context of live record reading.
+		/// </summary>
+		public void RewindAndSeek() => EnterSeekMode();
 
 		private SeekAlgorithm _SeekAlgorithm = SeekAlgorithms.Identity;
 
-        /// <summary>
-        ///     Adds a <see cref="SeekAlgorithm" /> to be used if <see cref="RewindAndSeek()" /> is called.
-        /// </summary>
-        /// <param name="algorithm"></param>
-        public void AddSeekAlgorithm(SeekAlgorithm algorithm) => _SeekAlgorithm = _SeekAlgorithm.Chain(algorithm);
+		/// <summary>
+		///     Adds a <see cref="SeekAlgorithm" /> to be used if <see cref="RewindAndSeek()" /> is called.
+		/// </summary>
+		/// <param name="algorithm"></param>
+		public void AddSeekAlgorithm(SeekAlgorithm algorithm) => _SeekAlgorithm = _SeekAlgorithm.Chain(algorithm);
 
 #endregion
 	}

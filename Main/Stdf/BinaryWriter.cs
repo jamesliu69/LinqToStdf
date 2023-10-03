@@ -11,52 +11,52 @@ using System.Text;
 
 namespace Stdf
 {
-    /// <summary>
-    ///     Knows how to write STDF-relevant binary data to a stream.
-    /// </summary>
-    /// <remarks>
-    ///     <para>
-    ///         Due to the lack of any endian-aware binary writer class in the framework,
-    ///         this class exists to abstract endian-ness issues.
-    ///         In addition, it adds some STDF-specific datatype writing
-    ///         such as variable-length strings and dates.
-    ///     </para>
-    ///     <para>
-    ///         As an implementation detail, record writing is done "backwards"
-    ///         from the end of the record.  For this reason, the writer
-    ///         has a constructor arg to support this.  This makes the implementation of
-    ///         optional fields at the end of a record far simpler
-    ///     </para>
-    /// </remarks>
-    public class BinaryWriter
+	/// <summary>
+	///     Knows how to write STDF-relevant binary data to a stream.
+	/// </summary>
+	/// <remarks>
+	///     <para>
+	///         Due to the lack of any endian-aware binary writer class in the framework,
+	///         this class exists to abstract endian-ness issues.
+	///         In addition, it adds some STDF-specific datatype writing
+	///         such as variable-length strings and dates.
+	///     </para>
+	///     <para>
+	///         As an implementation detail, record writing is done "backwards"
+	///         from the end of the record.  For this reason, the writer
+	///         has a constructor arg to support this.  This makes the implementation of
+	///         optional fields at the end of a record far simpler
+	///     </para>
+	/// </remarks>
+	public class BinaryWriter
 	{
-        /// <summary>
-        ///     Encoder used to encoding strings and characters
-        /// </summary>
-        private static readonly Encoding _Encoding = CreateEncoding();
+		/// <summary>
+		///     Encoder used to encoding strings and characters
+		/// </summary>
+		private static readonly Encoding _Encoding = CreateEncoding();
 
 		private readonly Stream _Stream;
 		private readonly Endian _StreamEndian;
 		private readonly bool   _WriteBackwards;
 		private          byte[] _Buffer;
 
-        /// <summary>
-        ///     Constructs a <see cref="BinaryWriter" /> on the given stream.  The stream is
-        ///     assumed to contain little endian data
-        /// </summary>
-        /// <param name="stream">The <see cref="Stream" /> to Write from</param>
-        public BinaryWriter(Stream stream) : this(stream, Endian.Little, false)
+		/// <summary>
+		///     Constructs a <see cref="BinaryWriter" /> on the given stream.  The stream is
+		///     assumed to contain little endian data
+		/// </summary>
+		/// <param name="stream">The <see cref="Stream" /> to Write from</param>
+		public BinaryWriter(Stream stream) : this(stream, Endian.Little, false)
 		{
 		}
 
-        /// <summary>
-        ///     Constructs a <see cref="BinaryWriter" /> on the given stream with
-        ///     the given endian-ness
-        /// </summary>
-        /// <param name="stream">The <see cref="Stream" /> to Write to</param>
-        /// <param name="streamEndian">The endian-ness of the stream</param>
-        /// <param name="writeBackwards">Whether to write to the stream "backwards"</param>
-        public BinaryWriter(Stream stream, Endian streamEndian, bool writeBackwards)
+		/// <summary>
+		///     Constructs a <see cref="BinaryWriter" /> on the given stream with
+		///     the given endian-ness
+		/// </summary>
+		/// <param name="stream">The <see cref="Stream" /> to Write to</param>
+		/// <param name="streamEndian">The endian-ness of the stream</param>
+		/// <param name="writeBackwards">Whether to write to the stream "backwards"</param>
+		public BinaryWriter(Stream stream, Endian streamEndian, bool writeBackwards)
 		{
 			Debug.Assert(stream != null, "The provided stream is null");
 			_Stream         = stream;
@@ -64,21 +64,21 @@ namespace Stdf
 			_WriteBackwards = writeBackwards;
 		}
 
-        /// <summary>
-        ///     Creates an ASCII encoder that throws if we can't encode the string to ASCII
-        /// </summary>
-        private static Encoding CreateEncoding()
+		/// <summary>
+		///     Creates an ASCII encoder that throws if we can't encode the string to ASCII
+		/// </summary>
+		private static Encoding CreateEncoding()
 		{
 			ASCIIEncoding encoding = (ASCIIEncoding)Encoding.ASCII.Clone();
 			encoding.EncoderFallback = EncoderFallback.ExceptionFallback;
 			return encoding;
 		}
 
-        /// <summary>
-        ///     Writes from the buffer to the stream
-        /// </summary>
-        /// <param name="length">The number of bytes to write</param>
-        private void WriteToStream(int length)
+		/// <summary>
+		///     Writes from the buffer to the stream
+		/// </summary>
+		/// <param name="length">The number of bytes to write</param>
+		private void WriteToStream(int length)
 		{
 			if(_WriteBackwards)
 			{
@@ -87,11 +87,11 @@ namespace Stdf
 			_Stream.Write(_Buffer, 0, length);
 		}
 
-        /// <summary>
-        ///     Writes an STDF record header to the stream
-        /// </summary>
-        /// <returns></returns>
-        public void WriteHeader(RecordHeader header)
+		/// <summary>
+		///     Writes an STDF record header to the stream
+		/// </summary>
+		/// <returns></returns>
+		public void WriteHeader(RecordHeader header)
 		{
 			if(_WriteBackwards)
 			{
@@ -107,15 +107,15 @@ namespace Stdf
 			}
 		}
 
-        /// <summary>
-        ///     Helper function capable of writing any array type,
-        ///     given an element writer function (which must honor
-        ///     "write backwards" state.)
-        /// </summary>
-        /// <typeparam name="T">The element type</typeparam>
-        /// <param name="arr">The array to write</param>
-        /// <param name="writeFunc">The function that will write a single element</param>
-        private void WriteArray<T>(T[] arr, Action<T> writeFunc)
+		/// <summary>
+		///     Helper function capable of writing any array type,
+		///     given an element writer function (which must honor
+		///     "write backwards" state.)
+		/// </summary>
+		/// <typeparam name="T">The element type</typeparam>
+		/// <param name="arr">The array to write</param>
+		/// <param name="writeFunc">The function that will write a single element</param>
+		private void WriteArray<T>(T[] arr, Action<T> writeFunc)
 		{
 			Debug.Assert(writeFunc != null, "The provided writeFunc delegate is null");
 
@@ -136,20 +136,20 @@ namespace Stdf
 			}
 		}
 
-        /// <summary>
-        ///     Writes a byte
-        /// </summary>
-        public void WriteByte(byte value) => _Stream.WriteByte(value);
+		/// <summary>
+		///     Writes a byte
+		/// </summary>
+		public void WriteByte(byte value) => _Stream.WriteByte(value);
 
-        /// <summary>
-        ///     Writes a byte array
-        /// </summary>
-        public void WriteByteArray(byte[] value) => WriteArray(value, WriteByte);
+		/// <summary>
+		///     Writes a byte array
+		/// </summary>
+		public void WriteByteArray(byte[] value) => WriteArray(value, WriteByte);
 
-        /// <summary>
-        ///     Writes a nibble array
-        /// </summary>
-        public void WriteNibbleArray(byte[] value)
+		/// <summary>
+		///     Writes a nibble array
+		/// </summary>
+		public void WriteNibbleArray(byte[] value)
 		{
 			if((value == null) || (value.Length == 0))
 			{
@@ -176,10 +176,10 @@ namespace Stdf
 			WriteToStream(newArray.Length);
 		}
 
-        /// <summary>
-        ///     Writes a bit array
-        /// </summary>
-        public void WriteBitArray(BitArray value)
+		/// <summary>
+		///     Writes a bit array
+		/// </summary>
+		public void WriteBitArray(BitArray value)
 		{
 			value = value ?? new BitArray(0);
 			ushort length = (ushort)value.Length;
@@ -203,158 +203,158 @@ namespace Stdf
 			}
 		}
 
-        /// <summary>
-        ///     Writes a signed byte
-        /// </summary>
-        public void WriteSByte(sbyte value) => _Stream.WriteByte((byte)value);
+		/// <summary>
+		///     Writes a signed byte
+		/// </summary>
+		public void WriteSByte(sbyte value) => _Stream.WriteByte((byte)value);
 
-        /// <summary>
-        ///     Writes a signed byte array
-        /// </summary>
-        /// <param name="value"></param>
-        public void WriteSByteArray(sbyte[] value) => WriteArray(value, WriteSByte);
+		/// <summary>
+		///     Writes a signed byte array
+		/// </summary>
+		/// <param name="value"></param>
+		public void WriteSByteArray(sbyte[] value) => WriteArray(value, WriteSByte);
 
-        /// <summary>
-        ///     Writes an unsigned 2-byte integer
-        /// </summary>
-        public void WriteUInt16(ushort value)
+		/// <summary>
+		///     Writes an unsigned 2-byte integer
+		/// </summary>
+		public void WriteUInt16(ushort value)
 		{
 			WriteToBuffer(BitConverter.GetBytes(value));
 			WriteToStream(2);
 		}
 
-        /// <summary>
-        ///     Writes an unsigned 2-byte integer array
-        /// </summary>
-        public void WriteUInt16Array(ushort[] value) => WriteArray(value, WriteUInt16);
+		/// <summary>
+		///     Writes an unsigned 2-byte integer array
+		/// </summary>
+		public void WriteUInt16Array(ushort[] value) => WriteArray(value, WriteUInt16);
 
-        /// <summary>
-        ///     Writes a 2-byte integer
-        /// </summary>
-        public void WriteInt16(short value)
+		/// <summary>
+		///     Writes a 2-byte integer
+		/// </summary>
+		public void WriteInt16(short value)
 		{
 			WriteToBuffer(BitConverter.GetBytes(value));
 			WriteToStream(2);
 		}
 
-        /// <summary>
-        ///     Writes a 2-byte integer array
-        /// </summary>
-        public void WriteInt16Array(short[] value) => WriteArray(value, WriteInt16);
+		/// <summary>
+		///     Writes a 2-byte integer array
+		/// </summary>
+		public void WriteInt16Array(short[] value) => WriteArray(value, WriteInt16);
 
-        /// <summary>
-        ///     Writes an unsigned 4-byte integer
-        /// </summary>
-        public void WriteUInt32(uint value)
+		/// <summary>
+		///     Writes an unsigned 4-byte integer
+		/// </summary>
+		public void WriteUInt32(uint value)
 		{
 			WriteToBuffer(BitConverter.GetBytes(value));
 			WriteToStream(4);
 		}
 
-        /// <summary>
-        ///     Writes an unsigned 4-byte integer array
-        /// </summary>
-        public void WriteUInt32Array(uint[] value) => WriteArray(value, WriteUInt32);
+		/// <summary>
+		///     Writes an unsigned 4-byte integer array
+		/// </summary>
+		public void WriteUInt32Array(uint[] value) => WriteArray(value, WriteUInt32);
 
-        /// <summary>
-        ///     Writes a 4-byte integer
-        /// </summary>
-        public void WriteInt32(int value)
+		/// <summary>
+		///     Writes a 4-byte integer
+		/// </summary>
+		public void WriteInt32(int value)
 		{
 			WriteToBuffer(BitConverter.GetBytes(value));
 			WriteToStream(4);
 		}
 
-        /// <summary>
-        ///     Writes a 4-byte integer array
-        /// </summary>
-        public void WriteInt32Array(int[] value) => WriteArray(value, WriteInt32);
+		/// <summary>
+		///     Writes a 4-byte integer array
+		/// </summary>
+		public void WriteInt32Array(int[] value) => WriteArray(value, WriteInt32);
 
-        /// <summary>
-        ///     Writes an unsigned 8-byte integer
-        /// </summary>
-        public void WriteUInt64(ulong value)
+		/// <summary>
+		///     Writes an unsigned 8-byte integer
+		/// </summary>
+		public void WriteUInt64(ulong value)
 		{
 			WriteToBuffer(BitConverter.GetBytes(value));
 			WriteToStream(8);
 		}
 
-        /// <summary>
-        ///     Writes an unsigned 8-byte integer array
-        /// </summary>
-        public void WriteUInt64Array(ulong[] value) => WriteArray(value, WriteUInt64);
+		/// <summary>
+		///     Writes an unsigned 8-byte integer array
+		/// </summary>
+		public void WriteUInt64Array(ulong[] value) => WriteArray(value, WriteUInt64);
 
-        /// <summary>
-        ///     Writes an 8-byte integer
-        /// </summary>
-        public void WriteInt64(long value)
+		/// <summary>
+		///     Writes an 8-byte integer
+		/// </summary>
+		public void WriteInt64(long value)
 		{
 			WriteToBuffer(BitConverter.GetBytes(value));
 			WriteToStream(8);
 		}
 
-        /// <summary>
-        ///     Writes an 8-byte integer array
-        /// </summary>
-        public void WriteInt64Array(long[] value) => WriteArray(value, WriteInt64);
+		/// <summary>
+		///     Writes an 8-byte integer array
+		/// </summary>
+		public void WriteInt64Array(long[] value) => WriteArray(value, WriteInt64);
 
-        /// <summary>
-        ///     Writes a 4-byte IEEE floating point number
-        /// </summary>
-        public void WriteSingle(float value)
+		/// <summary>
+		///     Writes a 4-byte IEEE floating point number
+		/// </summary>
+		public void WriteSingle(float value)
 		{
 			WriteToBuffer(BitConverter.GetBytes(value));
 			WriteToStream(4);
 		}
 
-        /// <summary>
-        ///     Writes a 4-byte IEEE floating point number array
-        /// </summary>
-        public void WriteSingleArray(float[] value) => WriteArray(value, WriteSingle);
+		/// <summary>
+		///     Writes a 4-byte IEEE floating point number array
+		/// </summary>
+		public void WriteSingleArray(float[] value) => WriteArray(value, WriteSingle);
 
-        /// <summary>
-        ///     Writes an 8-byte IEEE floating point number
-        /// </summary>
-        public void WriteDouble(double value)
+		/// <summary>
+		///     Writes an 8-byte IEEE floating point number
+		/// </summary>
+		public void WriteDouble(double value)
 		{
 			WriteToBuffer(BitConverter.GetBytes(value));
 			WriteToStream(8);
 		}
 
-        /// <summary>
-        ///     Writes an 8-byte IEEE floating point number array
-        /// </summary>
-        public void WriteDoubleArray(double[] value) => WriteArray(value, WriteDouble);
+		/// <summary>
+		///     Writes an 8-byte IEEE floating point number array
+		/// </summary>
+		public void WriteDoubleArray(double[] value) => WriteArray(value, WriteDouble);
 
-        /// <summary>
-        ///     Writes a single character
-        /// </summary>
-        public void WriteCharacter(char value)
+		/// <summary>
+		///     Writes a single character
+		/// </summary>
+		public void WriteCharacter(char value)
 		{
 			EnsureBufferLength(1);
 			_Encoding.GetBytes(value.ToString(), 0, 1, _Buffer, 0);
 			WriteToStream(1);
 		}
 
-        /// <summary>
-        ///     Writes an array of single characters
-        /// </summary>
-        public void WriteCharacterArray(char[] value) => WriteArray(value, WriteCharacter);
+		/// <summary>
+		///     Writes an array of single characters
+		/// </summary>
+		public void WriteCharacterArray(char[] value) => WriteArray(value, WriteCharacter);
 
-        /// <summary>
-        ///     Writes a string of the given length, truncating the rest
-        /// </summary>
-        public void WriteString(string value, int length)
+		/// <summary>
+		///     Writes a string of the given length, truncating the rest
+		/// </summary>
+		public void WriteString(string value, int length)
 		{
 			EnsureBufferLength(length);
 			_Encoding.GetBytes(value, 0, length, _Buffer, 0);
 			WriteToStream(length);
 		}
 
-        /// <summary>
-        ///     Writes a string where the first byte indicates the length
-        /// </summary>
-        public void WriteString(string value)
+		/// <summary>
+		///     Writes a string where the first byte indicates the length
+		/// </summary>
+		public void WriteString(string value)
 		{
 			// TODO: This should be setting value to the fields MissingValue
 			value = value ?? string.Empty;
@@ -382,17 +382,17 @@ namespace Stdf
 			}
 		}
 
-        /// <summary>
-        ///     Writes a string where the first byte indicates the length
-        /// </summary>
-        public void WriteStringArray(string[] value) => WriteArray(value, WriteString);
+		/// <summary>
+		///     Writes a string where the first byte indicates the length
+		/// </summary>
+		public void WriteStringArray(string[] value) => WriteArray(value, WriteString);
 
 		// TODO: The current STDF spec indicates no need for this, but do we want a WriteStringArray method for non-single-character fixed-length strings?
 
-        /// <summary>
-        ///     Writes an STDF datetime (4-byte integer seconds since the epoch)
-        /// </summary>
-        public void WriteDateTime(DateTime value)
+		/// <summary>
+		///     Writes an STDF datetime (4-byte integer seconds since the epoch)
+		/// </summary>
+		public void WriteDateTime(DateTime value)
 		{
 			uint seconds = (uint)(value - TimeFieldLayoutAttribute.Epoch).TotalSeconds;
 			WriteUInt32(seconds);
@@ -400,18 +400,18 @@ namespace Stdf
 
 #region Buffer Management
 
-        /// <summary>
-        ///     Writes bytes into the buffer and takes care of any endian swapping necessary
-        /// </summary>
-        /// <param name="value">the bytes to Write</param>
-        private void WriteToBuffer(byte[] value) => WriteToBuffer(value, true);
+		/// <summary>
+		///     Writes bytes into the buffer and takes care of any endian swapping necessary
+		/// </summary>
+		/// <param name="value">the bytes to Write</param>
+		private void WriteToBuffer(byte[] value) => WriteToBuffer(value, true);
 
-        /// <summary>
-        ///     Writes bytes into the buffer with an option to take care of any endian swapping necessary
-        /// </summary>
-        /// <param name="value">the bytes to Write</param>
-        /// <param name="endianize">true to take care of endian-ness</param>
-        private void WriteToBuffer(byte[] value, bool endianize)
+		/// <summary>
+		///     Writes bytes into the buffer with an option to take care of any endian swapping necessary
+		/// </summary>
+		/// <param name="value">the bytes to Write</param>
+		/// <param name="endianize">true to take care of endian-ness</param>
+		private void WriteToBuffer(byte[] value, bool endianize)
 		{
 			FillBuffer(value);
 
@@ -421,11 +421,11 @@ namespace Stdf
 			}
 		}
 
-        /// <summary>
-        ///     Fills the buffer
-        /// </summary>
-        /// <param name="value">the bytes</param>
-        private void FillBuffer(byte[] value)
+		/// <summary>
+		///     Fills the buffer
+		/// </summary>
+		/// <param name="value">the bytes</param>
+		private void FillBuffer(byte[] value)
 		{
 			Debug.Assert(value != null, "value was null");
 
@@ -436,11 +436,11 @@ namespace Stdf
 			}
 		}
 
-        /// <summary>
-        ///     Ensures the buffer is large enough to handle the specified length
-        /// </summary>
-        /// <param name="length">The length required</param>
-        private void EnsureBufferLength(int length)
+		/// <summary>
+		///     Ensures the buffer is large enough to handle the specified length
+		/// </summary>
+		/// <param name="length">The length required</param>
+		private void EnsureBufferLength(int length)
 		{
 			Debug.Assert(length >= 0, "length must be >= 0");
 
@@ -450,17 +450,17 @@ namespace Stdf
 			}
 		}
 
-        /// <summary>
-        ///     Reverses the content of the buffer (within the specified length from the beginning)
-        /// </summary>
-        /// <param name="length">The relevant length</param>
-        private void SwapBuffer(int length) => Array.Reverse(_Buffer, 0, length);
+		/// <summary>
+		///     Reverses the content of the buffer (within the specified length from the beginning)
+		/// </summary>
+		/// <param name="length">The relevant length</param>
+		private void SwapBuffer(int length) => Array.Reverse(_Buffer, 0, length);
 
-        /// <summary>
-        ///     Conditionally calls <see cref="SwapBuffer" /> depending on the endian-ness of the stream.
-        /// </summary>
-        /// <param name="length"></param>
-        private void Endianize(int length)
+		/// <summary>
+		///     Conditionally calls <see cref="SwapBuffer" /> depending on the endian-ness of the stream.
+		/// </summary>
+		/// <param name="length"></param>
+		private void Endianize(int length)
 		{
 			if(_StreamEndian == Endian.Big)
 			{

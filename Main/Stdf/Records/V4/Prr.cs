@@ -20,14 +20,14 @@ namespace Stdf.Records.V4
 
 		public byte   PartFlag  { get; set; }
 		public ushort TestCount { get; set; }
-        /// <summary>
-        ///     While ushort, valid bins must be 0 - 32,767
-        /// </summary>
-        public ushort HardBin { get; set; }
-        /// <summary>
-        ///     While ushort, valid bins must be 0 - 32,767
-        /// </summary>
-        public ushort? SoftBin { get;    set; }
+		/// <summary>
+		///     While ushort, valid bins must be 0 - 32,767
+		/// </summary>
+		public ushort HardBin { get; set; }
+		/// <summary>
+		///     While ushort, valid bins must be 0 - 32,767
+		/// </summary>
+		public ushort? SoftBin { get;    set; }
 		public short? XCoordinate { get; set; }
 		public short? YCoordinate { get; set; }
 		public uint?  TestTime    { get; set; }

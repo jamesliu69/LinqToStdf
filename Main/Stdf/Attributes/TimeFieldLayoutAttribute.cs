@@ -6,17 +6,17 @@ using System;
 
 namespace Stdf.Attributes
 {
-    /// <summary>
-    ///     Indicates that the field is a timestamp.  The result will be a
-    ///     <see cref="DateTime" />.
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
+	/// <summary>
+	///     Indicates that the field is a timestamp.  The result will be a
+	///     <see cref="DateTime" />.
+	/// </summary>
+	[AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
 	public class TimeFieldLayoutAttribute : FieldLayoutAttribute
 	{
-        /// <summary>
-        ///     The epoch used for STDF dates
-        /// </summary>
-        public static readonly DateTime Epoch = new DateTime(1970, 1, 1);
+		/// <summary>
+		///     The epoch used for STDF dates
+		/// </summary>
+		public static readonly DateTime Epoch = new DateTime(1970, 1, 1);
 
 		public TimeFieldLayoutAttribute()
 		{
@@ -24,10 +24,10 @@ namespace Stdf.Attributes
 			MissingValue   = Epoch;
 		}
 
-        /// <summary>
-        ///     Overriden to be locked to string. setting is an invalid operation.
-        /// </summary>
-        public override Type FieldType
+		/// <summary>
+		///     Overriden to be locked to string. setting is an invalid operation.
+		/// </summary>
+		public override Type FieldType
 		{
 			get => base.FieldType;
 			set

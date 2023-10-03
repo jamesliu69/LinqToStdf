@@ -10,11 +10,11 @@ using System.Reflection;
 
 namespace Stdf.Indexing
 {
-    /// <summary>
-    ///     This indexing strategy aims to provide performant, memory-efficient indexing of V4 STDFs that improve query
-    ///     performance
-    /// </summary>
-    public class V4StructureIndexingStrategy : CachingIndexingStrategy
+	/// <summary>
+	///     This indexing strategy aims to provide performant, memory-efficient indexing of V4 STDFs that improve query
+	///     performance
+	/// </summary>
+	public class V4StructureIndexingStrategy : CachingIndexingStrategy
 	{
 		private readonly ParentMap        _PartsMap  = new ParentMap();
 		private readonly List<Pcr>        _Pcrs      = new List<Pcr>();
@@ -25,10 +25,10 @@ namespace Stdf.Indexing
 		private Mir _Mir;
 		private Mrr _Mrr;
 
-        /// <summary>
-        ///     Finds all the records in the specified extents
-        /// </summary>
-        private IEnumerable<StdfRecord> GetRecordsInExtents(Extents extents)
+		/// <summary>
+		///     Finds all the records in the specified extents
+		/// </summary>
+		private IEnumerable<StdfRecord> GetRecordsInExtents(Extents extents)
 		{
 			for(int i = extents.StartIndex; i <= extents.EndIndex; i++)
 			{
@@ -36,12 +36,12 @@ namespace Stdf.Indexing
 			}
 		}
 
-        /// <summary>
-        ///     Finds all the records in the specified extents in reverse order
-        /// </summary>
-        /// <param name="extents"></param>
-        /// <returns></returns>
-        private IEnumerable<StdfRecord> GetRecordsInExtentsReverse(Extents extents)
+		/// <summary>
+		///     Finds all the records in the specified extents in reverse order
+		/// </summary>
+		/// <param name="extents"></param>
+		/// <returns></returns>
+		private IEnumerable<StdfRecord> GetRecordsInExtentsReverse(Extents extents)
 		{
 			for(int i = extents.EndIndex; i >= extents.StartIndex; i--)
 			{
@@ -49,10 +49,10 @@ namespace Stdf.Indexing
 			}
 		}
 
-        /// <summary>
-        ///     This is the method that is used to index a stream of records
-        /// </summary>
-        public override void IndexRecords(IEnumerable<StdfRecord> records)
+		/// <summary>
+		///     This is the method that is used to index a stream of records
+		/// </summary>
+		public override void IndexRecords(IEnumerable<StdfRecord> records)
 		{
 			_AllRecords = new List<StdfRecord>();
 
@@ -158,87 +158,87 @@ namespace Stdf.Indexing
 			}
 		}
 
-        /// <summary>
-        ///     Enumerates the records that we've indexed
-        /// </summary>
-        /// <returns></returns>
-        public override IEnumerable<StdfRecord> EnumerateIndexedRecords() => from r in _AllRecords select r;
+		/// <summary>
+		///     Enumerates the records that we've indexed
+		/// </summary>
+		/// <returns></returns>
+		public override IEnumerable<StdfRecord> EnumerateIndexedRecords() => from r in _AllRecords select r;
 
-        /// <summary>
-        ///     Transform a query to use the indexing strategy
-        /// </summary>
-        public override Expression TransformQuery(Expression query) => new OptimizingVisitor(this).Visit(query);
+		/// <summary>
+		///     Transform a query to use the indexing strategy
+		/// </summary>
+		public override Expression TransformQuery(Expression query) => new OptimizingVisitor(this).Visit(query);
 
-        /// <summary>
-        ///     Describes the scope of a section of the stdf file, like the records in the scope of a particular part, wafer, etc.
-        /// </summary>
-        private class Extents
+		/// <summary>
+		///     Describes the scope of a section of the stdf file, like the records in the scope of a particular part, wafer, etc.
+		/// </summary>
+		private class Extents
 		{
-            /// <summary>
-            ///     The starting record index
-            /// </summary>
-            public int StartIndex { get; set; }
-            /// <summary>
-            ///     The starting file offset
-            /// </summary>
-            public long StartOffset { get; set; }
-            /// <summary>
-            ///     The ending record index
-            /// </summary>
-            public int EndIndex { get; set; }
-            /// <summary>
-            ///     The ending file offset
-            /// </summary>
-            public long EndOffset { get; set; }
+			/// <summary>
+			///     The starting record index
+			/// </summary>
+			public int StartIndex { get; set; }
+			/// <summary>
+			///     The starting file offset
+			/// </summary>
+			public long StartOffset { get; set; }
+			/// <summary>
+			///     The ending record index
+			/// </summary>
+			public int EndIndex { get; set; }
+			/// <summary>
+			///     The ending file offset
+			/// </summary>
+			public long EndOffset { get; set; }
 		}
 
-        /// <summary>
-        ///     Maps records to "extents" of different scopes.  Also capable of mapping outer extents to extents
-        /// </summary>
-        private class ParentMap
+		/// <summary>
+		///     Maps records to "extents" of different scopes.  Also capable of mapping outer extents to extents
+		/// </summary>
+		private class ParentMap
 		{
-            /// <summary>
-            ///     A list of extents from the file
-            /// </summary>
-            private readonly List<Extents> _ExtentsList = new List<Extents>();
+			/// <summary>
+			///     A list of extents from the file
+			/// </summary>
+			private readonly List<Extents> _ExtentsList = new List<Extents>();
 
-            /// <summary>
-            ///     Gets the extents containing the specified record
-            /// </summary>
-            public Extents GetExtents(StdfRecord record)
+			/// <summary>
+			///     Gets the extents containing the specified record
+			/// </summary>
+			public Extents GetExtents(StdfRecord record)
 			{
 				//TODO: optimized search (binary?)
 				Extents candidate = _ExtentsList.TakeWhile(e => e.StartOffset <= record.Offset).LastOrDefault();
 				return candidate.EndOffset >= record.Offset ? candidate : null;
 			}
 
-            /// <summary>
-            ///     Enumerates the extents that are fully within the specified outer extents
-            /// </summary>
-            public IEnumerable<Extents> GetExtentsListWithin(Extents outerExtents) => _ExtentsList.SkipWhile(e => e.StartIndex < outerExtents.StartIndex).TakeWhile(e => e.EndIndex < outerExtents.EndIndex);
+			/// <summary>
+			///     Enumerates the extents that are fully within the specified outer extents
+			/// </summary>
+			public IEnumerable<Extents> GetExtentsListWithin(Extents outerExtents) => _ExtentsList.SkipWhile(e => e.StartIndex < outerExtents.StartIndex).TakeWhile(e => e.EndIndex < outerExtents.EndIndex);
 
-            /// <summary>
-            ///     Gets all the extents in the map
-            /// </summary>
-            public IEnumerable<Extents> GetAllExtents() => from e in _ExtentsList select e;
+			/// <summary>
+			///     Gets all the extents in the map
+			/// </summary>
+			public IEnumerable<Extents> GetAllExtents() => from e in _ExtentsList select e;
 
-            /// <summary>
-            ///     Adds extents to the map
-            /// </summary>
-            public void AddExtents(Extents extents) => _ExtentsList.Add(extents);
+			/// <summary>
+			///     Adds extents to the map
+			/// </summary>
+			public void AddExtents(Extents extents) => _ExtentsList.Add(extents);
 		}
 
-        /// <summary>
-        ///     Expression visitor that rewrites queries to leverage the indexed data
-        /// </summary>
-        private class OptimizingVisitor : ExpressionVisitor
+		/// <summary>
+		///     Expression visitor that rewrites queries to leverage the indexed data
+		/// </summary>
+		private class OptimizingVisitor : ExpressionVisitor
 		{
 #region Optimizing Map
 
-            /// <summary>
-            ///     This map stores information for how we optimize queries for this strategy
-            /// </summary>
-            private static readonly Dictionary<MethodInfo, MethodInfo> OptimizingMap = new Dictionary<MethodInfo, MethodInfo> {
+			/// <summary>
+			///     This map stores information for how we optimize queries for this strategy
+			/// </summary>
+			private static readonly Dictionary<MethodInfo, MethodInfo> OptimizingMap = new Dictionary<MethodInfo, MethodInfo> {
 				{ typeof(Extensions).GetMethod("GetMir"), typeof(V4StructureIndexingStrategy).GetMethod("GetMir") },
 				{ typeof(Extensions).GetMethod("GetMrr"), typeof(V4StructureIndexingStrategy).GetMethod("GetMrr") },
 				{ typeof(Extensions).GetMethod("GetPcrs", new[] { typeof(IRecordContext) }), typeof(V4StructureIndexingStrategy).GetMethod("GetPcrs",                             new[] { typeof(IRecordContext) }) },
@@ -269,10 +269,10 @@ namespace Stdf.Indexing
 
 			public OptimizingVisitor(V4StructureIndexingStrategy strategy) => _Strategy = strategy;
 
-            /// <summary>
-            ///     Lets us know the expression is a call to StdfFile.GetRecordsEnumerable
-            /// </summary>
-            private static bool IsAllRecords(Expression exp)
+			/// <summary>
+			///     Lets us know the expression is a call to StdfFile.GetRecordsEnumerable
+			/// </summary>
+			private static bool IsAllRecords(Expression exp)
 			{
 				if(exp is MethodCallExpression call)
 				{
@@ -281,10 +281,10 @@ namespace Stdf.Indexing
 				return false;
 			}
 
-            /// <summary>
-            ///     optimizes method calls
-            /// </summary>
-            protected override Expression VisitMethodCall(MethodCallExpression m)
+			/// <summary>
+			///     optimizes method calls
+			/// </summary>
+			protected override Expression VisitMethodCall(MethodCallExpression m)
 			{
 				if(OptimizingMap.TryGetValue(m.Method, out MethodInfo optimized))
 				{
@@ -307,68 +307,68 @@ namespace Stdf.Indexing
 
 #region Optimized implementations
 
-        /// <summary>
-        ///     Leverages the parts extents to get all Prrs.
-        ///     Note that this optimization gives them to you in a slightly different order if using multi-site data
-        /// </summary>
-        public IEnumerable<Prr> OfExactTypePrr(IEnumerable<StdfRecord> records)
+		/// <summary>
+		///     Leverages the parts extents to get all Prrs.
+		///     Note that this optimization gives them to you in a slightly different order if using multi-site data
+		/// </summary>
+		public IEnumerable<Prr> OfExactTypePrr(IEnumerable<StdfRecord> records)
 		{
 			records.Any(); //TODO: I don't remember what this is for :(
 			return from e in _PartsMap.GetAllExtents() from p in GetRecordsInExtentsReverse(e).Select(r => r as Prr).TakeWhile(r => r != null) select p;
 		}
 
-        /// <summary>
-        ///     The IQueryable implementation of OfExactTypePrr
-        /// </summary>
-        public IQueryable<Prr> OfExactTypePrr(IQueryable<StdfRecord> records) => records.Provider.CreateQuery<Prr>(Expression.Call(Expression.Constant(this), (MethodInfo)MethodBase.GetCurrentMethod(), records.Expression));
+		/// <summary>
+		///     The IQueryable implementation of OfExactTypePrr
+		/// </summary>
+		public IQueryable<Prr> OfExactTypePrr(IQueryable<StdfRecord> records) => records.Provider.CreateQuery<Prr>(Expression.Call(Expression.Constant(this), (MethodInfo)MethodBase.GetCurrentMethod(), records.Expression));
 
-        /// <summary>
-        ///     Leverages the parts extents to get all Prrs.
-        ///     Note that this optimization gives them to you in a slightly different order if using multi-site data
-        /// </summary>
-        public IEnumerable<Pir> OfExactTypePir(IEnumerable<StdfRecord> records)
+		/// <summary>
+		///     Leverages the parts extents to get all Prrs.
+		///     Note that this optimization gives them to you in a slightly different order if using multi-site data
+		/// </summary>
+		public IEnumerable<Pir> OfExactTypePir(IEnumerable<StdfRecord> records)
 		{
 			records.Any();
 			return from e in _PartsMap.GetAllExtents() from p in GetRecordsInExtents(e).Select(r => r as Pir).TakeWhile(r => r != null) select p;
 		}
 
-        /// <summary>
-        ///     The IQueryable implementation of OfExactTypePir
-        ///     TODO: Do we need these for all our optimizations?
-        /// </summary>
-        public IQueryable<Pir> OfExactTypePir(IQueryable<StdfRecord> records) => records.Provider.CreateQuery<Pir>(Expression.Call(Expression.Constant(this), (MethodInfo)MethodBase.GetCurrentMethod(), records.Expression));
+		/// <summary>
+		///     The IQueryable implementation of OfExactTypePir
+		///     TODO: Do we need these for all our optimizations?
+		/// </summary>
+		public IQueryable<Pir> OfExactTypePir(IQueryable<StdfRecord> records) => records.Provider.CreateQuery<Pir>(Expression.Call(Expression.Constant(this), (MethodInfo)MethodBase.GetCurrentMethod(), records.Expression));
 
-        /// <summary>
-        ///     Super fast GetMir :)
-        /// </summary>
-        public Mir GetMir(IRecordContext context)
+		/// <summary>
+		///     Super fast GetMir :)
+		/// </summary>
+		public Mir GetMir(IRecordContext context)
 		{
 			context.StdfFile.GetRecordsEnumerable().Any();
 			return _Mir;
 		}
 
-        /// <summary>
-        ///     Super fast GetMrr :)
-        /// </summary>
-        public Mrr GetMrr(IRecordContext context)
+		/// <summary>
+		///     Super fast GetMrr :)
+		/// </summary>
+		public Mrr GetMrr(IRecordContext context)
 		{
 			context.StdfFile.GetRecordsEnumerable().Any();
 			return _Mrr;
 		}
 
-        /// <summary>
-        ///     Super fast GetPcrs :)
-        /// </summary>
-        public IEnumerable<Pcr> GetPcrs(IRecordContext context)
+		/// <summary>
+		///     Super fast GetPcrs :)
+		/// </summary>
+		public IEnumerable<Pcr> GetPcrs(IRecordContext context)
 		{
 			context.StdfFile.GetRecordsEnumerable().Any();
 			return from p in _Pcrs select p;
 		}
 
-        /// <summary>
-        ///     Super fast GetPcrs :)
-        /// </summary>
-        public IEnumerable<Pcr> GetPcrs(IRecordContext context, byte headNumber, byte siteNumber)
+		/// <summary>
+		///     Super fast GetPcrs :)
+		/// </summary>
+		public IEnumerable<Pcr> GetPcrs(IRecordContext context, byte headNumber, byte siteNumber)
 		{
 			context.StdfFile.GetRecordsEnumerable().Any();
 			return from p in _Pcrs where (p.HeadNumber == headNumber) && (p.SiteNumber == siteNumber) select p;

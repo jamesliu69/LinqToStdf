@@ -10,15 +10,15 @@ using System.IO;
 
 namespace Stdf
 {
-    /// <summary>
-    ///     StdfFileWriter provides a "what you expect" API for writing STDF files.
-    ///     You provide a path and then call <see cref="WriteRecord" /> or <see cref="WriteRecords" />
-    ///     to write to the file.
-    ///     You can provide an endianness, or have the endianness inferred from the first record
-    ///     (which must be either <see cref="StartOfStreamRecord" /> or <see cref="Far" />.
-    /// </summary>
-    /// <seealso cref="StdfOutputDirectory" />
-    public sealed class StdfFileWriter : IDisposable
+	/// <summary>
+	///     StdfFileWriter provides a "what you expect" API for writing STDF files.
+	///     You provide a path and then call <see cref="WriteRecord" /> or <see cref="WriteRecords" />
+	///     to write to the file.
+	///     You can provide an endianness, or have the endianness inferred from the first record
+	///     (which must be either <see cref="StartOfStreamRecord" /> or <see cref="Far" />.
+	/// </summary>
+	/// <seealso cref="StdfOutputDirectory" />
+	public sealed class StdfFileWriter : IDisposable
 	{
 		private readonly bool   _OwnsStream;
 		private readonly Stream _Stream;
@@ -42,7 +42,7 @@ namespace Stdf
 			{
 				ConverterFactory = new RecordConverterFactory {
 					Debug = debug,
-                };
+				};
 				StdfV4Specification.RegisterRecords(ConverterFactory);
 			}
 			else
@@ -69,11 +69,11 @@ namespace Stdf
 
 #endregion
 
-        /// <summary>
-        ///     Writes a single record to the file, returning the number of bytes written
-        /// </summary>
-        /// <param name="record"></param>
-        public int WriteRecord(StdfRecord record)
+		/// <summary>
+		///     Writes a single record to the file, returning the number of bytes written
+		/// </summary>
+		/// <param name="record"></param>
+		public int WriteRecord(StdfRecord record)
 		{
 			if(record == null)
 			{
@@ -131,11 +131,11 @@ namespace Stdf
 			}
 		}
 
-        /// <summary>
-        ///     Writes a stream of records to the file.
-        /// </summary>
-        /// <param name="records"></param>
-        public int WriteRecords(IEnumerable<StdfRecord> records)
+		/// <summary>
+		///     Writes a stream of records to the file.
+		/// </summary>
+		/// <param name="records"></param>
+		public int WriteRecords(IEnumerable<StdfRecord> records)
 		{
 			int bytesWritten = 0;
 

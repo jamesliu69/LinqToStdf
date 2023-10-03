@@ -4,10 +4,10 @@
 // All other rights reserved.
 namespace Stdf.Records
 {
-    /// <summary>
-    ///     Identifies a chunk of "corrupted" data.
-    /// </summary>
-    public class CorruptDataRecord : FormatErrorRecord
+	/// <summary>
+	///     Identifies a chunk of "corrupted" data.
+	/// </summary>
+	public class CorruptDataRecord : FormatErrorRecord
 	{
 		public override string Message { get => base.Message ?? string.Format(Resources.CorruptDataMessage, (CorruptData ?? new byte[0]).Length, Offset); }
 

@@ -25,7 +25,7 @@ namespace CSTDF
 			FileName.Clear();
 			FileName.Add(filename);
 		}
-		
+
 		public CP2020(string[] filename)
 		{
 			FileName.Clear();
@@ -53,11 +53,12 @@ namespace CSTDF
 		public int PassPin { get; set; }
 
 		public int FailPin { get; set; }
+
 		public async Task<string[]> ReadAllLinesAsync(string path)
 		{
-			using (var reader = new StreamReader(path))
+			using(StreamReader reader = new StreamReader(path))
 			{
-				var text = await reader.ReadToEndAsync();
+				string text = await reader.ReadToEndAsync();
 				return text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
 			}
 		}
@@ -68,16 +69,17 @@ namespace CSTDF
 			{
 				lstChip.Clear();
 				lstChipData = new List<CChipData>();
-				foreach (string file in FileName)
+
+				foreach(string file in FileName)
 				{
 					//ReadFileAsync
 					string[] files = File.ReadAllLines(file); //以指定的編碼方式讀取檔案
+
 					//string[] files = await ReadAllLinesAsync(file);
 					files = files.Where(file => !string.IsNullOrEmpty(file)).ToArray();
 					string[] boundedLines = files.SkipWhile(line => !line.Trim().StartsWith("==> Test Start")).Skip(1).TakeWhile(line => !line.Trim().StartsWith("==> Test End")).Where(line => /*!line.Contains("JUDGE_V:") &&*/ !line.Contains("P/F   Site              Pin_name        Force      L-Limit      H-Limit      Measure   Min Measure   Max Measure")).ToArray();
 					int      idx          = 0;
-					
-					string Title = string.Empty;
+					string   Title        = string.Empty;
 
 					foreach(string word in boundedLines)
 					{
@@ -116,7 +118,6 @@ namespace CSTDF
 
 		public void GroupBySite()
 		{
-			
 		}
 
 		public void CalMeasure()
@@ -136,21 +137,21 @@ namespace CSTDF
 
 				if(StrArray.Length < 9)
 				{
-					ChipData.FileName           = Path.GetFileNameWithoutExtension(name);
-					ChipData.PassOrFail         = StrArray[0].Trim();
-					ChipData.Site               = StrArray[1].Trim();
-					ChipData.PinName            = StrArray[2].Trim();
-					ChipData.strForceValue      = StrArray[3].Trim();
+					ChipData.FileName      = Path.GetFileNameWithoutExtension(name);
+					ChipData.PassOrFail    = StrArray[0].Trim();
+					ChipData.Site          = StrArray[1].Trim();
+					ChipData.PinName       = StrArray[2].Trim();
+					ChipData.strForceValue = StrArray[3].Trim();
 
 					if(StrArray[4].StartsWith("-"))
 					{
 						ChipData.LowLimit  = StrArray[4].Trim();
-						ChipData.HighLimit = StrArray[4].Remove(0,1).Trim();
+						ChipData.HighLimit = StrArray[4].Remove(0, 1).Trim();
 					}
 					else
 					{
-						ChipData.LowLimit  = ("-"+StrArray[4]).Trim();
-						ChipData.HighLimit = StrArray[4].Trim();	
+						ChipData.LowLimit  = ("-" + StrArray[4]).Trim();
+						ChipData.HighLimit = StrArray[4].Trim();
 					}
 					ChipData.strMeasureValue    = StrArray[5].Trim();
 					ChipData.strMinMeasureValue = StrArray[6].Trim();
@@ -185,7 +186,7 @@ namespace CSTDF
 		{
 		}
 
-		public static CP2020 CreateInstance(string filename, int calOffset) => new CP2020(filename);
+		public static CP2020 CreateInstance(string   filename, int calOffset) => new CP2020(filename);
 		public static CP2020 CreateInstance(string[] filename, int calOffset) => new CP2020(filename);
 	}
 }

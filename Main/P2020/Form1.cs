@@ -277,6 +277,7 @@ namespace CSTDF
 			_P2020.AnalyzeFile();
 			s.Stop();
 			Console.WriteLine(s.ElapsedMilliseconds);
+
 			//49s
 			//32s
 			_FileParam = new CFileParam(@"C:\Users\USER1\Documents\Pti_Doc\Project\Tester STDF\P2020 8 Site\2023-09-06-14-06-02.txt");

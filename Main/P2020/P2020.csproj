@@ -58,7 +58,7 @@
         <Compile Include="CChipData.cs"/>
         <Compile Include="CFileParam.cs"/>
         <Compile Include="CP2020.cs"/>
-        <Compile Include="CStdf.cs" />
+        <Compile Include="CStdf.cs"/>
         <Compile Include="Form1.cs">
             <SubType>Form</SubType>
         </Compile>

@@ -6,37 +6,37 @@ using System;
 
 namespace Stdf
 {
-    /// <summary>
-    ///     Abstract stdf record type
-    /// </summary>
-    public abstract class StdfRecord : IRecordContext
+	/// <summary>
+	///     Abstract stdf record type
+	/// </summary>
+	public abstract class StdfRecord : IRecordContext
 	{
-        /// <summary>
-        ///     The mask used for the offset data. (we're reserving the 2 highest bits)
-        /// </summary>
-        private static readonly ulong _OffsetMask = 0x3fffffffffffffff;
+		/// <summary>
+		///     The mask used for the offset data. (we're reserving the 2 highest bits)
+		/// </summary>
+		private static readonly ulong _OffsetMask = 0x3fffffffffffffff;
 
-        /// <summary>
-        ///     The mask used for the synthesized bit
-        /// </summary>
-        private static readonly ulong _SynthesizedMask = 0x8000000000000000;
+		/// <summary>
+		///     The mask used for the synthesized bit
+		/// </summary>
+		private static readonly ulong _SynthesizedMask = 0x8000000000000000;
 
 		private ulong _OffsetData;
 
-        /// <summary>
-        ///     The <see cref="RecordType" /> of the instance
-        /// </summary>
-        public abstract RecordType RecordType { get; }
+		/// <summary>
+		///     The <see cref="RecordType" /> of the instance
+		/// </summary>
+		public abstract RecordType RecordType { get; }
 
-        /// <summary>
-        ///     Indicates whether this record should be considered for persisting to a file.
-        /// </summary>
-        public virtual bool IsWritable { get => true; }
+		/// <summary>
+		///     Indicates whether this record should be considered for persisting to a file.
+		/// </summary>
+		public virtual bool IsWritable { get => true; }
 
-        /// <summary>
-        ///     The file/stream offset of this record's header
-        /// </summary>
-        public long Offset
+		/// <summary>
+		///     The file/stream offset of this record's header
+		/// </summary>
+		public long Offset
 		{
 			get => (long)(_OffsetData & _OffsetMask);
 			set
@@ -54,14 +54,14 @@ namespace Stdf
 			}
 		}
 
-        /// <summary>
-        ///     Indicates whether or not this record was synthesized
-        /// </summary>
-        public bool Synthesized { get => (_SynthesizedMask & _OffsetData) != 0; set => _OffsetData = value ? _OffsetData | _SynthesizedMask : _OffsetData & ~_SynthesizedMask; }
+		/// <summary>
+		///     Indicates whether or not this record was synthesized
+		/// </summary>
+		public bool Synthesized { get => (_SynthesizedMask & _OffsetData) != 0; set => _OffsetData = value ? _OffsetData | _SynthesizedMask : _OffsetData & ~_SynthesizedMask; }
 
-        /// <summary>
-        ///     Reference to the "owning" StdfFile.
-        /// </summary>
-        public StdfFile StdfFile { get; set; }
+		/// <summary>
+		///     Reference to the "owning" StdfFile.
+		/// </summary>
+		public StdfFile StdfFile { get; set; }
 	}
 }

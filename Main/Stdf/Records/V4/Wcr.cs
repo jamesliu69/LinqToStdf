@@ -14,23 +14,23 @@ namespace Stdf.Records.V4
 		public float? WaferSize { get; set; }
 		public float? DieHeight { get; set; }
 		public float? DieWidth  { get; set; }
-        /// <summary>
-        ///     Known values are: 0 (unknown), 1 (in), 2 (cm), 3 (mm), 4 (mils)
-        /// </summary>
-        public byte? Units { get; set; }
-        /// <summary>
-        ///     Known values are: U, D, L, R
-        /// </summary>
-        public string Flat { get;    set; }
+		/// <summary>
+		///     Known values are: 0 (unknown), 1 (in), 2 (cm), 3 (mm), 4 (mils)
+		/// </summary>
+		public byte? Units { get; set; }
+		/// <summary>
+		///     Known values are: U, D, L, R
+		/// </summary>
+		public string Flat { get;    set; }
 		public short? CenterX { get; set; }
 		public short? CenterY { get; set; }
-        /// <summary>
-        ///     Known values are: L, R
-        /// </summary>
-        public string PositiveX { get; set; }
-        /// <summary>
-        ///     Known values are: U, D
-        /// </summary>
-        public string PositiveY { get; set; }
+		/// <summary>
+		///     Known values are: L, R
+		/// </summary>
+		public string PositiveX { get; set; }
+		/// <summary>
+		///     Known values are: U, D
+		/// </summary>
+		public string PositiveY { get; set; }
 	}
 }

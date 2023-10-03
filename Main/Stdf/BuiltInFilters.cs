@@ -10,95 +10,95 @@ using System.Linq;
 
 namespace Stdf
 {
-    /// <summary>
-    ///     Provides a number of built-in record filters.
-    ///     These can be added via <see cref="StdfFile.AddFilter" />.
-    /// </summary>
-    public static class BuiltInFilters
+	/// <summary>
+	///     Provides a number of built-in record filters.
+	///     These can be added via <see cref="StdfFile.AddFilter" />.
+	/// </summary>
+	public static class BuiltInFilters
 	{
-        /// <summary>
-        ///     This filter does nothing. (and has no n-based overhead)
-        /// </summary>
-        /// <remarks>
-        ///     This is useful if you need to return a <see cref="RecordFilter" />,
-        ///     from a method, but it doesn't always need to do anything.
-        /// </remarks>
-        public static RecordFilter IdentityFilter { get => input => input; }
+		/// <summary>
+		///     This filter does nothing. (and has no n-based overhead)
+		/// </summary>
+		/// <remarks>
+		///     This is useful if you need to return a <see cref="RecordFilter" />,
+		///     from a method, but it doesn't always need to do anything.
+		/// </remarks>
+		public static RecordFilter IdentityFilter { get => input => input; }
 
-        /// <summary>
-        ///     This filter implements caching for the StdfFile.
-        ///     It is internal because it is controlled via an option on StdfFile.
-        /// </summary>
-        internal static RecordFilter CachingFilter { get => new CachingFilterImpl().Filter; }
+		/// <summary>
+		///     This filter implements caching for the StdfFile.
+		///     It is internal because it is controlled via an option on StdfFile.
+		/// </summary>
+		internal static RecordFilter CachingFilter { get => new CachingFilterImpl().Filter; }
 
-        /// <summary>
-        ///     Reconstructs any missing "head 255" summary hbrs from site-specific hbrs.
-        /// </summary>
-        public static RecordFilter MissingHbrSummaryFilter { get => new MissingBinSummaryFilterImpl<Hbr>().Filter; }
+		/// <summary>
+		///     Reconstructs any missing "head 255" summary hbrs from site-specific hbrs.
+		/// </summary>
+		public static RecordFilter MissingHbrSummaryFilter { get => new MissingBinSummaryFilterImpl<Hbr>().Filter; }
 
-        /// <summary>
-        ///     Reconstructs any missing "head 255" summary sbrs from site-specific sbrs.
-        /// </summary>
-        public static RecordFilter MissingSbrSummaryFilter { get => new MissingBinSummaryFilterImpl<Sbr>().Filter; }
+		/// <summary>
+		///     Reconstructs any missing "head 255" summary sbrs from site-specific sbrs.
+		/// </summary>
+		public static RecordFilter MissingSbrSummaryFilter { get => new MissingBinSummaryFilterImpl<Sbr>().Filter; }
 
-        /// <summary>
-        ///     Reconstructs a missing "head 255" summary pcrs from site-specific pcrs.
-        /// </summary>
-        public static RecordFilter MissingPcrSummaryFilter { get => new MissingPcrSummaryFilterImpl().Filter; }
+		/// <summary>
+		///     Reconstructs a missing "head 255" summary pcrs from site-specific pcrs.
+		/// </summary>
+		public static RecordFilter MissingPcrSummaryFilter { get => new MissingPcrSummaryFilterImpl().Filter; }
 
-        /// <summary>
-        ///     Reconstructs any missing "head 255" summary tsrs from site-specific tsrs.
-        /// </summary>
-        public static RecordFilter MissingTsrSummaryFilter { get => new MissingTsrSummaryFilterImpl().Filter; }
+		/// <summary>
+		///     Reconstructs any missing "head 255" summary tsrs from site-specific tsrs.
+		/// </summary>
+		public static RecordFilter MissingTsrSummaryFilter { get => new MissingTsrSummaryFilterImpl().Filter; }
 
-        /// <summary>
-        ///     Reconstructs any missing "head 255" bin summaries (hbr/sbr) from the site-specific records.
-        /// </summary>
-        public static RecordFilter MissingBinSummaryFilter { get => MissingHbrSummaryFilter.Chain(MissingSbrSummaryFilter); }
+		/// <summary>
+		///     Reconstructs any missing "head 255" bin summaries (hbr/sbr) from the site-specific records.
+		/// </summary>
+		public static RecordFilter MissingBinSummaryFilter { get => MissingHbrSummaryFilter.Chain(MissingSbrSummaryFilter); }
 
-        /// <summary>
-        ///     Reconstructs any missing "head 255" summaries (hbr/sbr/pcr/tsr) from the site-specific records.
-        /// </summary>
-        public static RecordFilter MissingSummaryFilter { get => MissingPcrSummaryFilter.Chain(MissingBinSummaryFilter.Chain(MissingTsrSummaryFilter)); }
+		/// <summary>
+		///     Reconstructs any missing "head 255" summaries (hbr/sbr/pcr/tsr) from the site-specific records.
+		/// </summary>
+		public static RecordFilter MissingSummaryFilter { get => MissingPcrSummaryFilter.Chain(MissingBinSummaryFilter.Chain(MissingTsrSummaryFilter)); }
 
-        /// <summary>
-        ///     If any format errors are encountered, this will throw
-        /// </summary>
-        internal static RecordFilter ThrowOnFormatError { get => ThrowOnFormatErrorFilter; }
+		/// <summary>
+		///     If any format errors are encountered, this will throw
+		/// </summary>
+		internal static RecordFilter ThrowOnFormatError { get => ThrowOnFormatErrorFilter; }
 
-        /// <summary>
-        ///     Enforces the record ordering rules of the V4 spec.  It will push V4ContentErrorRecord's through the stream
-        ///     for any violations.
-        /// </summary>
-        public static RecordFilter V4ContentSpec { get => V4ContentSpecFilter; }
+		/// <summary>
+		///     Enforces the record ordering rules of the V4 spec.  It will push V4ContentErrorRecord's through the stream
+		///     for any violations.
+		/// </summary>
+		public static RecordFilter V4ContentSpec { get => V4ContentSpecFilter; }
 
-        /// <summary>
-        ///     Will throw if any V4ContentErrorRecords are encountered.
-        /// </summary>
-        public static RecordFilter ThrowOnV4ContentError { get => ThrowOnV4ContentErrorFilter; }
+		/// <summary>
+		///     Will throw if any V4ContentErrorRecords are encountered.
+		/// </summary>
+		public static RecordFilter ThrowOnV4ContentError { get => ThrowOnV4ContentErrorFilter; }
 
-        /// <summary>
-        ///     Will inject an mrr at the end of the stream if there wasn't one.
-        /// </summary>
-        /// <remarks>
-        ///     This is useful for making sure that other synthesized records
-        ///     that trigger off of MRR actually occur.
-        /// </remarks>
-        public static RecordFilter RepairMissingMrr { get => RepairMissingMrrImpl; }
+		/// <summary>
+		///     Will inject an mrr at the end of the stream if there wasn't one.
+		/// </summary>
+		/// <remarks>
+		///     This is useful for making sure that other synthesized records
+		///     that trigger off of MRR actually occur.
+		/// </remarks>
+		public static RecordFilter RepairMissingMrr { get => RepairMissingMrrImpl; }
 
-        /// <summary>
-        ///     Populates the "optional" PTR fields with the defaults provided by the first PTR record for the test.
-        /// </summary>
-        /// <remarks>
-        ///     See the V4 STDF spec section on PTRs, "Notes on Specific Fields", "Default Data"
-        /// </remarks>
-        public static RecordFilter PopulatePtrFieldsWithDefaults { get => PopulatePtrFieldsWithDefaultsImpl; }
+		/// <summary>
+		///     Populates the "optional" PTR fields with the defaults provided by the first PTR record for the test.
+		/// </summary>
+		/// <remarks>
+		///     See the V4 STDF spec section on PTRs, "Notes on Specific Fields", "Default Data"
+		/// </remarks>
+		public static RecordFilter PopulatePtrFieldsWithDefaults { get => PopulatePtrFieldsWithDefaultsImpl; }
 
-        /// <summary>
-        ///     This filter will invoke the <see cref="StdfFile.RewindAndSeek">"rewind and seek"</see> functionality
-        ///     if any unknown records are encountered.
-        /// </summary>
-        public static RecordFilter ExpectOnlyKnownRecords { get => ExpectOnlyKnownRecordsImpl; }
+		/// <summary>
+		///     This filter will invoke the <see cref="StdfFile.RewindAndSeek">"rewind and seek"</see> functionality
+		///     if any unknown records are encountered.
+		/// </summary>
+		public static RecordFilter ExpectOnlyKnownRecords { get => ExpectOnlyKnownRecordsImpl; }
 
 		private static IEnumerable<StdfRecord> ThrowOnFormatErrorFilter(IEnumerable<StdfRecord> input)
 		{
@@ -144,7 +144,7 @@ namespace Stdf
 					yield return new Mrr {
 						Synthesized = true,
 						Offset      = r.Offset,
-                    };
+					};
 				}
 				yield return r;
 			}
@@ -253,22 +253,22 @@ namespace Stdf
 
 #region CachingFilter implementation
 
-        /// <summary>
-        ///     Provides the implementation for the caching filter
-        /// </summary>
-        private class CachingFilterImpl
+		/// <summary>
+		///     Provides the implementation for the caching filter
+		/// </summary>
+		private class CachingFilterImpl
 		{
 			private bool _Caching;
-            /// <summary>
-            ///     The cached records
-            /// </summary>
-            private List<StdfRecord> _Records;
+			/// <summary>
+			///     The cached records
+			/// </summary>
+			private List<StdfRecord> _Records;
 
-            /// <summary>
-            ///     Caches the records provided by input and passes them through.
-            ///     Subsequent calls return the contents of the cache
-            /// </summary>
-            public IEnumerable<StdfRecord> Filter(IEnumerable<StdfRecord> input)
+			/// <summary>
+			///     Caches the records provided by input and passes them through.
+			///     Subsequent calls return the contents of the cache
+			/// </summary>
+			public IEnumerable<StdfRecord> Filter(IEnumerable<StdfRecord> input)
 			{
 				if(_Caching)
 				{
@@ -302,28 +302,28 @@ namespace Stdf
 
 #region MissingBinSummaryFilter implementation
 
-        /// <summary>
-        ///     Provides the implementation for synthesizing summary records from
-        ///     the site-specific records.
-        /// </summary>
-        /// <typeparam name="T">The kind of <see cref="BinSummaryRecord" /> to provide.</typeparam>
-        private class MissingBinSummaryFilterImpl<T> where T : BinSummaryRecord, new()
+		/// <summary>
+		///     Provides the implementation for synthesizing summary records from
+		///     the site-specific records.
+		/// </summary>
+		/// <typeparam name="T">The kind of <see cref="BinSummaryRecord" /> to provide.</typeparam>
+		private class MissingBinSummaryFilterImpl<T> where T : BinSummaryRecord, new()
 		{
-            /// <summary>
-            ///     The list of bin records
-            /// </summary>
-            private readonly List<T> _Brs = new List<T>();
-            /// <summary>
-            ///     Indicates whether summary records are already in place
-            /// </summary>
-            private bool _FoundSummary;
+			/// <summary>
+			///     The list of bin records
+			/// </summary>
+			private readonly List<T> _Brs = new List<T>();
+			/// <summary>
+			///     Indicates whether summary records are already in place
+			/// </summary>
+			private bool _FoundSummary;
 
-            /// <summary>
-            ///     Passes through the records provided by input,
-            ///     taking note of the bin records.  If no summary records
-            ///     are found, they are synthesized and passed through before the mrr.
-            /// </summary>
-            public IEnumerable<StdfRecord> Filter(IEnumerable<StdfRecord> input)
+			/// <summary>
+			///     Passes through the records provided by input,
+			///     taking note of the bin records.  If no summary records
+			///     are found, they are synthesized and passed through before the mrr.
+			/// </summary>
+			public IEnumerable<StdfRecord> Filter(IEnumerable<StdfRecord> input)
 			{
 				foreach(StdfRecord r in input)
 				{
@@ -348,10 +348,10 @@ namespace Stdf
 				}
 			}
 
-            /// <summary>
-            ///     Generates the summary records
-            /// </summary>
-            private IEnumerable<StdfRecord> GenerateSummaries(long offset)
+			/// <summary>
+			///     Generates the summary records
+			/// </summary>
+			private IEnumerable<StdfRecord> GenerateSummaries(long offset)
 			{
 				IEnumerable<T> q = from b in _Brs
 								   group b by b.BinNumber into g
@@ -485,32 +485,32 @@ namespace Stdf
 
 #region V4ContentSpec implementation
 
-        /// <summary>
-        ///     node in the state machine representation
-        /// </summary>
-        private class RecordState
+		/// <summary>
+		///     node in the state machine representation
+		/// </summary>
+		private class RecordState
 		{
 			public string                 Message = Resources.V4ContentState_Unknown;
 			public List<RecordState>      Routes;
 			public Func<StdfRecord, bool> ShouldTransition;
 		}
 
-        /// <summary>
-        ///     These records are not allowed after the initial sequence, or before the Mrr
-        /// </summary>
-        private static readonly HashSet<RuntimeTypeHandle> _InitialSequenceSet = new HashSet<RuntimeTypeHandle> {
+		/// <summary>
+		///     These records are not allowed after the initial sequence, or before the Mrr
+		/// </summary>
+		private static readonly HashSet<RuntimeTypeHandle> _InitialSequenceSet = new HashSet<RuntimeTypeHandle> {
 			typeof(Far).TypeHandle,
 			typeof(Atr).TypeHandle,
 			typeof(Mir).TypeHandle,
 			typeof(Rdr).TypeHandle,
 			typeof(Sdr).TypeHandle,
 			typeof(EndOfStreamRecord).TypeHandle,
-        };
+		};
 
-        /// <summary>
-        ///     Uses a state machine to enforce the V4 content spec (initial sequence and mrr at the end)
-        /// </summary>
-        private static IEnumerable<StdfRecord> V4ContentSpecFilter(IEnumerable<StdfRecord> input)
+		/// <summary>
+		///     Uses a state machine to enforce the V4 content spec (initial sequence and mrr at the end)
+		/// </summary>
+		private static IEnumerable<StdfRecord> V4ContentSpecFilter(IEnumerable<StdfRecord> input)
 		{
 #region States
 
@@ -527,7 +527,7 @@ namespace Stdf
 				ShouldTransition = r => r.GetType() == typeof(Mrr),
 				Routes = new List<RecordState> {
 					eofState,
-                }, //we only expect EOF from here
+				}, //we only expect EOF from here
 			};
 
 			RecordState bodyState = new RecordState {
@@ -540,7 +540,7 @@ namespace Stdf
 			bodyState.Routes = new List<RecordState> {
 				mrrState,
 				bodyState,
-            };
+			};
 
 			RecordState sdrState = new RecordState {
 				Message          = Resources.V4ContentState_AfterSdr,
@@ -550,7 +550,7 @@ namespace Stdf
 			sdrState.Routes = new List<RecordState> {
 				sdrState,
 				bodyState,
-            };
+			};
 
 			RecordState rdrState = new RecordState {
 				Message          = Resources.V4ContentState_AfterRdr,
@@ -558,7 +558,7 @@ namespace Stdf
 				Routes = new List<RecordState> {
 					sdrState,
 					bodyState,
-                },
+				},
 			};
 
 			RecordState mirState = new RecordState {
@@ -568,7 +568,7 @@ namespace Stdf
 					rdrState,
 					sdrState,
 					bodyState,
-                },
+				},
 			};
 
 			RecordState atrState = new RecordState {
@@ -579,7 +579,7 @@ namespace Stdf
 			atrState.Routes = new List<RecordState> {
 				atrState,
 				mirState,
-            };
+			};
 
 			RecordState farState = new RecordState {
 				Message          = Resources.V4ContentState_AfterFar,
@@ -587,7 +587,7 @@ namespace Stdf
 				Routes = new List<RecordState> {
 					atrState,
 					mirState,
-                },
+				},
 			};
 
 			RecordState sofState = new RecordState {
@@ -595,7 +595,7 @@ namespace Stdf
 				ShouldTransition = r => r.GetType() == typeof(StartOfStreamRecord),
 				Routes = new List<RecordState> {
 					farState,
-                },
+				},
 			};
 
 #endregion
@@ -605,7 +605,7 @@ namespace Stdf
 				Message = Resources.V4ContentState_BeforeSOF,
 				Routes = new List<RecordState> {
 					sofState,
-                },
+				},
 			};
 
 			foreach(StdfRecord r in input)
@@ -628,7 +628,7 @@ namespace Stdf
 					yield return new V4ContentErrorRecord {
 						Offset  = r.Offset,
 						Message = string.Format(Resources.InitialSequenceError, r.GetType().Name, currentState.Message),
-                    };
+					};
 				}
 				yield return r;
 			}

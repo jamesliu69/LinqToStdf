@@ -95,10 +95,10 @@ namespace CSTDF
 						HandlerID = str[1].Trim().Replace("----------", "");
 						break;
 					case "Lot START":
-						LotSTART = title.Remove(0, title.IndexOf(":")+1).Trim();
+						LotSTART = title.Remove(0, title.IndexOf(":") + 1).Trim();
 						break;
 					case "Lot END":
-						LotEND = title.Remove(0, title.IndexOf(":")+1).Trim();
+						LotEND = title.Remove(0, title.IndexOf(":") + 1).Trim();
 						break;
 				}
 
@@ -153,12 +153,12 @@ namespace CSTDF
 						}
 					}
 				}
-				
+
 				if(str[0].Contains("[SOFTWARE BIN]"))
 				{
 					bool IsSoftWareBinTitle = files.Contains("[SOFTWARE BIN]");
 					int  IdxString1         = files.ToList().IndexOf("[SOFTWARE BIN]");
-                              
+
 					var AssignItemAndIdx = files.Select((item, index) => new {
 													Item  = item,
 													Index = index,

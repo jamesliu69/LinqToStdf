@@ -7,35 +7,35 @@ namespace Stdf
 {
 	public partial class StdfFile
 	{
-        /// <summary>
-        ///     This provides an abstraction over stream with a more app-specific API,
-        ///     that allows us to generalize Stream so that we can consume streams that
-        ///     don't support seeking, Position, or Length.
-        /// </summary>
-        private class RewindableByteStream
+		/// <summary>
+		///     This provides an abstraction over stream with a more app-specific API,
+		///     that allows us to generalize Stream so that we can consume streams that
+		///     don't support seeking, Position, or Length.
+		/// </summary>
+		private class RewindableByteStream
 		{
-            /// <summary>
-            ///     buffer used for reading a record header
-            /// </summary>
-            private readonly byte[] _Buffer = new byte[2];
+			/// <summary>
+			///     buffer used for reading a record header
+			/// </summary>
+			private readonly byte[] _Buffer = new byte[2];
 
-            /// <summary>
-            ///     A stream we use for memoizing results of previous read operations,
-            ///     enabling us to rewind back into them
-            /// </summary>
-            private readonly MemoryStream _MemoizedData;
-            /// <summary>
-            ///     The underlying Stream
-            /// </summary>
-            private readonly Stream _Stream;
-            /// <summary>
-            ///     Tracks our current offset in the stream
-            /// </summary>
-            private int _Offset;
-            /// <summary>
-            ///     Indicates how far we're rewound into the memoized data
-            /// </summary>
-            private int _Rewound;
+			/// <summary>
+			///     A stream we use for memoizing results of previous read operations,
+			///     enabling us to rewind back into them
+			/// </summary>
+			private readonly MemoryStream _MemoizedData;
+			/// <summary>
+			///     The underlying Stream
+			/// </summary>
+			private readonly Stream _Stream;
+			/// <summary>
+			///     Tracks our current offset in the stream
+			/// </summary>
+			private int _Offset;
+			/// <summary>
+			///     Indicates how far we're rewound into the memoized data
+			/// </summary>
+			private int _Rewound;
 
 			public RewindableByteStream(Stream stream)
 			{
@@ -58,33 +58,33 @@ namespace Stdf
 				}
 			}
 
-            /// <summary>
-            ///     The current offset
-            /// </summary>
-            public int Offset { get => _Offset; }
+			/// <summary>
+			///     The current offset
+			/// </summary>
+			public int Offset { get => _Offset; }
 
-            /// <summary>
-            ///     Indicates an operation has read beyond the end of the underlying stream
-            /// </summary>
-            public bool PastEndOfStream { get; private set; }
+			/// <summary>
+			///     Indicates an operation has read beyond the end of the underlying stream
+			/// </summary>
+			public bool PastEndOfStream { get; private set; }
 
-            /// <summary>
-            ///     Reads a record header from the underlying stream.
-            /// </summary>
-            /// <remarks>
-            ///     The record header is the only data structure
-            ///     we need to understand at the file level,
-            ///     so we have this specialization.
-            ///     If we return null, the stream will be at the begining
-            ///     of the header, otherwise, it will be at the content of
-            ///     the record.
-            /// </remarks>
-            /// <param name="endian">The endianess of the stream</param>
-            /// <returns>
-            ///     A populated record header,
-            ///     or null if we reached the end of the stream while reading.
-            /// </returns>
-            public RecordHeader? ReadHeader(Endian endian)
+			/// <summary>
+			///     Reads a record header from the underlying stream.
+			/// </summary>
+			/// <remarks>
+			///     The record header is the only data structure
+			///     we need to understand at the file level,
+			///     so we have this specialization.
+			///     If we return null, the stream will be at the begining
+			///     of the header, otherwise, it will be at the content of
+			///     the record.
+			/// </remarks>
+			/// <param name="endian">The endianess of the stream</param>
+			/// <returns>
+			///     A populated record header,
+			///     or null if we reached the end of the stream while reading.
+			/// </returns>
+			public RecordHeader? ReadHeader(Endian endian)
 			{
 				//read the record length
 				int read = Read(_Buffer, 2);
@@ -127,14 +127,14 @@ namespace Stdf
 				return new RecordHeader(length, new RecordType((byte)type, (byte)subType));
 			}
 
-            /// <summary>
-            ///     Abstraction of <see cref="Stream.Read" />.  Reads <paramref name="count" />
-            ///     bytes into <paramref name="buffer" />.
-            /// </summary>
-            /// <param name="buffer">the buffer to read into</param>
-            /// <param name="count">the number of bytes to read</param>
-            /// <returns>The number of bytes read</returns>
-            public int Read(byte[] buffer, int count)
+			/// <summary>
+			///     Abstraction of <see cref="Stream.Read" />.  Reads <paramref name="count" />
+			///     bytes into <paramref name="buffer" />.
+			/// </summary>
+			/// <param name="buffer">the buffer to read into</param>
+			/// <param name="count">the number of bytes to read</param>
+			/// <returns>The number of bytes read</returns>
+			public int Read(byte[] buffer, int count)
 			{
 				//the offset into buffer.  Start at 0
 				int offset = 0;
@@ -189,10 +189,10 @@ namespace Stdf
 				return totalRead;
 			}
 
-            /// <summary>
-            ///     This rewinds as far as we can.  This will be back to the last place we called <see cref="Flush()" />
-            /// </summary>
-            public void RewindAll()
+			/// <summary>
+			///     This rewinds as far as we can.  This will be back to the last place we called <see cref="Flush()" />
+			/// </summary>
+			public void RewindAll()
 			{
 				//TODO: reconcile types here
 				_Rewound =  (int)_MemoizedData.Length;
@@ -200,11 +200,11 @@ namespace Stdf
 				_MemoizedData.Seek(0, SeekOrigin.Begin);
 			}
 
-            /// <summary>
-            ///     This rewinds a number of bytes from the current position
-            /// </summary>
-            /// <param name="offset"></param>
-            public void Rewind(int offset)
+			/// <summary>
+			///     This rewinds a number of bytes from the current position
+			/// </summary>
+			/// <param name="offset"></param>
+			public void Rewind(int offset)
 			{
 				if(offset == 0)
 				{
@@ -221,11 +221,11 @@ namespace Stdf
 				_MemoizedData.Seek(-offset, SeekOrigin.Current);
 			}
 
-            /// <summary>
-            ///     This flushes all the memoized data.  This is called when we know
-            ///     we won't need it (after we've successfully converted a record).
-            /// </summary>
-            public void Flush()
+			/// <summary>
+			///     This flushes all the memoized data.  This is called when we know
+			///     we won't need it (after we've successfully converted a record).
+			/// </summary>
+			public void Flush()
 			{
 				//if we're rewound, we need to remove a chunk from the beginning
 				//of the stream.
@@ -245,11 +245,11 @@ namespace Stdf
 				}
 			}
 
-            /// <summary>
-            ///     Reads a single byte
-            /// </summary>
-            /// <returns>The read value, or -1 if we are past the end of the stream.</returns>
-            public int ReadByte()
+			/// <summary>
+			///     Reads a single byte
+			/// </summary>
+			/// <returns>The read value, or -1 if we are past the end of the stream.</returns>
+			public int ReadByte()
 			{
 				int value;
 
@@ -278,11 +278,11 @@ namespace Stdf
 				return value;
 			}
 
-            /// <summary>
-            ///     Convenient iterator to read bytes as a sequence.
-            /// </summary>
-            /// <returns></returns>
-            public IEnumerable<byte> ReadAsByteSequence()
+			/// <summary>
+			///     Convenient iterator to read bytes as a sequence.
+			/// </summary>
+			/// <returns></returns>
+			public IEnumerable<byte> ReadAsByteSequence()
 			{
 				while(true)
 				{

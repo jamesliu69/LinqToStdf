@@ -9,39 +9,39 @@ using System.Linq.Expressions;
 
 namespace Stdf.CompiledQuerySupport
 {
-    /// <summary>
-    ///     This is the class that inspects precompile queries and determines
-    ///     which records and fields should be parsed.
-    /// </summary>
-    internal static class ExpressionInspector
+	/// <summary>
+	///     This is the class that inspects precompile queries and determines
+	///     which records and fields should be parsed.
+	/// </summary>
+	internal static class ExpressionInspector
 	{
-        /// <summary>
-        ///     Wraps the inspection of a lambda expression for use in CompiledQuery
-        /// </summary>
-        public static RecordsAndFields Inspect(LambdaExpression exp) => new InspectingVisitor().InspectExpression(exp);
+		/// <summary>
+		///     Wraps the inspection of a lambda expression for use in CompiledQuery
+		/// </summary>
+		public static RecordsAndFields Inspect(LambdaExpression exp) => new InspectingVisitor().InspectExpression(exp);
 
-        /// <summary>
-        ///     This visitor processes a query (in the form of a LambdaExpression) and
-        ///     ensure it won't leak concrete record types and tracks the records and
-        ///     fields used in the query so that it can optimize the converters.
-        /// </summary>
-        private class InspectingVisitor : ExpressionVisitor
+		/// <summary>
+		///     This visitor processes a query (in the form of a LambdaExpression) and
+		///     ensure it won't leak concrete record types and tracks the records and
+		///     fields used in the query so that it can optimize the converters.
+		/// </summary>
+		private class InspectingVisitor : ExpressionVisitor
 		{
-            /// <summary>
-            ///     This is the set of types we've checked to reduce duplication
-            ///     and prevent following circular references
-            /// </summary>
-            private readonly HashSet<Type> _CheckedTypes = new HashSet<Type>();
-            /// <summary>
-            ///     The records and fields used in the query
-            /// </summary>
-            private RecordsAndFields _RecordsAndFields;
+			/// <summary>
+			///     This is the set of types we've checked to reduce duplication
+			///     and prevent following circular references
+			/// </summary>
+			private readonly HashSet<Type> _CheckedTypes = new HashSet<Type>();
+			/// <summary>
+			///     The records and fields used in the query
+			/// </summary>
+			private RecordsAndFields _RecordsAndFields;
 
-            /// <summary>
-            ///     Inspects a query, ensuring it won't leak records and calculating the
-            ///     records and fields it uses.
-            /// </summary>
-            public RecordsAndFields InspectExpression(LambdaExpression node)
+			/// <summary>
+			///     Inspects a query, ensuring it won't leak records and calculating the
+			///     records and fields it uses.
+			/// </summary>
+			public RecordsAndFields InspectExpression(LambdaExpression node)
 			{
 				_RecordsAndFields = new RecordsAndFields();
 
@@ -53,10 +53,10 @@ namespace Stdf.CompiledQuerySupport
 				return _RecordsAndFields;
 			}
 
-            /// <summary>
-            ///     This gets called for each member access.
-            /// </summary>
-            protected override Expression VisitMember(MemberExpression node)
+			/// <summary>
+			///     This gets called for each member access.
+			/// </summary>
+			protected override Expression VisitMember(MemberExpression node)
 			{
 				//Get the type that declares the member
 				Type type = node.Member.DeclaringType;
@@ -69,10 +69,10 @@ namespace Stdf.CompiledQuerySupport
 				return base.VisitMember(node);
 			}
 
-            /// <summary>
-            ///     Throws if the type, its interfaces, or any generic parameters leak stdf records
-            /// </summary>
-            private void EnsureTypeWontLeakRecords(Type type)
+			/// <summary>
+			///     Throws if the type, its interfaces, or any generic parameters leak stdf records
+			/// </summary>
+			private void EnsureTypeWontLeakRecords(Type type)
 			{
 				//TODO: think about whether we need to go up the base type chain to check for interfaces.
 				//This depends on a) whether we care that much, and b) whether GetFields/etc. return aggregated data.
@@ -119,10 +119,10 @@ namespace Stdf.CompiledQuerySupport
 				EnsureTypesWontLeakRecords(from m in type.GetMethods() select m.ReturnType);
 			}
 
-            /// <summary>
-            ///     helper that will ensure collections don't leak
-            /// </summary>
-            private void EnsureTypesWontLeakRecords(IEnumerable<Type> types)
+			/// <summary>
+			///     helper that will ensure collections don't leak
+			/// </summary>
+			private void EnsureTypesWontLeakRecords(IEnumerable<Type> types)
 			{
 				foreach(Type type in types)
 				{

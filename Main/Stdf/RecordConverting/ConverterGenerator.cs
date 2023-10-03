@@ -12,25 +12,25 @@ using System.Reflection.Emit;
 
 namespace Stdf.RecordConverting
 {
-    /// <summary>
-    ///     This helper class encapsulates the generation of IL for the converters
-    /// </summary>
-    internal class ConverterGenerator
+	/// <summary>
+	///     This helper class encapsulates the generation of IL for the converters
+	/// </summary>
+	internal class ConverterGenerator
 	{
 		private readonly HashSet<string> _Fields;
 		private readonly ILGenerator     _ILGen;
 		private readonly Type            _Type;
 
-        /// <summary>
-        ///     Constructs a converter using the supplied il generator and the type we're converting to.
-        /// </summary>
-        /// <param name="ilgen">The il generator to use</param>
-        /// <param name="type">The type we're converting to</param>
-        /// <param name="fields">
-        ///     The fields we should parse (null if we should parse everything, empty if we shouldn't parse at
-        ///     all)
-        /// </param>
-        public ConverterGenerator(ILGenerator ilgen, Type type, HashSet<string> fields)
+		/// <summary>
+		///     Constructs a converter using the supplied il generator and the type we're converting to.
+		/// </summary>
+		/// <param name="ilgen">The il generator to use</param>
+		/// <param name="type">The type we're converting to</param>
+		/// <param name="fields">
+		///     The fields we should parse (null if we should parse everything, empty if we shouldn't parse at
+		///     all)
+		/// </param>
+		public ConverterGenerator(ILGenerator ilgen, Type type, HashSet<string> fields)
 		{
 			_ILGen = ilgen ?? throw new ArgumentNullException("ilgen");
 			_Type  = type  ?? throw new ArgumentNullException("type");
@@ -41,15 +41,15 @@ namespace Stdf.RecordConverting
 			}
 		}
 
-        /// <summary>
-        ///     Indicates whether we should parse the given field
-        /// </summary>
-        private bool ShouldParseField(string field) => _Fields == null ? true : _Fields.Contains(field);
+		/// <summary>
+		///     Indicates whether we should parse the given field
+		/// </summary>
+		private bool ShouldParseField(string field) => _Fields == null ? true : _Fields.Contains(field);
 
-        /// <summary>
-        ///     Does the work of generating the appropriate code.
-        /// </summary>
-        internal void GenerateConverter()
+		/// <summary>
+		///     Does the work of generating the appropriate code.
+		/// </summary>
+		internal void GenerateConverter()
 		{
 			List<KeyValuePair<FieldLayoutAttribute, PropertyInfo>> fields = GetFieldLayoutsAndAssignments(_Type);
 

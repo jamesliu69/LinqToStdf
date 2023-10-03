@@ -9,22 +9,22 @@ using System.IO;
 
 namespace Stdf
 {
-    /// <summary>
-    ///     Provides a "larger scale" STDF writing mechanism.
-    ///     Rather than providing a "per file" API, StdfOutputDirectory
-    ///     represents a directory that STDF files will be written to.
-    ///     <see cref="StartOfStreamRecord" /> and <see cref="EndOfStreamRecord" />
-    ///     are used to indicate the start and end a file.
-    /// </summary>
-    public class StdfOutputDirectory
+	/// <summary>
+	///     Provides a "larger scale" STDF writing mechanism.
+	///     Rather than providing a "per file" API, StdfOutputDirectory
+	///     represents a directory that STDF files will be written to.
+	///     <see cref="StartOfStreamRecord" /> and <see cref="EndOfStreamRecord" />
+	///     are used to indicate the start and end a file.
+	/// </summary>
+	public class StdfOutputDirectory
 	{
 		private readonly string _Path;
 
-        /// <summary>
-        ///     Creates an StdfOutputDirectory using the given path as a root directory.
-        /// </summary>
-        /// <param name="path">The directory to use as the root.  It must exist.</param>
-        public StdfOutputDirectory(string path)
+		/// <summary>
+		///     Creates an StdfOutputDirectory using the given path as a root directory.
+		/// </summary>
+		/// <param name="path">The directory to use as the root.  It must exist.</param>
+		public StdfOutputDirectory(string path)
 		{
 			if(!Directory.Exists(path))
 			{
@@ -33,12 +33,12 @@ namespace Stdf
 			_Path = path;
 		}
 
-        /// <summary>
-        ///     Consumes a stream of records to write to the output directory.
-        ///     Files cannot span calls to this method.
-        /// </summary>
-        /// <param name="records">The records to write.</param>
-        public void WriteRecords(IEnumerable<StdfRecord> records)
+		/// <summary>
+		///     Consumes a stream of records to write to the output directory.
+		///     Files cannot span calls to this method.
+		/// </summary>
+		/// <param name="records">The records to write.</param>
+		public void WriteRecords(IEnumerable<StdfRecord> records)
 		{
 			StdfFileWriter writer = null;
 
