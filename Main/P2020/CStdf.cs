@@ -2,6 +2,7 @@
 using Stdf.Records.V4;
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 
@@ -16,12 +17,21 @@ namespace CSTDF
 		private          CP2020         _P2020;
 		private          StdfFileWriter writer;
 
+		/// <summary>
+		/// 建構式
+		/// </summary>
+		/// <param name="LogPath"> Log 存在路徑位置</param>
+		/// <param name="SummaryLog">Summary 存在路徑位置</param>
+		/// <param name="Output">輸出路徑</param>
 		public CStdf(string LogPath, string SummaryLog, string Output)
 		{
-			_LogPath    = LogPath;
+			Debug.Assert(LogPath != null, nameof(LogPath) + " != null");
+			_LogPath = LogPath;
+			Debug.Assert(SummaryLog != null, nameof(SummaryLog) + " != null");
 			_SummaryLog = SummaryLog;
-			_Output     = Output;
-			writer      = new StdfFileWriter(Output, true);
+			Debug.Assert(Output != null, nameof(Output) + " != null");
+			_Output = Output;
+			writer  = new StdfFileWriter(_Output, true);
 		}
 
 		private void AnalyzeFile()
@@ -40,6 +50,9 @@ namespace CSTDF
 			}
 		}
 
+		/// <summary>
+		/// 執行STDF 轉檔
+		/// </summary>
 		public void DoWork()
 		{
 			AnalyzeFile();
