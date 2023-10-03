@@ -1,4 +1,4 @@
-﻿namespace P2020
+﻿namespace CSTDF
 {
 	partial class Form1
 	{

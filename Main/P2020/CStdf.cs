@@ -1,24 +1,52 @@
 ﻿using Stdf;
 using Stdf.Records.V4;
 using System;
-using System.Diagnostics;
+using System.ComponentModel;
 using System.IO;
 using System.Text.RegularExpressions;
-using System.Windows.Forms;
 
 namespace CSTDF
 {
-	public partial class Form1 : Form
+	public class CStdf
 	{
-		private CFileParam _FileParam;
-		private CP2020     _P2020;
+		private readonly string         _LogPath;
+		private readonly string         _SummaryLog;
+		private readonly string         _Output;
+		private          CFileParam     _FileParam;
+		private          CP2020         _P2020;
+		private          StdfFileWriter writer;
 
-		public Form1() => InitializeComponent();
-
-		private void button1_Click(object sender, EventArgs e)
+		public CStdf(string LogPath, string SummaryLog, string Output)
 		{
-			File.Delete("C:\\STDFATDF\\jamesliu_test.stdf");
-			StdfFileWriter writer = new StdfFileWriter("C:\\STDFATDF\\jamesliu_test.stdf", true);
+			_LogPath    = LogPath;
+			_SummaryLog = SummaryLog;
+			_Output     = Output;
+			writer      = new StdfFileWriter(Output, true);
+
+			
+		}
+
+		
+		private void AnalyzeFile()
+		{
+			try
+			{
+				_P2020 = CP2020.CreateInstance(Directory.GetFiles(_LogPath, "*.txt"), 0);
+				_P2020.AnalyzeFile();
+				_FileParam = new CFileParam(_SummaryLog);
+				_FileParam.AnalyzeFile();
+			}
+			catch(Exception e)
+			{
+				Console.WriteLine($@"處理中有錯誤發生: {e.Message}");
+				throw;
+			}
+		}
+		
+		
+		public void DoWork()
+		{
+			AnalyzeFile();
 			Far            far    = new Far();
 			far.CpuType     = 2;
 			far.StdfVersion = 4;
@@ -264,30 +292,6 @@ namespace CSTDF
 			writer.Dispose();
 		}
 
-		private void button2_Click(object sender, EventArgs e)
-		{
-			// _P2020 = CP2020.CreateInstance(@"C:\Users\USER1\Documents\Pti_Doc\Project\Tester STDF\P2020 8 Site\P2020_8site_datalog.txt", 0);
-			// _P2020.AnalyzeFile();
 
-			//_P2020 = CP2020.CreateInstance(Directory.GetFiles(@"C:\Users\USER1\Documents\Pti_Doc\Project\Jerry\P2020\P2020_Data Log\Data Log\","*.txt"), 0);
-			//_P2020.AnalyzeFile();
-			Stopwatch s = new Stopwatch();
-			s.Start();
-			_P2020 = CP2020.CreateInstance(Directory.GetFiles(@"C:\STDFATDF\2023-09-18-02-59-16\New", "*.txt"), 0);
-			_P2020.AnalyzeFile();
-			s.Stop();
-			Console.WriteLine(s.ElapsedMilliseconds);
-			//49s
-			//32s
-			_FileParam = new CFileParam(@"C:\Users\USER1\Documents\Pti_Doc\Project\Tester STDF\P2020 8 Site\2023-09-06-14-06-02.txt");
-			_FileParam.AnalyzeFile();
-
-			//C:\Users\USER1\Documents\Pti_Doc\Project\Jerry\P2020\P2020_Data Log\Data Log
-		}
-
-		private void textBox1_KeyDown(object sender, KeyEventArgs e)
-		{
-			//throw new System.NotImplementedException();
-		}
 	}
 }

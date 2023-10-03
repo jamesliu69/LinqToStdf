@@ -10,7 +10,7 @@ using System.Windows.Forms;
 
 #endregion
 
-namespace P2020
+namespace CSTDF
 {
 	public class CP2020 : IAnalyze
 	{
@@ -116,17 +116,17 @@ namespace P2020
 
 		public void GroupBySite()
 		{
+			
 		}
 
 		public void CalMeasure()
 		{
+			//85/
 		}
 
 		public void OutputFile()
 		{
 		}
-
-		
 
 		private CChipData EnumerableConvert(string name, string Title, string[] StrArray)
 		{

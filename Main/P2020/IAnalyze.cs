@@ -1,7 +1,7 @@
 using System;
 using System.Data;
 
-namespace P2020
+namespace CSTDF
 {
 	public interface IAnalyze
 	{

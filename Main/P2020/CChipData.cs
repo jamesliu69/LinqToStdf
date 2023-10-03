@@ -1,4 +1,4 @@
-namespace P2020
+namespace CSTDF
 {
 	public class CChipData
 	{

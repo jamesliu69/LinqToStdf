@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 
-namespace P2020
+namespace CSTDF
 {
 	internal static class Program
 	{
@@ -11,9 +11,9 @@ namespace P2020
 		[STAThread]
 		private static void Main()
 		{
-			Application.EnableVisualStyles();
-			Application.SetCompatibleTextRenderingDefault(false);
-			Application.Run(new Form1());
+			//Application.EnableVisualStyles();
+			//Application.SetCompatibleTextRenderingDefault(false);
+			//Application.Run(new Form1());
 		}
 	}
 }

@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace P2020
+namespace CSTDF
 {
 	public class CFileParam
 	{
@@ -50,7 +50,7 @@ namespace P2020
 
 		public CFileParam(string filename) => FileName = filename;
 
-		public void AnnalyzeFile()
+		public void AnalyzeFile()
 		{
 			StringBuilder sb    = new StringBuilder();
 			string[]      files = File.ReadAllLines(FileName);

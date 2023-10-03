@@ -52,14 +52,12 @@ namespace Stdf
         /// <returns>The addition of first and second where null is treated as 0.</returns>
         public static uint? Combine(this uint? first, uint? second)
 		{
-			if((first == null) && (second == null))
+			switch(first)
 			{
-				return null;
-			}
-
-			if(first == null)
-			{
-				return second;
+				case null when (second == null):
+					return null;
+				case null:
+					return second;
 			}
 
 			if(second == null)
