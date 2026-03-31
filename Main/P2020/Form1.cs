@@ -15,7 +15,7 @@ namespace STDF
 
 		public Form1() => InitializeComponent();
 
-		private void button1_Click(object sender, EventArgs e)
+		private void btnGenerateStdf_Click(object sender, EventArgs e)
 		{
 			File.Delete("C:\\STDFATDF\\jamesliu_test.stdf");
 			StdfFileWriter writer = new StdfFileWriter("C:\\STDFATDF\\jamesliu_test.stdf", true);
@@ -264,7 +264,7 @@ namespace STDF
 			writer.Dispose();
 		}
 
-		private void button2_Click(object sender, EventArgs e)
+		private void btnAnalyzeSource_Click(object sender, EventArgs e)
 		{
 			// _P2020 = CP2020.CreateInstance(@"C:\Users\USER1\Documents\Pti_Doc\Project\Tester STDF\P2020 8 Site\P2020_8site_datalog.txt", 0);
 			// _P2020.AnalyzeFile();
@@ -286,7 +286,7 @@ namespace STDF
 			//C:\Users\USER1\Documents\Pti_Doc\Project\Jerry\P2020\P2020_Data Log\Data Log
 		}
 
-		private void textBox1_KeyDown(object sender, KeyEventArgs e)
+		private void txtInputPath_KeyDown(object sender, KeyEventArgs e)
 		{
 			//throw new System.NotImplementedException();
 		}
