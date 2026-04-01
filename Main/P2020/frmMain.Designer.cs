@@ -1,6 +1,6 @@
 ﻿namespace STDF
 {
-	partial class Form1
+	partial class frmMain
 	{
 		/// <summary>
 		/// Required designer variable.
@@ -73,7 +73,7 @@
 			this.Controls.Add(this.txtInputPath);
 			this.Controls.Add(this.btnAnalyzeSource);
 			this.Controls.Add(this.btnGenerateStdf);
-			this.Name = "Form1";
+			this.Name = "frmMain";
 			this.Text = "frmMain";
 			this.ResumeLayout(false);
 			this.PerformLayout();

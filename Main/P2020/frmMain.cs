@@ -8,12 +8,12 @@ using System.Windows.Forms;
 
 namespace STDF
 {
-	public partial class Form1 : Form
+	public partial class frmMain : Form
 	{
 		private CFileParam _fileParam;
 		private CP2020     _p2020;
 
-		public Form1() => InitializeComponent();
+		public frmMain() => InitializeComponent();
 
 		private void btnGenerateStdf_Click(object sender, EventArgs e)
 		{
