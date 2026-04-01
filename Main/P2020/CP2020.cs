@@ -15,6 +15,7 @@ namespace STDF
 {
 	public class CP2020 : IAnalyze
 	{
+		private const string LogTag = "[STDF-TRACE-ERR]";
 		private readonly Regex _dataLineRegex = new Regex(@"^\s*(?<passOrFail>\S+)\s+(?<site>\S+)\s+(?<pinName>\S+)\s+(?<forceValue>\S+)\s+(?<lowLimit>\S*)\s+(?<highLimit>\S*)\s+(?<measureValue>\S+)\s+(?<minMeasureValue>\S+)\s+(?<maxMeasureValue>\S+)\s*$",
 														  RegexOptions.Compiled | RegexOptions.CultureInvariant);
 		private readonly List<string> _fileNames = new List<string>();
@@ -59,9 +60,18 @@ namespace STDF
 
 				foreach(string logFilePath in _fileNames)
 				{
-					// 讀取原始資料列，後續依 STDF 需要的欄位結構解析。
-					string[] logLines = File.ReadAllLines(logFilePath);
-					logLines = logLines.Where(line => !string.IsNullOrWhiteSpace(line)).ToArray();
+					string[] logLines;
+					try
+					{
+						// 讀取原始資料列，後續依 STDF 需要的欄位結構解析。
+						logLines = File.ReadAllLines(logFilePath);
+						logLines = logLines.Where(line => !string.IsNullOrWhiteSpace(line)).ToArray();
+					}
+					catch(Exception ex)
+					{
+						LogException("ReadAllLines", ex, logFilePath, string.Empty, string.Empty, string.Empty, string.Empty, "SourceLog");
+						throw;
+					}
 
 					// 只保留 Test Start / Test End 之間的資料。
 					string[] dataLines = logLines
@@ -103,8 +113,10 @@ namespace STDF
 			}
 			catch(Exception e)
 			{
+				LogException("AnalyzeFile", e, string.Join(";", _fileNames), string.Empty, string.Empty, string.Empty, string.Empty, "ChipDataList");
 				Console.WriteLine(e);
 				MessageBox.Show(e.Message + "\r\n" + e.StackTrace);
+				throw;
 			}
 		}
 
@@ -169,10 +181,17 @@ namespace STDF
 			}
 			catch(Exception e)
 			{
+				LogException("EnumerableConvert", e, filePath, testItemTitle, null, null, dataLine, "CChipData");
 				MessageBox.Show($"EnumerableConvert 錯誤:\n檔案: {filePath}\n標題: {testItemTitle}\n資料列: {dataLine}\n\n{e.Message}\n{e.StackTrace}");
+				throw;
 			}
+		}
 
-			return null;
+		private static void LogException(string operation, Exception ex, string filePath, string testItem, string site, string pin, string rawInputValue, string targetRecord)
+		{
+			string safeMessage = ex?.Message?.Replace(Environment.NewLine, " ");
+			Console.Error.WriteLine(
+				$"{LogTag} op={operation} filePath=\"{filePath ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" target=\"{targetRecord ?? "N/A"}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
 		}
 
 		public void Dispose()

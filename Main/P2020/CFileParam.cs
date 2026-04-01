@@ -8,6 +8,7 @@ namespace STDF
 {
 	public class CFileParam
 	{
+		private const string LogTag = "[STDF-TRACE-ERR]";
 		public const string split = "********************************************************************";
 		public       string ATEID;
 		public       string Customer;
@@ -53,7 +54,16 @@ namespace STDF
 		public void AnalyzeFile()
 		{
 			StringBuilder summaryBuilder = new StringBuilder();
-			string[]      logLines       = File.ReadAllLines(FileName);
+			string[]      logLines;
+			try
+			{
+				logLines = File.ReadAllLines(FileName);
+			}
+			catch(Exception ex)
+			{
+				LogException("ReadSummaryFile", ex, FileName, null, null, null, null, "SummaryHeader");
+				throw;
+			}
 
 			foreach(string headerLine in logLines)
 			{
@@ -111,7 +121,15 @@ namespace STDF
 				{
 					IEnumerable<string> siteTokens  = headerParts[0].Trim().Split(' ').Where(c => c != "");
 					IEnumerable<string> countTokens = siteTokens.Skip(3);
-					SiteCount = Convert.ToInt32(countTokens.ElementAt(0).Substring(0, countTokens.ElementAt(0).IndexOf("(")));
+					try
+					{
+						SiteCount = Convert.ToInt32(countTokens.ElementAt(0).Substring(0, countTokens.ElementAt(0).IndexOf("(")));
+					}
+					catch(Exception ex)
+					{
+						LogException("ParseSiteCount", ex, FileName, TestItemName, null, null, headerLine, "SiteCount");
+						throw;
+					}
 				}
 				else if(headerParts[0].Contains("Pass  (By Sites)"))
 				{
@@ -154,11 +172,19 @@ namespace STDF
 
 						foreach(string binLine in hardwareBinLines)
 						{
-							IEnumerable<string> splitValues = binLine.Split(' ').Where(c => c != "");
-
-							if(!string.IsNullOrEmpty(splitValues.ElementAt(0)))
+							try
 							{
-								HardWareBin[splitValues.ElementAt(0)] = binLine.Trim().Split(' ').Where(c => c != "").Skip(3).ToList();
+								IEnumerable<string> splitValues = binLine.Split(' ').Where(c => c != "");
+
+								if(!string.IsNullOrEmpty(splitValues.ElementAt(0)))
+								{
+									HardWareBin[splitValues.ElementAt(0)] = binLine.Trim().Split(' ').Where(c => c != "").Skip(3).ToList();
+								}
+							}
+							catch(Exception ex)
+							{
+								LogException("ParseHardwareBin", ex, FileName, TestItemName, null, null, binLine, "HardWareBin");
+								throw;
 							}
 						}
 					}
@@ -181,16 +207,31 @@ namespace STDF
 
 						foreach(string binLine in softwareBinLines)
 						{
-							IEnumerable<string> splitValues = binLine.Split(' ').Where(c => c != "");
-
-							if(!string.IsNullOrEmpty(splitValues.ElementAt(0)))
+							try
 							{
-								SoftWareBin[splitValues.ElementAt(0)] = binLine.Trim().Split(' ').Where(c => c != "").Skip(3).ToList();
+								IEnumerable<string> splitValues = binLine.Split(' ').Where(c => c != "");
+
+								if(!string.IsNullOrEmpty(splitValues.ElementAt(0)))
+								{
+									SoftWareBin[splitValues.ElementAt(0)] = binLine.Trim().Split(' ').Where(c => c != "").Skip(3).ToList();
+								}
+							}
+							catch(Exception ex)
+							{
+								LogException("ParseSoftwareBin", ex, FileName, TestItemName, null, null, binLine, "SoftWareBin");
+								throw;
 							}
 						}
 					}
 				}
 			}
+		}
+
+		private static void LogException(string operation, Exception ex, string filePath, string testItem, string site, string pin, string rawInputValue, string targetRecord)
+		{
+			string safeMessage = ex?.Message?.Replace(Environment.NewLine, " ");
+			Console.Error.WriteLine(
+				$"{LogTag} op={operation} filePath=\"{filePath ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" target=\"{targetRecord ?? "N/A"}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
 		}
 	}
 }
