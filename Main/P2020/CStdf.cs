@@ -48,7 +48,7 @@ namespace STDF
 				}
 				catch(Exception ex)
 				{
-					LogException("LoadLogFiles", ex, _logPath, null, null, null, null, "P2020LogFiles");
+					LogException("LoadLogFiles", ex, _logPath, null, null, null, null, "P2020LogFiles", "AnalyzeFile.LoadLogFiles", _logPath, _outputPath);
 					throw;
 				}
 
@@ -61,7 +61,7 @@ namespace STDF
 				}
 				catch(Exception ex)
 				{
-					LogException("LoadSummaryFile", ex, _logPath, null, null, null, null, "SummaryTxt");
+					LogException("LoadSummaryFile", ex, _logPath, null, null, null, null, "SummaryTxt", "AnalyzeFile.LoadSummaryFile", _logPath, _outputPath);
 					throw;
 				}
 
@@ -70,7 +70,7 @@ namespace STDF
 			}
 			catch(Exception e)
 			{
-				LogException("AnalyzeFile", e, _logPath, null, null, null, null, "AnalyzeFlow");
+				LogException("AnalyzeFile", e, _logPath, null, null, null, null, "AnalyzeFlow", "AnalyzeFile", _logPath, _outputPath);
 				Console.WriteLine($@"處理中有錯誤發生: {e.Message}");
 				throw;
 			}
@@ -81,7 +81,44 @@ namespace STDF
 		/// </summary>
 		public void DoWork()
 		{
+			string workflowStage = "DoWork.AnalyzeFile";
+			try
+			{
 			AnalyzeFile();
+			workflowStage = "DoWork.PrepareSiteAndPinMap";
+			List<CChipData> chipDataList = _p2020.ChipDataList ?? new List<CChipData>();
+			List<byte> siteNumbers = chipDataList
+									 .Select(chip => byte.TryParse(chip.Site, out byte site) ? (byte?)site : null)
+									 .Where(site => site.HasValue)
+									 .Select(site => site.Value)
+									 .Distinct()
+									 .OrderBy(site => site)
+									 .ToList();
+			if(siteNumbers.Count == 0)
+			{
+				siteNumbers.Add(1);
+			}
+
+			Dictionary<ushort, PinInfo> pinMap = new Dictionary<ushort, PinInfo>();
+			foreach(CChipData chip in chipDataList)
+			{
+				if(!TryExtractPinIndex(chip.PinName, out ushort pinIndex))
+				{
+					continue;
+				}
+
+				if(!pinMap.ContainsKey(pinIndex))
+				{
+					pinMap[pinIndex] = new PinInfo
+									   {
+										   PinIndex    = pinIndex,
+										   RawPinName  = chip.PinName?.Trim() ?? string.Empty,
+										   LogicalName = ExtractPinLogicalName(chip.PinName)
+									   };
+				}
+			}
+
+			workflowStage = "DoWork.WriteFARATR";
 			Far far = new Far();
 			far.CpuType     = 2;
 			far.StdfVersion = 4;
@@ -93,6 +130,7 @@ namespace STDF
 
 			#region MIR
 			// MIR（Master Information Record）：記錄整批測試作業的主資訊，例如批號、開始時間與測試程式版本。
+			workflowStage = "DoWork.WriteMIR";
 
 			Mir mir = new Mir();
 			try
@@ -102,7 +140,7 @@ namespace STDF
 			}
 			catch(Exception ex)
 			{
-				LogException("ParseDateTime", ex, _fileParam.FilePath, _fileParam.TestItemName, null, null, _fileParam.LotSTART, "MIR.SetupTime/StartTime");
+				LogException("ParseDateTime", ex, _fileParam.FilePath, _fileParam.TestItemName, null, null, _fileParam.LotSTART, "MIR.SetupTime/StartTime", workflowStage, _logPath, _outputPath);
 				throw;
 			}
 			mir.StationNumber        = 0;
@@ -147,15 +185,12 @@ namespace STDF
 
 			#region SDR
 			// SDR（Site Description Record）：描述測試站台與設備配置資訊，定義 Head/Site 與硬體識別資料。
+			workflowStage = "DoWork.WriteSDR";
 
 			Sdr sdr = new Sdr();
 			sdr.HeadNumber = 1;
 			sdr.SiteGroup  = 1;
-
-			sdr.SiteNumbers = new byte[]
-							  {
-								  1
-							  };
+			sdr.SiteNumbers = siteNumbers.ToArray();
 			sdr.HandlerType   = "";
 			sdr.HandlerId     = "";
 			sdr.CardType      = "";
@@ -178,44 +213,65 @@ namespace STDF
 
 			#region Prm
 			// PMR（Pin Map Record）：定義量測通道與實體/邏輯腳位對應，供後續測試結果參照。
+			workflowStage = "DoWork.WritePMR";
 
-			Pmr pmr = new Pmr();
-			pmr.PinIndex     = 1;
-			pmr.ChannelType  = 0;
-			pmr.ChannelName  = "";
-			pmr.PhysicalName = "";
-			pmr.LogicalName  = "";
-			pmr.HeadNumber   = 1;
-			pmr.SiteNumber   = 0;
-			ExecuteWithLogging("WriteRecord", _fileParam.FilePath, _fileParam.TestItemName, null, null, null, "PMR", () => _stdfWriter.WriteRecord(pmr));
+			if(pinMap.Count > 0)
+			{
+				foreach(PinInfo pin in pinMap.Values.OrderBy(p => p.PinIndex))
+				{
+					Pmr pmr = new Pmr();
+					pmr.PinIndex     = pin.PinIndex;
+					pmr.ChannelType  = 0;
+					pmr.ChannelName  = pin.LogicalName;
+					pmr.PhysicalName = pin.RawPinName;
+					pmr.LogicalName  = pin.LogicalName;
+					pmr.HeadNumber   = 1;
+					pmr.SiteNumber   = siteNumbers[0];
+					ExecuteWithLogging("WriteRecord", _fileParam.FilePath, _fileParam.TestItemName, null, pin.RawPinName, null, "PMR", () => _stdfWriter.WriteRecord(pmr));
+				}
+			}
+			else
+			{
+				Pmr pmr = new Pmr();
+				pmr.PinIndex     = 1;
+				pmr.ChannelType  = 0;
+				pmr.ChannelName  = "";
+				pmr.PhysicalName = "";
+				pmr.LogicalName  = "";
+				pmr.HeadNumber   = 1;
+				pmr.SiteNumber   = siteNumbers[0];
+				ExecuteWithLogging("WriteRecord", _fileParam.FilePath, _fileParam.TestItemName, null, null, null, "PMR", () => _stdfWriter.WriteRecord(pmr));
+			}
 
 			#endregion
 
 			#region PGR
 			// PGR（Pin Group Record）：將多個腳位索引分組，方便以群組方式描述測試腳位集合。
+			workflowStage = "DoWork.WritePGR";
 
 			Pgr pgr = new Pgr();
 			pgr.GroupIndex = 1;
 			pgr.GroupName  = "G1_OPPN";
-
-			pgr.PinIndexes = new ushort[]
-							 {
-								 1
-							 };
+			pgr.PinIndexes = pinMap.Count > 0 ? pinMap.Keys.OrderBy(index => index).ToArray() : new ushort[] { 1 };
 			ExecuteWithLogging("WriteRecord", _fileParam.FilePath, _fileParam.TestItemName, null, null, null, "PGR", () => _stdfWriter.WriteRecord(pgr));
 
 			#endregion
 
 			#region PTR
 			// PTR（Parametric Test Record）群組：以 PIR/PTR/PRR 串接每顆料件的進站、量測結果與出站資訊。
+			workflowStage = "DoWork.WritePIR_PTR_PRR";
 
 			Dictionary<string, uint> testNumberMap = new Dictionary<string, uint>(StringComparer.OrdinalIgnoreCase);
 			Dictionary<uint, TestSummary> testSummaries = new Dictionary<uint, TestSummary>();
 			uint nextTestNumber = 1;
 
-			for(int i = 0; i < _p2020.ChipDataList.Count; i++)
+			for(int i = 0; i < chipDataList.Count; i++)
 			{
-				CChipData chip = _p2020.ChipDataList[i];
+				CChipData chip      = chipDataList[i];
+				int       chipTotal = chipDataList.Count;
+				workflowStage = $"DoWork.ProcessChip[{i + 1}/{chipTotal}]";
+				try
+				{
 				Pir       pir  = new Pir();
 				pir.HeadNumber = 1;
 				byte siteNumber;
@@ -225,7 +281,7 @@ namespace STDF
 				}
 				catch(Exception ex)
 				{
-					LogException("ConvertSite", ex, chip.FileName, chip.Comment, chip.Site, chip.PinName, chip.Site, "PIR.SiteNumber");
+					LogException("ConvertSite", ex, chip.FileName, chip.Comment, chip.Site, chip.PinName, $"loop={i + 1}/{chipTotal};siteRaw={chip.Site}", "PIR.SiteNumber", workflowStage, _logPath, _outputPath);
 					throw;
 				}
 				pir.SiteNumber = siteNumber;
@@ -250,14 +306,14 @@ namespace STDF
 				float? measurementValue;
 				try
 				{
-					measurementValue = TryExtractFloat(chip.strMaxMeasureValue) ??
-									   TryExtractFloat(chip.strMeasureValue) ??
+					measurementValue = TryExtractFloat(chip.strMeasureValue) ??
+									   TryExtractFloat(chip.strMaxMeasureValue) ??
 									   TryExtractFloat(chip.strMinMeasureValue);
 				}
 				catch(Exception ex)
 				{
 					LogException("ValueConversion", ex, chip.FileName, chip.Comment, chip.Site, chip.PinName,
-								 $"{chip.strMaxMeasureValue}|{chip.strMeasureValue}|{chip.strMinMeasureValue}", "PTR.Result");
+								 $"loop={i + 1}/{chipTotal};values={chip.strMaxMeasureValue}|{chip.strMeasureValue}|{chip.strMinMeasureValue}", "PTR.Result", workflowStage, _logPath, _outputPath);
 					throw;
 				}
 				ptr.Result                   = measurementValue;
@@ -320,14 +376,21 @@ namespace STDF
 				prr.HeadNumber = 1;
 				prr.SiteNumber = siteNumber;
 				ExecuteWithLogging("WriteRecord", chip.FileName, chip.Comment, chip.Site, chip.PinName, chip.PassOrFail, "PRR", () => _stdfWriter.WriteRecord(prr));
+				}
+				catch(Exception ex)
+				{
+					LogException("ProcessChip", ex, chip.FileName, chip.Comment, chip.Site, chip.PinName, $"loop={i + 1}/{chipTotal}", "PIR/PTR/PRR", workflowStage, _logPath, _outputPath);
+					throw;
+				}
 			}
 
 			#endregion
 
 			#region NO TSR
 			// TSR（Test Synopsis Record）：提供特定測試項目的統計摘要（執行次數、失敗數、統計值等）。
+			workflowStage = "DoWork.WriteTSR";
 
-			byte summarySiteNumber = _p2020.ChipDataList.Count > 0 ? Convert.ToByte(_p2020.ChipDataList[0].Site) : (byte)1;
+			byte summarySiteNumber = siteNumbers[0];
 			foreach(TestSummary summary in testSummaries.OrderBy(c => c.Key).Select(c => c.Value))
 			{
 				Tsr tsr = new Tsr();
@@ -353,6 +416,7 @@ namespace STDF
 
 			#region NO HBR
 			// HBR（Hardware Bin Record）：彙整硬體 Bin 分類結果與數量，用於硬體分 bin 統計。
+			workflowStage = "DoWork.WriteHBR";
 
 			foreach(BinSummary bin in BuildBinSummaries(_fileParam.HardWareBin, _p2020.ChipDataList))
 			{
@@ -370,6 +434,7 @@ namespace STDF
 
 			#region NO SBR
 			// SBR（Software Bin Record）：彙整軟體 Bin 分類結果與數量，用於軟體分 bin 統計。
+			workflowStage = "DoWork.WriteSBR";
 
 			foreach(BinSummary bin in BuildBinSummaries(_fileParam.SoftWareBin, _p2020.ChipDataList))
 			{
@@ -387,6 +452,7 @@ namespace STDF
 
 			#region PCR
 			// PCR（Part Count Record）：記錄測試數量統計（如測試顆數、良率相關計數）的站點摘要。
+			workflowStage = "DoWork.WritePCR";
 
 			Pcr pcr = new Pcr();
 			pcr.HeadNumber = 1;
@@ -397,6 +463,7 @@ namespace STDF
 
 			#region MRR
 			// MRR（Master Results Record）：標記整批測試結束資訊，例如完工時間與結束說明。
+			workflowStage = "DoWork.WriteMRR";
 
 			Mrr mrr = new Mrr();
 			try
@@ -405,7 +472,7 @@ namespace STDF
 			}
 			catch(Exception ex)
 			{
-				LogException("ParseDateTime", ex, _fileParam.FilePath, _fileParam.TestItemName, null, null, _fileParam.LotEND, "MRR.FinishTime");
+				LogException("ParseDateTime", ex, _fileParam.FilePath, _fileParam.TestItemName, null, null, _fileParam.LotEND, "MRR.FinishTime", workflowStage, _logPath, _outputPath);
 				throw;
 			}
 			mrr.DispositionCode = " ";
@@ -415,7 +482,14 @@ namespace STDF
 
 			#endregion
 
+			workflowStage = "DoWork.DisposeWriter";
 			_stdfWriter.Dispose();
+			}
+			catch(Exception ex)
+			{
+				LogException("DoWork", ex, _fileParam?.FilePath ?? _logPath, _fileParam?.TestItemName, null, null, null, "Workflow", workflowStage, _logPath, _outputPath);
+				throw;
+			}
 		}
 
 		private static float? TryExtractFloat(string rawText)
@@ -434,7 +508,7 @@ namespace STDF
 			return float.TryParse(match.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out float value) ? value : (float?)null;
 		}
 
-		private static void ExecuteWithLogging(string operation, string filePath, string testItem, string site, string pin, string rawInputValue, string targetRecord, Action action)
+		private void ExecuteWithLogging(string operation, string filePath, string testItem, string site, string pin, string rawInputValue, string targetRecord, Action action)
 		{
 			try
 			{
@@ -442,16 +516,23 @@ namespace STDF
 			}
 			catch(Exception ex)
 			{
-				LogException(operation, ex, filePath, testItem, site, pin, rawInputValue, targetRecord);
+				LogException(operation, ex, filePath, testItem, site, pin, rawInputValue, targetRecord, "DoWork.WriteRecord", _logPath, _outputPath);
 				throw;
 			}
 		}
 
-		private static void LogException(string operation, Exception ex, string filePath, string testItem, string site, string pin, string rawInputValue, string targetRecord)
+		private static void LogException(string operation, Exception ex, string filePath, string testItem, string site, string pin, string rawInputValue, string targetRecord, string stage = null, string inputFolder = null, string outputPath = null)
 		{
 			string safeMessage = ex?.Message?.Replace(Environment.NewLine, " ");
-			Console.Error.WriteLine(
-				$"{LogTag} op={operation} filePath=\"{filePath ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" target=\"{targetRecord ?? "N/A"}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
+			TraceLogger.WriteLine(
+				$"{LogTag} stage=\"{stage ?? "N/A"}\" op={operation} inputFolder=\"{inputFolder ?? "N/A"}\" outputPath=\"{outputPath ?? "N/A"}\" filePath=\"{filePath ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" target=\"{targetRecord ?? "N/A"}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
+		}
+
+		private static void LogTraceError(string operation, string filePath, string binKey, IEnumerable<string> tokens, string reason)
+		{
+			string tokenText = tokens == null ? string.Empty : string.Join("|", tokens);
+			TraceLogger.WriteLine(
+				$"{LogTag} op={operation} filePath=\"{filePath ?? "N/A"}\" binKey=\"{binKey ?? "N/A"}\" tokens=\"{tokenText}\" reason=\"{reason ?? "N/A"}\"");
 		}
 
 		private static IEnumerable<BinSummary> BuildBinSummaries(Dictionary<string, IEnumerable<string>> binMap, IEnumerable<CChipData> chipDataList)
@@ -463,14 +544,26 @@ namespace STDF
 				foreach(KeyValuePair<string, IEnumerable<string>> item in binMap)
 				{
 					string[] tokens = item.Value?.Where(token => !string.IsNullOrWhiteSpace(token)).ToArray() ?? Array.Empty<string>();
-					if(!TryExtractUShort(item.Key, out ushort binNumber))
+					if(string.IsNullOrWhiteSpace(item.Key))
 					{
+						LogTraceError("BuildBinSummaries", null, item.Key, tokens, "Bin key is empty; skip this bin entry");
 						continue;
 					}
 
-					uint binCount = tokens
-									.Select(token => uint.TryParse(token, out uint value) ? (uint?)value : null)
-									.FirstOrDefault(value => value.HasValue) ?? 0;
+					if(!TryExtractUShort(item.Key, out ushort binNumber))
+					{
+						LogTraceError("BuildBinSummaries", null, item.Key, tokens, "Unable to parse bin number from key; skip this bin entry");
+						continue;
+					}
+
+					uint? parsedBinCount = tokens
+										   .Select(token => uint.TryParse(token, out uint value) ? (uint?)value : null)
+										   .FirstOrDefault(value => value.HasValue);
+					uint binCount = parsedBinCount ?? 0;
+					if(!parsedBinCount.HasValue)
+					{
+						LogTraceError("BuildBinSummaries", null, item.Key, tokens, "No valid bin count token found; fallback to 0");
+					}
 
 					string binPassFail = tokens.Select(NormalizePassFailToken).FirstOrDefault(token => token != null) ?? InferPassFailFromBinNumber(binNumber);
 					string binName = tokens.FirstOrDefault(token =>
@@ -530,6 +623,34 @@ namespace STDF
 			return match.Success && ushort.TryParse(match.Value, out value);
 		}
 
+		private static bool TryExtractPinIndex(string pinName, out ushort pinIndex)
+		{
+			pinIndex = 0;
+			if(string.IsNullOrWhiteSpace(pinName))
+			{
+				return false;
+			}
+
+			Match parenMatch = Regex.Match(pinName, @"\(\s*(\d+)\s*\)");
+			if(parenMatch.Success && ushort.TryParse(parenMatch.Groups[1].Value, out pinIndex))
+			{
+				return true;
+			}
+
+			return false;
+		}
+
+		private static string ExtractPinLogicalName(string pinName)
+		{
+			if(string.IsNullOrWhiteSpace(pinName))
+			{
+				return string.Empty;
+			}
+
+			Match match = Regex.Match(pinName, @"^(?<name>[^\(\s]+)");
+			return match.Success ? match.Groups["name"].Value.Trim() : pinName.Trim();
+		}
+
 		private static string NormalizePassFailToken(string token)
 		{
 			if(string.IsNullOrWhiteSpace(token))
@@ -572,6 +693,13 @@ namespace STDF
 			public uint   BinCount    { get; set; }
 			public string BinPassFail { get; set; }
 			public string BinName     { get; set; }
+		}
+
+		private sealed class PinInfo
+		{
+			public ushort PinIndex    { get; set; }
+			public string RawPinName  { get; set; }
+			public string LogicalName { get; set; }
 		}
 	}
 }

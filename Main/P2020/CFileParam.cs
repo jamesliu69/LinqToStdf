@@ -55,18 +55,21 @@ namespace STDF
 		{
 			StringBuilder summaryBuilder = new StringBuilder();
 			string[]      logLines;
+			List<string>  logLineList;
 			try
 			{
 				logLines = File.ReadAllLines(FileName);
 			}
 			catch(Exception ex)
 			{
-				LogException("ReadSummaryFile", ex, FileName, null, null, null, null, "SummaryHeader");
+				LogException("ReadSummaryFile", ex, FileName, "SummaryHeader", null, null, null, null, null, -1);
 				throw;
 			}
+			logLineList = logLines.ToList();
 
-			foreach(string headerLine in logLines)
+			for(int headerLineIndex = 0; headerLineIndex < logLines.Length; headerLineIndex++)
 			{
+				string   headerLine  = logLines[headerLineIndex];
 				string[] headerParts = headerLine.Split(':');
 
 				if(headerParts.Length < 2)
@@ -127,7 +130,7 @@ namespace STDF
 					}
 					catch(Exception ex)
 					{
-						LogException("ParseSiteCount", ex, FileName, TestItemName, null, null, headerLine, "SiteCount");
+						LogException("ParseSiteCount", ex, FileName, "Result", TestItemName, null, null, headerLine, headerParts[0], headerLineIndex + 1);
 						throw;
 					}
 				}
@@ -138,7 +141,15 @@ namespace STDF
 
 					foreach(string siteValue in resultTokens)
 					{
-						ResultPass.Add(siteValue.Substring(0, resultTokens.ElementAt(0).IndexOf("(")));
+						try
+						{
+							ResultPass.Add(siteValue.Substring(0, resultTokens.ElementAt(0).IndexOf("(")));
+						}
+						catch(Exception ex)
+						{
+							LogException("ParsePassBySite", ex, FileName, "Result", TestItemName, null, null, headerLine, siteValue, headerLineIndex + 1);
+							throw;
+						}
 					}
 				}
 				else if(headerParts[0].Contains("Fail  (By Sites)"))
@@ -148,7 +159,15 @@ namespace STDF
 
 					foreach(string siteValue in resultTokens)
 					{
-						ResultFail.Add(siteValue.Substring(0, resultTokens.ElementAt(0).IndexOf("(")));
+						try
+						{
+							ResultFail.Add(siteValue.Substring(0, resultTokens.ElementAt(0).IndexOf("(")));
+						}
+						catch(Exception ex)
+						{
+							LogException("ParseFailBySite", ex, FileName, "Result", TestItemName, null, null, headerLine, siteValue, headerLineIndex + 1);
+							throw;
+						}
 					}
 				}
 
@@ -157,81 +176,127 @@ namespace STDF
 
 				if(headerParts[0].Contains("[HARDWARE BIN]"))
 				{
-					int hardwareBinStartIndex = logLines.ToList().IndexOf("[HARDWARE BIN]");
-
-					var hardwareBinMarker = logLines.Select((item, index) => new
-																			 {
-																				 Item  = item,
-																				 Index = index
-																			 })
-													.FirstOrDefault(x => x.Item.StartsWith("**************"));
-
-					if(hardwareBinMarker != null && hardwareBinStartIndex >= 0)
+					int hardwareBinStartIndex = logLineList.IndexOf("[HARDWARE BIN]");
+					if(hardwareBinStartIndex < 0)
 					{
-						List<string> hardwareBinLines = logLines.ToList().GetRange(hardwareBinStartIndex + 2, hardwareBinMarker.Index);
+						InvalidDataException ex = new InvalidDataException("找不到 [HARDWARE BIN] 區段起點。");
+						LogException("ParseHardwareBin", ex, FileName, "HARDWARE BIN", TestItemName, null, null, "marker=[HARDWARE BIN]", null, headerLineIndex + 1);
+						throw ex;
+					}
 
-						foreach(string binLine in hardwareBinLines)
+					int hardwareBinMarkerIndex = logLineList.FindIndex(hardwareBinStartIndex + 1, line => line.StartsWith("**************"));
+					if(hardwareBinMarkerIndex < 0)
+					{
+						InvalidDataException ex = new InvalidDataException($"[HARDWARE BIN] 缺少結尾 marker，startIndex={hardwareBinStartIndex}。");
+						LogException("ParseHardwareBin", ex, FileName, "HARDWARE BIN", TestItemName, null, null, $"startIndex={hardwareBinStartIndex}; marker=**************", null, hardwareBinStartIndex + 1);
+						throw ex;
+					}
+
+					int hardwareRangeStart = hardwareBinStartIndex + 2;
+					int hardwareRangeCount = hardwareBinMarkerIndex - hardwareRangeStart;
+					if(hardwareRangeStart < 0 || hardwareRangeStart > logLineList.Count || hardwareRangeCount < 0 || hardwareRangeStart + hardwareRangeCount > logLineList.Count)
+					{
+						InvalidDataException ex = new InvalidDataException($"[HARDWARE BIN] 範圍越界，start={hardwareRangeStart}, count={hardwareRangeCount}, total={logLineList.Count}。");
+						LogException("ParseHardwareBin", ex, FileName, "HARDWARE BIN", TestItemName, null, null, $"startIndex={hardwareBinStartIndex}; markerIndex={hardwareBinMarkerIndex}; rangeStart={hardwareRangeStart}; rangeCount={hardwareRangeCount}", null, hardwareRangeStart + 1);
+						throw ex;
+					}
+
+					if(hardwareRangeCount == 0)
+					{
+						InvalidDataException ex = new InvalidDataException($"[HARDWARE BIN] 區段為空，start={hardwareBinStartIndex}, marker={hardwareBinMarkerIndex}。");
+						LogException("ParseHardwareBin", ex, FileName, "HARDWARE BIN", TestItemName, null, null, $"rangeStart={hardwareRangeStart}; rangeCount=0", null, hardwareRangeStart + 1);
+						throw ex;
+					}
+
+					List<string> hardwareBinLines = logLineList.GetRange(hardwareRangeStart, hardwareRangeCount);
+
+					foreach(string binLine in hardwareBinLines)
+					{
+						try
 						{
-							try
+							List<string> splitValues = binLine.Split(' ').Where(c => c != "").ToList();
+							if(splitValues.Count == 0 || string.IsNullOrWhiteSpace(splitValues[0]))
 							{
-								IEnumerable<string> splitValues = binLine.Split(' ').Where(c => c != "");
+								InvalidDataException ex = new InvalidDataException($"Hardware bin 列格式錯誤，無法取得 key: '{binLine}'");
+								LogException("ParseHardwareBin", ex, FileName, "HARDWARE BIN", TestItemName, null, null, binLine, splitValues.Count > 0 ? splitValues[0] : null, hardwareRangeStart + hardwareBinLines.IndexOf(binLine) + 1);
+								throw ex;
+							}
 
-								if(!string.IsNullOrEmpty(splitValues.ElementAt(0)))
-								{
-									HardWareBin[splitValues.ElementAt(0)] = binLine.Trim().Split(' ').Where(c => c != "").Skip(3).ToList();
-								}
-							}
-							catch(Exception ex)
-							{
-								LogException("ParseHardwareBin", ex, FileName, TestItemName, null, null, binLine, "HardWareBin");
-								throw;
-							}
+							HardWareBin[splitValues[0]] = splitValues.Skip(3).ToList();
+						}
+						catch(Exception ex)
+						{
+							LogException("ParseHardwareBin", ex, FileName, "HARDWARE BIN", TestItemName, null, null, binLine, null, hardwareRangeStart + hardwareBinLines.IndexOf(binLine) + 1);
+							throw;
 						}
 					}
 				}
 
 				if(headerParts[0].Contains("[SOFTWARE BIN]"))
 				{
-					int softwareBinStartIndex = logLines.ToList().IndexOf("[SOFTWARE BIN]");
-
-					var softwareBinMarker = logLines.Select((item, index) => new
-																			 {
-																				 Item  = item,
-																				 Index = index
-																			 })
-													.FirstOrDefault(x => x.Item.StartsWith("**************"));
-
-					if(softwareBinMarker != null && softwareBinStartIndex >= 0)
+					int softwareBinStartIndex = logLineList.IndexOf("[SOFTWARE BIN]");
+					if(softwareBinStartIndex < 0)
 					{
-						List<string> softwareBinLines = logLines.ToList().GetRange(softwareBinStartIndex + 2, softwareBinMarker.Index);
+						InvalidDataException ex = new InvalidDataException("找不到 [SOFTWARE BIN] 區段起點。");
+						LogException("ParseSoftwareBin", ex, FileName, "SOFTWARE BIN", TestItemName, null, null, "marker=[SOFTWARE BIN]", null, headerLineIndex + 1);
+						throw ex;
+					}
 
-						foreach(string binLine in softwareBinLines)
+					int softwareBinMarkerIndex = logLineList.FindIndex(softwareBinStartIndex + 1, line => line.StartsWith("**************"));
+					if(softwareBinMarkerIndex < 0)
+					{
+						InvalidDataException ex = new InvalidDataException($"[SOFTWARE BIN] 缺少結尾 marker，startIndex={softwareBinStartIndex}。");
+						LogException("ParseSoftwareBin", ex, FileName, "SOFTWARE BIN", TestItemName, null, null, $"startIndex={softwareBinStartIndex}; marker=**************", null, softwareBinStartIndex + 1);
+						throw ex;
+					}
+
+					int softwareRangeStart = softwareBinStartIndex + 2;
+					int softwareRangeCount = softwareBinMarkerIndex - softwareRangeStart;
+					if(softwareRangeStart < 0 || softwareRangeStart > logLineList.Count || softwareRangeCount < 0 || softwareRangeStart + softwareRangeCount > logLineList.Count)
+					{
+						InvalidDataException ex = new InvalidDataException($"[SOFTWARE BIN] 範圍越界，start={softwareRangeStart}, count={softwareRangeCount}, total={logLineList.Count}。");
+						LogException("ParseSoftwareBin", ex, FileName, "SOFTWARE BIN", TestItemName, null, null, $"startIndex={softwareBinStartIndex}; markerIndex={softwareBinMarkerIndex}; rangeStart={softwareRangeStart}; rangeCount={softwareRangeCount}", null, softwareRangeStart + 1);
+						throw ex;
+					}
+
+					if(softwareRangeCount == 0)
+					{
+						InvalidDataException ex = new InvalidDataException($"[SOFTWARE BIN] 區段為空，start={softwareBinStartIndex}, marker={softwareBinMarkerIndex}。");
+						LogException("ParseSoftwareBin", ex, FileName, "SOFTWARE BIN", TestItemName, null, null, $"rangeStart={softwareRangeStart}; rangeCount=0", null, softwareRangeStart + 1);
+						throw ex;
+					}
+
+					List<string> softwareBinLines = logLineList.GetRange(softwareRangeStart, softwareRangeCount);
+
+					foreach(string binLine in softwareBinLines)
+					{
+						try
 						{
-							try
+							List<string> splitValues = binLine.Split(' ').Where(c => c != "").ToList();
+							if(splitValues.Count == 0 || string.IsNullOrWhiteSpace(splitValues[0]))
 							{
-								IEnumerable<string> splitValues = binLine.Split(' ').Where(c => c != "");
+								InvalidDataException ex = new InvalidDataException($"Software bin 列格式錯誤，無法取得 key: '{binLine}'");
+								LogException("ParseSoftwareBin", ex, FileName, "SOFTWARE BIN", TestItemName, null, null, binLine, splitValues.Count > 0 ? splitValues[0] : null, softwareRangeStart + softwareBinLines.IndexOf(binLine) + 1);
+								throw ex;
+							}
 
-								if(!string.IsNullOrEmpty(splitValues.ElementAt(0)))
-								{
-									SoftWareBin[splitValues.ElementAt(0)] = binLine.Trim().Split(' ').Where(c => c != "").Skip(3).ToList();
-								}
-							}
-							catch(Exception ex)
-							{
-								LogException("ParseSoftwareBin", ex, FileName, TestItemName, null, null, binLine, "SoftWareBin");
-								throw;
-							}
+							SoftWareBin[splitValues[0]] = splitValues.Skip(3).ToList();
+						}
+						catch(Exception ex)
+						{
+							LogException("ParseSoftwareBin", ex, FileName, "SOFTWARE BIN", TestItemName, null, null, binLine, null, softwareRangeStart + softwareBinLines.IndexOf(binLine) + 1);
+							throw;
 						}
 					}
 				}
 			}
 		}
 
-		private static void LogException(string operation, Exception ex, string filePath, string testItem, string site, string pin, string rawInputValue, string targetRecord)
+		private static void LogException(string operation, Exception ex, string filePath, string section, string testItem, string site, string pin, string rawInputValue, string keyRawValue, int lineNumber)
 		{
 			string safeMessage = ex?.Message?.Replace(Environment.NewLine, " ");
-			Console.Error.WriteLine(
-				$"{LogTag} op={operation} filePath=\"{filePath ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" target=\"{targetRecord ?? "N/A"}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
+			TraceLogger.WriteLine(
+				$"{LogTag} op={operation} filePath=\"{filePath ?? "N/A"}\" section=\"{section ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" line=\"{lineNumber}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" keyRaw=\"{keyRawValue ?? "N/A"}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
 		}
 	}
 }

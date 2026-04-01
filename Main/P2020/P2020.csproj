@@ -58,6 +58,7 @@
         <Compile Include="CFileParam.cs" />
         <Compile Include="CP2020.cs" />
         <Compile Include="CStdf.cs" />
+        <Compile Include="TraceLogger.cs" />
         <Compile Include="frmMain.cs">
             <SubType>Form</SubType>
         </Compile>

@@ -10,6 +10,7 @@ namespace STDF
 {
 	public partial class frmMain : Form
 	{
+		private const string LogTag = "[STDF-TRACE-ERR]";
 		private CFileParam _fileParam;
 		private CP2020     _p2020;
 
@@ -19,6 +20,8 @@ namespace STDF
 		{
 			// 將分析結果輸出成 STDF 檔案。
 			string stdfPath = "C:\\STDFATDF\\jamesliu_test.stdf";
+			try
+			{
 			File.Delete(stdfPath);
 			StdfFileWriter stdfWriter = new StdfFileWriter(stdfPath, true);
 			Far            far        = new Far();
@@ -268,21 +271,37 @@ namespace STDF
 			#endregion
 
 			stdfWriter.Dispose();
+			}
+			catch(Exception ex)
+			{
+				LogEntryPointException("btnGenerateStdf_Click", ex, null, stdfPath, "InlineSTDFGeneration");
+				throw;
+			}
 		}
 
 		private void btnAnalyzeSource_Click(object sender, EventArgs e)
 		{
 			// 可在這裡切換不同 P2020 資料來源做轉檔測試。
 			Stopwatch s = new Stopwatch();
+			string inputFolder = @"C:\STDFATDF\2023-09-18-02-59-16\New";
+			string summaryPath = @"C:\Users\USER1\Documents\Pti_Doc\Project\Tester STDF\P2020 8 Site\2023-09-06-14-06-02.txt";
+			try
+			{
 			s.Start();
-			_p2020 = CP2020.CreateInstance(Directory.GetFiles(@"C:\STDFATDF\2023-09-18-02-59-16\New", "*.txt"), 0);
+			_p2020 = CP2020.CreateInstance(Directory.GetFiles(inputFolder, "*.txt"), 0);
 			_p2020.AnalyzeFile();
 			s.Stop();
 			Console.WriteLine(s.ElapsedMilliseconds);
 
 			// 讀取對應的測試參數檔。
-			_fileParam = new CFileParam(@"C:\Users\USER1\Documents\Pti_Doc\Project\Tester STDF\P2020 8 Site\2023-09-06-14-06-02.txt");
+			_fileParam = new CFileParam(summaryPath);
 			_fileParam.AnalyzeFile();
+			}
+			catch(Exception ex)
+			{
+				LogEntryPointException("btnAnalyzeSource_Click", ex, inputFolder, summaryPath, "AnalyzeSource");
+				throw;
+			}
 
 			//C:\Users\USER1\Documents\Pti_Doc\Project\Jerry\P2020\P2020_Data Log\Data Log
 		}
@@ -290,6 +309,13 @@ namespace STDF
 		private void txtInputPath_KeyDown(object sender, KeyEventArgs e)
 		{
 			// 保留按鍵事件，以便未來加入路徑輸入驗證或快速執行。
+		}
+
+		private static void LogEntryPointException(string stage, Exception ex, string inputFolder, string outputPath, string target)
+		{
+			string safeMessage = ex?.Message?.Replace(Environment.NewLine, " ");
+			Console.Error.WriteLine(
+				$"{LogTag} stage=\"{stage}\" op=UIEntryPoint inputFolder=\"{inputFolder ?? "N/A"}\" outputPath=\"{outputPath ?? "N/A"}\" target=\"{target ?? "N/A"}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
 		}
 	}
 }

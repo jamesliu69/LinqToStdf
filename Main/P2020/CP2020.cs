@@ -69,23 +69,52 @@ namespace STDF
 					}
 					catch(Exception ex)
 					{
-						LogException("ReadAllLines", ex, logFilePath, string.Empty, string.Empty, string.Empty, string.Empty, "SourceLog");
+						LogException("ReadAllLines", ex, logFilePath, "SourceLog", string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, -1);
 						throw;
+					}
+
+					int testStartIndex = Array.FindIndex(logLines, line => line.Trim().StartsWith("==> Test Start"));
+					if(testStartIndex < 0)
+					{
+						InvalidDataException ex = new InvalidDataException("缺少 Test Start 標記，無法擷取測試資料區段。");
+						LogException("ExtractTestRange", ex, logFilePath, "DataLines", string.Empty, string.Empty, string.Empty, "marker=Test Start", string.Empty, testStartIndex);
+						throw ex;
+					}
+
+					int testEndIndex = Array.FindIndex(logLines, testStartIndex + 1, line => line.Trim().StartsWith("==> Test End"));
+					if(testEndIndex < 0)
+					{
+						InvalidDataException ex = new InvalidDataException($"缺少 Test End 標記，Test Start index={testStartIndex}。");
+						LogException("ExtractTestRange", ex, logFilePath, "DataLines", string.Empty, string.Empty, string.Empty, $"startIndex={testStartIndex}; marker=Test End", string.Empty, testEndIndex);
+						throw ex;
+					}
+
+					if(testEndIndex <= testStartIndex + 1)
+					{
+						InvalidDataException ex = new InvalidDataException($"Test Start/Test End 之間無可用資料，start={testStartIndex}, end={testEndIndex}。");
+						LogException("ExtractTestRange", ex, logFilePath, "DataLines", string.Empty, string.Empty, string.Empty, $"startIndex={testStartIndex}; endIndex={testEndIndex}", string.Empty, testEndIndex);
+						throw ex;
 					}
 
 					// 只保留 Test Start / Test End 之間的資料。
 					string[] dataLines = logLines
-										 .SkipWhile(line => !line.Trim().StartsWith("==> Test Start"))
-										 .Skip(1)
-										 .TakeWhile(line => !line.Trim().StartsWith("==> Test End"))
+										 .Skip(testStartIndex + 1)
+										 .Take(testEndIndex - testStartIndex - 1)
 										 .Where(line => !line.Contains("P/F   Site              Pin_name        Force      L-Limit      H-Limit      Measure   Min Measure   Max Measure"))
 										 .ToArray();
+					if(dataLines.Length == 0)
+					{
+						InvalidDataException ex = new InvalidDataException($"Test Start/Test End 之間資料為空，start={testStartIndex}, end={testEndIndex}。");
+						LogException("ExtractTestRange", ex, logFilePath, "DataLines", string.Empty, string.Empty, string.Empty, $"startIndex={testStartIndex}; endIndex={testEndIndex}; dataLineCount=0", string.Empty, testEndIndex);
+						throw ex;
+					}
 
 					int    currentJudgeIndex = 0;
 					string testItemTitle     = string.Empty;
 
-					foreach(string dataLine in dataLines)
+					for(int dataLineIndex = 0; dataLineIndex < dataLines.Length; dataLineIndex++)
 					{
+						string dataLine = dataLines[dataLineIndex];
 						if(dataLine.Contains("<<<<<<---------------     Test Item :"))
 						{
 							testItemTitle = dataLine.Replace("<<<<<<---------------     Test Item : OSitem_", string.Empty).Replace("--------------->>>>>>", string.Empty).Trim();
@@ -98,7 +127,7 @@ namespace STDF
 							continue;
 						}
 
-						CChipData chipData = EnumerableConvert(logFilePath, testItemTitle, dataLine);
+						CChipData chipData = EnumerableConvert(logFilePath, testItemTitle, dataLine, dataLineIndex + testStartIndex + 2);
 
 						if(string.Equals(chipData.PassOrFail, "PASS", StringComparison.OrdinalIgnoreCase))
 						{
@@ -113,7 +142,7 @@ namespace STDF
 			}
 			catch(Exception e)
 			{
-				LogException("AnalyzeFile", e, string.Join(";", _fileNames), string.Empty, string.Empty, string.Empty, string.Empty, "ChipDataList");
+				LogException("AnalyzeFile", e, string.Join(";", _fileNames), "ChipDataList", string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, -1);
 				Console.WriteLine(e);
 				MessageBox.Show(e.Message + "\r\n" + e.StackTrace);
 				throw;
@@ -146,7 +175,7 @@ namespace STDF
 			}
 		}
 
-		private CChipData EnumerableConvert(string filePath, string testItemTitle, string dataLine)
+		private CChipData EnumerableConvert(string filePath, string testItemTitle, string dataLine, int lineNumber)
 		{
 			try
 			{
@@ -154,7 +183,9 @@ namespace STDF
 
 				if(!match.Success)
 				{
-					throw new InvalidOperationException($"資料列格式不符合預期: {dataLine}");
+					InvalidOperationException ex = new InvalidOperationException($"資料列格式不符合預期: {dataLine}");
+					LogException("EnumerableConvert.Match", ex, filePath, "DataLineRegex", testItemTitle, string.Empty, string.Empty, dataLine, string.Empty, lineNumber);
+					throw ex;
 				}
 
 				CChipData chipData = new CChipData();
@@ -181,17 +212,17 @@ namespace STDF
 			}
 			catch(Exception e)
 			{
-				LogException("EnumerableConvert", e, filePath, testItemTitle, null, null, dataLine, "CChipData");
+				LogException("EnumerableConvert", e, filePath, "CChipData", testItemTitle, null, null, dataLine, string.Empty, lineNumber);
 				MessageBox.Show($"EnumerableConvert 錯誤:\n檔案: {filePath}\n標題: {testItemTitle}\n資料列: {dataLine}\n\n{e.Message}\n{e.StackTrace}");
 				throw;
 			}
 		}
 
-		private static void LogException(string operation, Exception ex, string filePath, string testItem, string site, string pin, string rawInputValue, string targetRecord)
+		private static void LogException(string operation, Exception ex, string filePath, string section, string testItem, string site, string pin, string rawInputValue, string keyRawValue, int lineNumber)
 		{
 			string safeMessage = ex?.Message?.Replace(Environment.NewLine, " ");
-			Console.Error.WriteLine(
-				$"{LogTag} op={operation} filePath=\"{filePath ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" target=\"{targetRecord ?? "N/A"}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
+			TraceLogger.WriteLine(
+				$"{LogTag} op={operation} filePath=\"{filePath ?? "N/A"}\" section=\"{section ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" line=\"{lineNumber}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" keyRaw=\"{keyRawValue ?? "N/A"}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
 		}
 
 		public void Dispose()
