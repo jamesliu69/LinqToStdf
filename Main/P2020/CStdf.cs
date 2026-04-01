@@ -9,12 +9,12 @@ namespace STDF
 {
 	public class CStdf
 	{
-		private readonly string         _LogPath;
-		private readonly string         _Output;
-		private readonly string         _SummaryLog;
-		private readonly StdfFileWriter writer;
-		private          CFileParam     _FileParam;
-		private          CP2020         _P2020;
+		private readonly string         _logPath;
+		private readonly string         _outputPath;
+		private readonly StdfFileWriter _stdfWriter;
+		private readonly string         _summaryLog;
+		private          CFileParam     _fileParam;
+		private          CP2020         _p2020;
 
 		/// <summary>
 		///     建構式
@@ -22,24 +22,25 @@ namespace STDF
 		/// <param name="LogPath"> Log 存在路徑位置</param>
 		/// <param name="SummaryLog">Summary 存在路徑位置</param>
 		/// <param name="Output">輸出路徑</param>
-		public CStdf(string LogPath, string Output)
+		public CStdf(string logPath, string outputPath)
 		{
-			Debug.Assert(LogPath != null, nameof(LogPath) + " != null");
-			_LogPath    = LogPath;
-			_SummaryLog = LogPath;
-			Debug.Assert(Output != null, nameof(Output) + " != null");
-			_Output = Output;
-			writer  = new StdfFileWriter(_Output, true);
+			Debug.Assert(logPath != null, nameof(logPath) + " != null");
+			_logPath    = logPath;
+			_summaryLog = logPath;
+			Debug.Assert(outputPath != null, nameof(outputPath) + " != null");
+			_outputPath = outputPath;
+			_stdfWriter = new StdfFileWriter(_outputPath, true);
 		}
 
 		private void AnalyzeFile()
 		{
 			try
 			{
-				_P2020 = CP2020.CreateInstance(Directory.GetFiles(_LogPath, "*.log"), 0);
-				_P2020.AnalyzeFile();
-				_FileParam = new CFileParam(Directory.GetFiles(_LogPath, "*.txt")[0]);
-				_FileParam.AnalyzeFile();
+				// 先解析 P2020 原始資料，再讀取對應的測試參數檔。
+				_p2020 = CP2020.CreateInstance(Directory.GetFiles(_logPath, "*.log"), 0);
+				_p2020.AnalyzeFile();
+				_fileParam = new CFileParam(Directory.GetFiles(_logPath, "*.txt")[0]);
+				_fileParam.AnalyzeFile();
 			}
 			catch(Exception e)
 			{
@@ -57,24 +58,24 @@ namespace STDF
 			Far far = new Far();
 			far.CpuType     = 2;
 			far.StdfVersion = 4;
-			writer.WriteRecord(far);
+			_stdfWriter.WriteRecord(far);
 			Atr atr = new Atr();
 			atr.ModifiedTime = DateTime.Now;
 			atr.CommandLine  = "";
-			writer.WriteRecord(atr);
+			_stdfWriter.WriteRecord(atr);
 
 			#region MIR
 
 			Mir mir = new Mir();
-			mir.SetupTime            = DateTime.Parse(_FileParam.LotSTART);
-			mir.StartTime            = DateTime.Parse(_FileParam.LotSTART);
+			mir.SetupTime            = DateTime.Parse(_fileParam.LotSTART);
+			mir.StartTime            = DateTime.Parse(_fileParam.LotSTART);
 			mir.StationNumber        = 0;
 			mir.ModeCode             = "P";
 			mir.RetestCode           = "N";
 			mir.ProtectionCode       = "0";
 			mir.BurnInTime           = 0;
 			mir.CommandModeCode      = "0";
-			mir.LotId                = _FileParam.LotNumber;
+			mir.LotId                = _fileParam.LotNumber;
 			mir.PartType             = "";
 			mir.NodeName             = "";
 			mir.TesterType           = "";
@@ -95,7 +96,7 @@ namespace STDF
 			mir.FloorId              = "";
 			mir.ProcessId            = "";
 			mir.OperationFrequency   = "";
-			mir.SpecificationName    = _FileParam.TestProgramName;
+			mir.SpecificationName    = _fileParam.TestProgramName;
 			mir.SpecificationVersion = "";
 			mir.FlowId               = "";
 			mir.SetupId              = "";
@@ -104,7 +105,7 @@ namespace STDF
 			mir.RomCode              = "";
 			mir.SerialNumber         = "";
 			mir.SupervisorName       = "";
-			writer.WriteRecord(mir);
+			_stdfWriter.WriteRecord(mir);
 
 			#endregion
 
@@ -134,7 +135,7 @@ namespace STDF
 			sdr.LaserId       = "";
 			sdr.ExtraType     = "";
 			sdr.ExtraId       = "";
-			writer.WriteRecord(sdr);
+			_stdfWriter.WriteRecord(sdr);
 
 			#endregion
 
@@ -148,7 +149,7 @@ namespace STDF
 			pmr.LogicalName  = "";
 			pmr.HeadNumber   = 1;
 			pmr.SiteNumber   = 0;
-			writer.WriteRecord(pmr);
+			_stdfWriter.WriteRecord(pmr);
 
 			#endregion
 
@@ -162,72 +163,72 @@ namespace STDF
 							 {
 								 1
 							 };
-			writer.WriteRecord(pgr);
+			_stdfWriter.WriteRecord(pgr);
 
 			#endregion
 
 			#region PTR
 
-			for(int i = 0; i < _P2020.lstChipData.Count; i++)
+			for(int i = 0; i < _p2020.ChipDataList.Count; i++)
 			{
-				CChipData chip = _P2020.lstChipData[i];
+				CChipData chip = _p2020.ChipDataList[i];
 				Pir       pir  = new Pir();
 				pir.HeadNumber = 1;
 				pir.SiteNumber = Convert.ToByte(chip.Site);
-				writer.WriteRecord(pir);
+				_stdfWriter.WriteRecord(pir);
 				Ptr ptr = new Ptr();
 				ptr.TestNumber      = 1;
 				ptr.HeadNumber      = 1;
 				ptr.SiteNumber      = Convert.ToByte(chip.Site);
 				ptr.TestFlags       = chip.PassOrFail == "PASS" ? (byte)1 : (byte)0;
 				ptr.ParametricFlags = 0;
-				float? result = float.Parse(Regex.Match(chip.strMaxMeasureValue, @"[-+]?\d+\.?\d*").Value);
-				ptr.Result                   = result;
+				float? measurementValue = float.Parse(Regex.Match(chip.strMaxMeasureValue, @"[-+]?\d+\.?\d*").Value);
+				ptr.Result                   = measurementValue;
 				ptr.TestText                 = chip.Comment;
 				ptr.AlarmId                  = " ";
 				ptr.OptionalFlags            = 0;
 				ptr.ResultScalingExponent    = 6;
 				ptr.LowLimitScalingExponent  = 6;
 				ptr.HighLimitScalingExponent = 6;
-				string LO_LIMIT = chip.LowLimit;
-				string HI_LIMIT = chip.HighLimit;
+				string lowLimitText  = chip.LowLimit;
+				string highLimitText = chip.HighLimit;
 
-				if(LO_LIMIT != null)
+				if(!string.IsNullOrWhiteSpace(lowLimitText))
 				{
-					float? f = float.Parse(Regex.Match(LO_LIMIT, @"[-+]?\d+\.?\d*").Value);
-					ptr.LowLimit = f;
+					float? lowLimitValue = float.Parse(Regex.Match(lowLimitText, @"[-+]?\d+\.?\d*").Value);
+					ptr.LowLimit = lowLimitValue;
 				}
 				else
 				{
 					ptr.LowLimit = 0;
 				}
 
-				if(HI_LIMIT != null)
+				if(!string.IsNullOrWhiteSpace(highLimitText))
 				{
-					float? h = float.Parse(Regex.Match(HI_LIMIT, @"[-+]?\d+\.?\d*").Value);
-					ptr.HighLimit = h;
+					float? highLimitValue = float.Parse(Regex.Match(highLimitText, @"[-+]?\d+\.?\d*").Value);
+					ptr.HighLimit = highLimitValue;
 				}
 				else
 				{
 					ptr.HighLimit = 0;
 				}
-				string UnitResult = "0";
+				string unitsText = string.Empty;
 
-				if(chip.LowLimit != null)
+				if(!string.IsNullOrWhiteSpace(chip.LowLimit))
 				{
-					UnitResult = Regex.Replace(chip.LowLimit, "[^a-zA-Z]", "");
+					unitsText = Regex.Replace(chip.LowLimit, "[^a-zA-Z]", "");
 				}
 
-				if(UnitResult == "0")
+				if(string.IsNullOrWhiteSpace(unitsText))
 				{
-					UnitResult = Regex.Replace(chip.HighLimit, "[^a-zA-Z]", "");
+					unitsText = string.IsNullOrWhiteSpace(chip.HighLimit) ? string.Empty : Regex.Replace(chip.HighLimit, "[^a-zA-Z]", "");
 				}
-				ptr.Units = UnitResult;
-				writer.WriteRecord(ptr);
+				ptr.Units = unitsText;
+				_stdfWriter.WriteRecord(ptr);
 				Prr prr = new Prr();
 				prr.HeadNumber = 1;
 				prr.SiteNumber = Convert.ToByte(chip.Site);
-				writer.WriteRecord(prr);
+				_stdfWriter.WriteRecord(prr);
 			}
 
 			#endregion
@@ -236,7 +237,7 @@ namespace STDF
 
 			Tsr tsr = new Tsr();
 			tsr.HeadNumber       = 1;
-			tsr.SiteNumber       = (byte?)_FileParam.SiteCount;
+			tsr.SiteNumber       = (byte?)_fileParam.SiteCount;
 			tsr.TestType         = "P";
 			tsr.TestNumber       = 1000;
 			tsr.ExecutedCount    = 0;
@@ -250,7 +251,7 @@ namespace STDF
 			tsr.TestMax          = null;
 			tsr.TestSum          = null;
 			tsr.TestSumOfSquares = null;
-			writer.WriteRecord(tsr);
+			_stdfWriter.WriteRecord(tsr);
 
 			#endregion
 
@@ -258,12 +259,12 @@ namespace STDF
 
 			Hbr hbr = new Hbr();
 			hbr.HeadNumber  = 1;
-			hbr.SiteNumber  = (byte?)_FileParam.SiteCount;
+			hbr.SiteNumber  = (byte?)_fileParam.SiteCount;
 			hbr.BinNumber   = 2;
 			hbr.BinCount    = 2;
 			hbr.BinPassFail = "P";
 			hbr.BinName     = 2.ToString();
-			writer.WriteRecord(hbr);
+			_stdfWriter.WriteRecord(hbr);
 
 			#endregion
 
@@ -271,12 +272,12 @@ namespace STDF
 
 			Sbr sbr = new Sbr();
 			sbr.HeadNumber  = 1;
-			sbr.SiteNumber  = (byte?)_FileParam.SiteCount;
+			sbr.SiteNumber  = (byte?)_fileParam.SiteCount;
 			sbr.BinNumber   = 2;
 			sbr.BinCount    = 2;
 			sbr.BinPassFail = "P";
 			sbr.BinName     = 2.ToString();
-			writer.WriteRecord(sbr);
+			_stdfWriter.WriteRecord(sbr);
 
 			#endregion
 
@@ -284,23 +285,23 @@ namespace STDF
 
 			Pcr pcr = new Pcr();
 			pcr.HeadNumber = 1;
-			pcr.SiteNumber = (byte?)_FileParam.SiteCount;
-			writer.WriteRecord(pcr);
+			pcr.SiteNumber = (byte?)_fileParam.SiteCount;
+			_stdfWriter.WriteRecord(pcr);
 
 			#endregion
 
 			#region MRR
 
 			Mrr mrr = new Mrr();
-			mrr.FinishTime      = DateTime.Parse(_FileParam.LotEND);
+			mrr.FinishTime      = DateTime.Parse(_fileParam.LotEND);
 			mrr.DispositionCode = " ";
 			mrr.UserDescription = " ";
 			mrr.ExecDescription = " ";
-			writer.WriteRecord(mrr);
+			_stdfWriter.WriteRecord(mrr);
 
 			#endregion
 
-			writer.Dispose();
+			_stdfWriter.Dispose();
 		}
 	}
 }

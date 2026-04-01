@@ -52,129 +52,141 @@ namespace STDF
 
 		public void AnalyzeFile()
 		{
-			StringBuilder sb    = new StringBuilder();
-			string[]      files = File.ReadAllLines(FileName);
+			StringBuilder summaryBuilder = new StringBuilder();
+			string[]      logLines       = File.ReadAllLines(FileName);
 
-			foreach(string title in files)
+			foreach(string headerLine in logLines)
 			{
-				string[] str = title.Split(':');
+				string[] headerParts = headerLine.Split(':');
 
-				switch(str[0].Trim())
+				if(headerParts.Length < 2)
+				{
+					continue;
+				}
+
+				switch(headerParts[0].Trim())
 				{
 					case "File Path":
-						FilePath = str[1].Trim().Replace("----------", "");
+						FilePath = headerParts[1].Trim().Replace("----------", "");
 						break;
 					case "LoadBoard Name":
-						LoadBoardName = str[1].Trim().Replace("----------", "");
+						LoadBoardName = headerParts[1].Trim().Replace("----------", "");
 						break;
 					case "Lot Number":
-						LotNumber = str[1].Trim().Replace("----------", "");
+						LotNumber = headerParts[1].Trim().Replace("----------", "");
 						break;
 					case "Device ID":
-						DeviceID = str[1].Trim().Replace("----------", "");
+						DeviceID = headerParts[1].Trim().Replace("----------", "");
 						break;
 					case "Operator":
-						Operator = str[1].Trim().Replace("----------", "");
+						Operator = headerParts[1].Trim().Replace("----------", "");
 						break;
 					case "Customer":
-						Customer = str[1].Trim().Replace("----------", "");
+						Customer = headerParts[1].Trim().Replace("----------", "");
 						break;
 					case "Test Program Name":
-						TestProgramName = str[1].Trim().Replace("----------", "");
+						TestProgramName = headerParts[1].Trim().Replace("----------", "");
 						break;
 					case "Sample Rate":
-						SampleRate = str[1].Trim().Replace("----------", "");
+						SampleRate = headerParts[1].Trim().Replace("----------", "");
 						break;
 					case "Test Cycle":
-						TestCycle = str[1].Trim().Replace("----------", "");
+						TestCycle = headerParts[1].Trim().Replace("----------", "");
 						break;
 					case "ATE ID":
-						ATEID = str[1].Trim().Replace("-", "");
+						ATEID = headerParts[1].Trim().Replace("-", "");
 						break;
 					case "Handler ID":
-						HandlerID = str[1].Trim().Replace("----------", "");
+						HandlerID = headerParts[1].Trim().Replace("----------", "");
 						break;
 					case "Lot START":
-						LotSTART = title.Remove(0, title.IndexOf(":") + 1).Trim();
+						LotSTART = headerLine.Remove(0, headerLine.IndexOf(":") + 1).Trim();
 						break;
 					case "Lot END":
-						LotEND = title.Remove(0, title.IndexOf(":") + 1).Trim();
+						LotEND = headerLine.Remove(0, headerLine.IndexOf(":") + 1).Trim();
 						break;
 				}
 
-				if(str[0].Contains("Total (By Sites)"))
+				if(headerParts[0].Contains("Total (By Sites)"))
 				{
-					IEnumerable<string> v1 = str[0].Trim().Split(' ').Where(c => c != "");
-					IEnumerable<string> v2 = v1.Skip(3);
-					SiteCount = Convert.ToInt32(v2.ElementAt(0).Substring(0, v2.ElementAt(0).IndexOf("(")));
+					IEnumerable<string> siteTokens  = headerParts[0].Trim().Split(' ').Where(c => c != "");
+					IEnumerable<string> countTokens = siteTokens.Skip(3);
+					SiteCount = Convert.ToInt32(countTokens.ElementAt(0).Substring(0, countTokens.ElementAt(0).IndexOf("(")));
 				}
-				else if(str[0].Contains("Pass  (By Sites)"))
+				else if(headerParts[0].Contains("Pass  (By Sites)"))
 				{
-					IEnumerable<string> v1 = str[0].Trim().Split(' ').Where(c => c != "");
-					IEnumerable<string> v2 = v1.Skip(4);
+					IEnumerable<string> siteTokens   = headerParts[0].Trim().Split(' ').Where(c => c != "");
+					IEnumerable<string> resultTokens = siteTokens.Skip(4);
 
-					foreach(string VARIABLE in v2)
+					foreach(string siteValue in resultTokens)
 					{
-						ResultPass.Add(VARIABLE.Substring(0, v2.ElementAt(0).IndexOf("(")));
+						ResultPass.Add(siteValue.Substring(0, resultTokens.ElementAt(0).IndexOf("(")));
 					}
 				}
-				else if(str[0].Contains("Fail  (By Sites)"))
+				else if(headerParts[0].Contains("Fail  (By Sites)"))
 				{
-					IEnumerable<string> v1 = str[0].Trim().Split(' ').Where(c => c != "");
-					IEnumerable<string> v2 = v1.Skip(4);
+					IEnumerable<string> siteTokens   = headerParts[0].Trim().Split(' ').Where(c => c != "");
+					IEnumerable<string> resultTokens = siteTokens.Skip(4);
 
-					foreach(string VARIABLE in v2)
+					foreach(string siteValue in resultTokens)
 					{
-						ResultFail.Add(VARIABLE.Substring(0, v2.ElementAt(0).IndexOf("(")));
+						ResultFail.Add(siteValue.Substring(0, resultTokens.ElementAt(0).IndexOf("(")));
 					}
 				}
+
+				// 每筆資料重新清理，避免前一輪結果殘留。
 				HardWareBin.Clear();
 
-				//[HARDWARE BIN]
-				if(str[0].Contains("[HARDWARE BIN]"))
+				if(headerParts[0].Contains("[HARDWARE BIN]"))
 				{
-					bool IsHardWareBinTitle = files.Contains("[HARDWARE BIN]");
-					int  IdxString1         = files.ToList().IndexOf("[HARDWARE BIN]");
+					int hardwareBinStartIndex = logLines.ToList().IndexOf("[HARDWARE BIN]");
 
-					var AssignItemAndIdx = files.Select((item, index) => new
-																		 {
-																			 Item  = item,
-																			 Index = index
-																		 })
-												.FirstOrDefault(x => x.Item.StartsWith("**************"));
-					List<string> GetRangeString = files.ToList().GetRange(IdxString1 + 2, AssignItemAndIdx.Index);
+					var hardwareBinMarker = logLines.Select((item, index) => new
+																			 {
+																				 Item  = item,
+																				 Index = index
+																			 })
+													.FirstOrDefault(x => x.Item.StartsWith("**************"));
 
-					foreach(string s in GetRangeString)
+					if(hardwareBinMarker != null && hardwareBinStartIndex >= 0)
 					{
-						IEnumerable<string> spilts = s.Split(' ').Where(c => c != "");
+						List<string> hardwareBinLines = logLines.ToList().GetRange(hardwareBinStartIndex + 2, hardwareBinMarker.Index);
 
-						if(!string.IsNullOrEmpty(spilts.ElementAt(0)))
+						foreach(string binLine in hardwareBinLines)
 						{
-							HardWareBin[spilts.ElementAt(0)] = s.Trim().Split(' ').Where(c => c != "").Skip(3).ToList();
+							IEnumerable<string> splitValues = binLine.Split(' ').Where(c => c != "");
+
+							if(!string.IsNullOrEmpty(splitValues.ElementAt(0)))
+							{
+								HardWareBin[splitValues.ElementAt(0)] = binLine.Trim().Split(' ').Where(c => c != "").Skip(3).ToList();
+							}
 						}
 					}
 				}
 
-				if(str[0].Contains("[SOFTWARE BIN]"))
+				if(headerParts[0].Contains("[SOFTWARE BIN]"))
 				{
-					bool IsSoftWareBinTitle = files.Contains("[SOFTWARE BIN]");
-					int  IdxString1         = files.ToList().IndexOf("[SOFTWARE BIN]");
+					int softwareBinStartIndex = logLines.ToList().IndexOf("[SOFTWARE BIN]");
 
-					var AssignItemAndIdx = files.Select((item, index) => new
-																		 {
-																			 Item  = item,
-																			 Index = index
-																		 })
-												.FirstOrDefault(x => x.Item.StartsWith("**************"));
-					List<string> GetRangeString = files.ToList().GetRange(IdxString1 + 2, AssignItemAndIdx.Index);
+					var softwareBinMarker = logLines.Select((item, index) => new
+																			 {
+																				 Item  = item,
+																				 Index = index
+																			 })
+													.FirstOrDefault(x => x.Item.StartsWith("**************"));
 
-					foreach(string s in GetRangeString)
+					if(softwareBinMarker != null && softwareBinStartIndex >= 0)
 					{
-						IEnumerable<string> spilts = s.Split(' ').Where(c => c != "");
+						List<string> softwareBinLines = logLines.ToList().GetRange(softwareBinStartIndex + 2, softwareBinMarker.Index);
 
-						if(!string.IsNullOrEmpty(spilts.ElementAt(0)))
+						foreach(string binLine in softwareBinLines)
 						{
-							SoftWareBin[spilts.ElementAt(0)] = s.Trim().Split(' ').Where(c => c != "").Skip(3).ToList();
+							IEnumerable<string> splitValues = binLine.Split(' ').Where(c => c != "");
+
+							if(!string.IsNullOrEmpty(splitValues.ElementAt(0)))
+							{
+								SoftWareBin[splitValues.ElementAt(0)] = binLine.Trim().Split(' ').Where(c => c != "").Skip(3).ToList();
+							}
 						}
 					}
 				}

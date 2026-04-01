@@ -12,10 +12,12 @@ namespace WindowsFormsApp1
 			InitializeComponent();
 		}
 
-		private void button1_Click(object sender, EventArgs e)
+		private void GenerateStdfButton_Click(object sender, EventArgs e)
 		{
-			CStdf stdf = new CStdf(@"D:\P2020 Log\2023-08-26-10-53-30", Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "testSTDF.stdf"));
-			stdf.DoWork();
+			// 以目前指定的 P2020 測試資料夾產生 STDF 檔案。
+			string outputPath    = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "testSTDF.stdf");
+			CStdf  stdfConverter = new CStdf(@"D:\P2020 Log\2023-08-26-10-53-30", outputPath);
+			stdfConverter.DoWork();
 		}
 	}
 }

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -14,24 +15,21 @@ namespace STDF
 {
 	public class CP2020 : IAnalyze
 	{
-		private readonly List<string>    FileName = new List<string>();
-		private          int             CalOffset;
-		private          DataTable?      dt;
-		public           List<CChipData> lstChipData = new List<CChipData>();
+		private readonly Regex _dataLineRegex = new Regex(@"^\s*(?<passOrFail>\S+)\s+(?<site>\S+)\s+(?<pinName>\S+)\s+(?<forceValue>\S+)\s+(?<lowLimit>\S*)\s+(?<highLimit>\S*)\s+(?<measureValue>\S+)\s+(?<minMeasureValue>\S+)\s+(?<maxMeasureValue>\S+)\s*$",
+														  RegexOptions.Compiled | RegexOptions.CultureInvariant);
+		private readonly List<string> _fileNames = new List<string>();
 
 		public CP2020(string filename)
 		{
-			FileName.Clear();
-			FileName.Add(filename);
+			_fileNames.Add(filename);
 		}
 
 		public CP2020(string[] filename)
 		{
-			FileName.Clear();
-			FileName.AddRange(filename);
+			_fileNames.AddRange(filename);
 		}
 
-		private List<CChipData> lstChip { get; } = new List<CChipData>();
+		public List<CChipData> ChipDataList { get; } = new List<CChipData>();
 
 		public int DictCount { get; set; }
 
@@ -57,53 +55,51 @@ namespace STDF
 		{
 			try
 			{
-				lstChip.Clear();
-				lstChipData = new List<CChipData>();
+				ChipDataList.Clear();
 
-				foreach(string file in FileName)
+				foreach(string logFilePath in _fileNames)
 				{
-					//ReadFileAsync
-					string[] files = File.ReadAllLines(file); //以指定的編碼方式讀取檔案
+					// 讀取原始資料列，後續依 STDF 需要的欄位結構解析。
+					string[] logLines = File.ReadAllLines(logFilePath);
+					logLines = logLines.Where(line => !string.IsNullOrWhiteSpace(line)).ToArray();
 
-					//string[] files = await ReadAllLinesAsync(file);
-					files = files.Where(file => !string.IsNullOrEmpty(file)).ToArray();
+					// 只保留 Test Start / Test End 之間的資料。
+					string[] dataLines = logLines
+										 .SkipWhile(line => !line.Trim().StartsWith("==> Test Start"))
+										 .Skip(1)
+										 .TakeWhile(line => !line.Trim().StartsWith("==> Test End"))
+										 .Where(line => !line.Contains("P/F   Site              Pin_name        Force      L-Limit      H-Limit      Measure   Min Measure   Max Measure"))
+										 .ToArray();
 
-					string[] boundedLines = files.SkipWhile(line => !line.Trim().StartsWith("==> Test Start")).Skip(1).TakeWhile(line => !line.Trim().StartsWith("==> Test End"))
-												 .Where(line => /*!line.Contains("JUDGE_V:") &&*/ !line.Contains("P/F   Site              Pin_name        Force      L-Limit      H-Limit      Measure   Min Measure   Max Measure")).ToArray();
-					int    idx   = 0;
-					string Title = string.Empty;
+					int    currentJudgeIndex = 0;
+					string testItemTitle     = string.Empty;
 
-					foreach(string word in boundedLines)
+					foreach(string dataLine in dataLines)
 					{
-						if(word.Contains("<<<<<<---------------     Test Item :"))
+						if(dataLine.Contains("<<<<<<---------------     Test Item :"))
 						{
-							Title = word.Replace("<<<<<<---------------     Test Item : OSitem_", "").Replace("--------------->>>>>>", "").Trim();
+							testItemTitle = dataLine.Replace("<<<<<<---------------     Test Item : OSitem_", string.Empty).Replace("--------------->>>>>>", string.Empty).Trim();
 							continue;
 						}
 
-						if(word.Contains("JUDGE_V:"))
+						if(dataLine.Contains("JUDGE_V:"))
 						{
-							idx++;
+							currentJudgeIndex++;
 							continue;
 						}
 
-						string[] spilts =
-						{
-							"  "
-						};
-						IEnumerable<string> Enumerables = word.Split(spilts, StringSplitOptions.None).Where(c => c != "");
-						CChipData           convert     = EnumerableConvert(file, Title, Enumerables.ToArray());
+						CChipData chipData = EnumerableConvert(logFilePath, testItemTitle, dataLine);
 
-						if(convert.PassOrFail.ToUpper() == "PASS")
+						if(string.Equals(chipData.PassOrFail, "PASS", StringComparison.OrdinalIgnoreCase))
 						{
-							convert.Id = idx;
+							chipData.Id = currentJudgeIndex;
 						}
-						lstChipData.Add(convert);
+
+						ChipDataList.Add(chipData);
 					}
-
-					//listChip[file] = lstChipData;
 				}
-				DictCount = lstChip.Count;
+
+				DictCount = ChipDataList.Count;
 			}
 			catch(Exception e)
 			{
@@ -118,7 +114,7 @@ namespace STDF
 
 		public void CalMeasure()
 		{
-			//85/
+			// 目前 P2020 資料來源不需要額外計算量測值。
 		}
 
 		public void OutputFile()
@@ -138,42 +134,44 @@ namespace STDF
 			}
 		}
 
-		private CChipData EnumerableConvert(string name, string Title, string[] StrArray)
+		private CChipData EnumerableConvert(string filePath, string testItemTitle, string dataLine)
 		{
 			try
 			{
-				CChipData ChipData = new CChipData();
-				ChipData.FileName = Path.GetFileNameWithoutExtension(name);
-				ChipData.Comment  = Title.Trim();
+				Match match = _dataLineRegex.Match(dataLine);
 
-				// 确保数组至少有9个元素
-				if(StrArray.Length < 9)
+				if(!match.Success)
 				{
-					throw new InvalidOperationException($"数据格式错误: 列数不足 (实际: {StrArray.Length}, 需要: 9)");
+					throw new InvalidOperationException($"資料列格式不符合預期: {dataLine}");
 				}
 
-				ChipData.PassOrFail    = StrArray[0].Trim();
-				ChipData.Site          = StrArray[1].Trim();
-				ChipData.PinName       = StrArray[2].Trim();
-				ChipData.strForceValue = StrArray[3].Trim();
+				CChipData chipData = new CChipData();
+				chipData.FileName = Path.GetFileNameWithoutExtension(filePath);
+				chipData.Comment  = testItemTitle.Trim();
 
-				// 直接读取 L-Limit 和 H-Limit，处理空白值
-				string lowLimitRaw  = StrArray[4].Trim();
-				string highLimitRaw = StrArray[5].Trim();
+				// 依欄位直接取值，保留 L-Limit / H-Limit 的空白狀態。
+				chipData.PassOrFail    = match.Groups["passOrFail"].Value.Trim();
+				chipData.Site          = match.Groups["site"].Value.Trim();
+				chipData.PinName       = match.Groups["pinName"].Value.Trim();
+				chipData.strForceValue = match.Groups["forceValue"].Value.Trim();
 
-				ChipData.LowLimit  = string.IsNullOrWhiteSpace(lowLimitRaw) ? null : lowLimitRaw;
-				ChipData.HighLimit = string.IsNullOrWhiteSpace(highLimitRaw) ? null : highLimitRaw;
+				string lowLimitText  = match.Groups["lowLimit"].Value.Trim();
+				string highLimitText = match.Groups["highLimit"].Value.Trim();
 
-				ChipData.strMeasureValue    = StrArray[6].Trim();
-				ChipData.strMinMeasureValue = StrArray[7].Trim();
-				ChipData.strMaxMeasureValue = StrArray[8].Trim();
+				chipData.LowLimit  = string.IsNullOrWhiteSpace(lowLimitText) ? null : lowLimitText;
+				chipData.HighLimit = string.IsNullOrWhiteSpace(highLimitText) ? null : highLimitText;
 
-				return ChipData;
+				chipData.strMeasureValue    = match.Groups["measureValue"].Value.Trim();
+				chipData.strMinMeasureValue = match.Groups["minMeasureValue"].Value.Trim();
+				chipData.strMaxMeasureValue = match.Groups["maxMeasureValue"].Value.Trim();
+
+				return chipData;
 			}
 			catch(Exception e)
 			{
-				MessageBox.Show($"EnumerableConvert 错误:\n文件: {name}\n标题: {Title}\n数据: {string.Join(" | ", StrArray)}\n\n{e.Message}\n{e.StackTrace}");
+				MessageBox.Show($"EnumerableConvert 錯誤:\n檔案: {filePath}\n標題: {testItemTitle}\n資料列: {dataLine}\n\n{e.Message}\n{e.StackTrace}");
 			}
+
 			return null;
 		}
 
