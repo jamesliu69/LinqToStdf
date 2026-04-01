@@ -17,7 +17,7 @@ namespace Stdf
 	public enum ConverterType
 	{
 		Converter,
-		Unconverter,
+		Unconverter
 	}
 
 	/// <summary>
@@ -257,7 +257,7 @@ namespace Stdf
 			return dynamicMethod.GetILGenerator();
 		}
 
-#if !SILVERLIGHT
+		#if !SILVERLIGHT
 		private AssemblyBuilder _DynamicAssembly;
 		private ModuleBuilder   _DynamicModule;
 
@@ -279,9 +279,9 @@ namespace Stdf
 			}
 			_DynamicAssembly.Save("DynamicConverters.dll");
 		}
-#endif
+		#endif
 
-#region CreateConverterForType
+		#region CreateConverterForType
 
 		/// <summary>
 		///     Generates a converter delegate from the attribute metadata on <paramref name="type" />.
@@ -325,11 +325,11 @@ namespace Stdf
 
 			if(Debug)
 			{
-#if SILVERLIGHT
+				#if SILVERLIGHT
                 throw new NotSupportedException(Resources.NoDebugInSilverlight);
-#else
+				#else
 				ilGenerator = CreateNewRefEmitMethod(string.Format("{0}Converter", type.Name), string.Format("ConvertTo{0}", type.Name), ref finalizeConverter);
-#endif
+				#endif
 			}
 			else
 			{
@@ -345,9 +345,9 @@ namespace Stdf
 			return converter;
 		}
 
-#endregion
+		#endregion
 
-#region CreateUnconverterForType
+		#region CreateUnconverterForType
 
 		private Func<StdfRecord, Endian, UnknownRecord> CreateUnconverterForType(Type type)
 		{
@@ -374,11 +374,11 @@ namespace Stdf
 
 			if(Debug)
 			{
-#if SILVERLIGHT
+				#if SILVERLIGHT
                 throw new NotSupportedException(Resources.NoDebugInSilverlight);
-#else
+				#else
 				ilGenerator = CreateNewRefEmitMethod(string.Format("{0}Unconverter", type.Name), string.Format("UnconvertFrom{0}", type.Name), ref finalizeUnconverter);
-#endif
+				#endif
 			}
 			else
 			{
@@ -391,6 +391,6 @@ namespace Stdf
 			return unconverter;
 		}
 
-#endregion
+		#endregion
 	}
 }

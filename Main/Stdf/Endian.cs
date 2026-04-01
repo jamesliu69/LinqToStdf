@@ -20,6 +20,6 @@ namespace Stdf
 		/// <summary>
 		///     Little Endian
 		/// </summary>
-		Little,
+		Little
 	}
 }

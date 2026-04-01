@@ -1,7 +1,6 @@
 ﻿using Stdf;
 using Stdf.Records.V4;
 using System;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -11,22 +10,22 @@ namespace STDF
 	public class CStdf
 	{
 		private readonly string         _LogPath;
-		private readonly string         _SummaryLog;
 		private readonly string         _Output;
+		private readonly string         _SummaryLog;
+		private readonly StdfFileWriter writer;
 		private          CFileParam     _FileParam;
 		private          CP2020         _P2020;
-		private          StdfFileWriter writer;
 
 		/// <summary>
-		/// 建構式
+		///     建構式
 		/// </summary>
 		/// <param name="LogPath"> Log 存在路徑位置</param>
 		/// <param name="SummaryLog">Summary 存在路徑位置</param>
 		/// <param name="Output">輸出路徑</param>
-		public CStdf(string LogPath,  string Output)
+		public CStdf(string LogPath, string Output)
 		{
 			Debug.Assert(LogPath != null, nameof(LogPath) + " != null");
-			_LogPath = LogPath;
+			_LogPath    = LogPath;
 			_SummaryLog = LogPath;
 			Debug.Assert(Output != null, nameof(Output) + " != null");
 			_Output = Output;
@@ -50,7 +49,7 @@ namespace STDF
 		}
 
 		/// <summary>
-		/// 執行STDF 轉檔
+		///     執行STDF 轉檔
 		/// </summary>
 		public void DoWork()
 		{
@@ -64,7 +63,7 @@ namespace STDF
 			atr.CommandLine  = "";
 			writer.WriteRecord(atr);
 
-#region MIR
+			#region MIR
 
 			Mir mir = new Mir();
 			mir.SetupTime            = DateTime.Parse(_FileParam.LotSTART);
@@ -107,14 +106,18 @@ namespace STDF
 			mir.SupervisorName       = "";
 			writer.WriteRecord(mir);
 
-#endregion
+			#endregion
 
-#region SDR
+			#region SDR
 
 			Sdr sdr = new Sdr();
-			sdr.HeadNumber    = 1;
-			sdr.SiteGroup     = 1;
-			sdr.SiteNumbers   = new byte[] { 1 };
+			sdr.HeadNumber = 1;
+			sdr.SiteGroup  = 1;
+
+			sdr.SiteNumbers = new byte[]
+							  {
+								  1
+							  };
 			sdr.HandlerType   = "";
 			sdr.HandlerId     = "";
 			sdr.CardType      = "";
@@ -133,9 +136,9 @@ namespace STDF
 			sdr.ExtraId       = "";
 			writer.WriteRecord(sdr);
 
-#endregion
+			#endregion
 
-#region Prm
+			#region Prm
 
 			Pmr pmr = new Pmr();
 			pmr.PinIndex     = 1;
@@ -147,19 +150,23 @@ namespace STDF
 			pmr.SiteNumber   = 0;
 			writer.WriteRecord(pmr);
 
-#endregion
+			#endregion
 
-#region PGR
+			#region PGR
 
 			Pgr pgr = new Pgr();
 			pgr.GroupIndex = 1;
 			pgr.GroupName  = "G1_OPPN";
-			pgr.PinIndexes = new ushort[] { 1 };
+
+			pgr.PinIndexes = new ushort[]
+							 {
+								 1
+							 };
 			writer.WriteRecord(pgr);
 
-#endregion
+			#endregion
 
-#region PTR
+			#region PTR
 
 			for(int i = 0; i < _P2020.lstChipData.Count; i++)
 			{
@@ -223,9 +230,9 @@ namespace STDF
 				writer.WriteRecord(prr);
 			}
 
-#endregion
+			#endregion
 
-#region NO TSR
+			#region NO TSR
 
 			Tsr tsr = new Tsr();
 			tsr.HeadNumber       = 1;
@@ -245,9 +252,9 @@ namespace STDF
 			tsr.TestSumOfSquares = null;
 			writer.WriteRecord(tsr);
 
-#endregion
+			#endregion
 
-#region NO HBR
+			#region NO HBR
 
 			Hbr hbr = new Hbr();
 			hbr.HeadNumber  = 1;
@@ -258,9 +265,9 @@ namespace STDF
 			hbr.BinName     = 2.ToString();
 			writer.WriteRecord(hbr);
 
-#endregion
+			#endregion
 
-#region NO SBR
+			#region NO SBR
 
 			Sbr sbr = new Sbr();
 			sbr.HeadNumber  = 1;
@@ -271,18 +278,18 @@ namespace STDF
 			sbr.BinName     = 2.ToString();
 			writer.WriteRecord(sbr);
 
-#endregion
+			#endregion
 
-#region PCR
+			#region PCR
 
 			Pcr pcr = new Pcr();
 			pcr.HeadNumber = 1;
 			pcr.SiteNumber = (byte?)_FileParam.SiteCount;
 			writer.WriteRecord(pcr);
 
-#endregion
+			#endregion
 
-#region MRR
+			#region MRR
 
 			Mrr mrr = new Mrr();
 			mrr.FinishTime      = DateTime.Parse(_FileParam.LotEND);
@@ -291,7 +298,7 @@ namespace STDF
 			mrr.ExecDescription = " ";
 			writer.WriteRecord(mrr);
 
-#endregion
+			#endregion
 
 			writer.Dispose();
 		}

@@ -136,10 +136,11 @@ namespace STDF
 					bool IsHardWareBinTitle = files.Contains("[HARDWARE BIN]");
 					int  IdxString1         = files.ToList().IndexOf("[HARDWARE BIN]");
 
-					var AssignItemAndIdx = files.Select((item, index) => new {
-													Item  = item,
-													Index = index,
-												})
+					var AssignItemAndIdx = files.Select((item, index) => new
+																		 {
+																			 Item  = item,
+																			 Index = index
+																		 })
 												.FirstOrDefault(x => x.Item.StartsWith("**************"));
 					List<string> GetRangeString = files.ToList().GetRange(IdxString1 + 2, AssignItemAndIdx.Index);
 
@@ -159,10 +160,11 @@ namespace STDF
 					bool IsSoftWareBinTitle = files.Contains("[SOFTWARE BIN]");
 					int  IdxString1         = files.ToList().IndexOf("[SOFTWARE BIN]");
 
-					var AssignItemAndIdx = files.Select((item, index) => new {
-													Item  = item,
-													Index = index,
-												})
+					var AssignItemAndIdx = files.Select((item, index) => new
+																		 {
+																			 Item  = item,
+																			 Index = index
+																		 })
 												.FirstOrDefault(x => x.Item.StartsWith("**************"));
 					List<string> GetRangeString = files.ToList().GetRange(IdxString1 + 2, AssignItemAndIdx.Index);
 

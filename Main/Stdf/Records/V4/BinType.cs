@@ -7,6 +7,6 @@ namespace Stdf.Records.V4
 	public enum BinType
 	{
 		Hard,
-		Soft,
+		Soft
 	}
 }

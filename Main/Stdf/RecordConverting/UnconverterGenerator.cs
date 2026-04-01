@@ -38,10 +38,11 @@ namespace Stdf.RecordConverting
 																			   //we're just binding to the generic GenerateAssignment method for the field's type
 																			   select GenerateAssignment(pair)));
 
-			new UnconverterEmittingVisitor {
+			new UnconverterEmittingVisitor
+			{
 				ConcreteType = _Type,
 				ILGen        = _ILGen,
-				EnableLog    = ConverterLog.IsLogging,
+				EnableLog    = ConverterLog.IsLogging
 			}.Visit(node);
 		}
 

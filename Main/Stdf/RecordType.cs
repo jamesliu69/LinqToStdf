@@ -58,7 +58,7 @@ namespace Stdf
 		/// </summary>
 		public override string ToString() => string.Format("StdfRecord:{0}:{1}", Type, Subtype);
 
-#region IEquatable<RecordType> Members
+		#region IEquatable<RecordType> Members
 
 		/// <summary>
 		///     Implements equality
@@ -67,9 +67,9 @@ namespace Stdf
 		/// <returns>true if the instance is equal to <paramref name="other" />, otherwise false</returns>
 		public bool Equals(RecordType other) => (Type == other.Type) && (Subtype == other.Subtype);
 
-#endregion
+		#endregion
 
-#region IComparable<RecordType> Members
+		#region IComparable<RecordType> Members
 
 		/// <summary>
 		///     Implements comparability
@@ -88,9 +88,9 @@ namespace Stdf
 			return value;
 		}
 
-#endregion
+		#endregion
 
-#region IComparable Members
+		#region IComparable Members
 
 		/// <summary>
 		///     Implements comparability
@@ -100,9 +100,9 @@ namespace Stdf
 		/// <seealso cref="IComparable.CompareTo" />
 		public int CompareTo(object obj) => CompareTo((RecordType)obj);
 
-#endregion
+		#endregion
 
-#region Operators
+		#region Operators
 
 		/// <summary>
 		///     Equality operator
@@ -134,6 +134,6 @@ namespace Stdf
 		/// </summary>
 		public static bool operator <=(RecordType first, RecordType second) => first.CompareTo(second) <= 0;
 
-#endregion
+		#endregion
 	}
 }

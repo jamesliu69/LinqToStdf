@@ -62,16 +62,18 @@ namespace Stdf
 
 				if(factory == null)
 				{
-					stdf = new StdfFile(new StdfFileStreamManager(path), false, rnf) {
-						IndexingStrategy = new NonCachingStrategy(),
-					};
+					stdf = new StdfFile(new StdfFileStreamManager(path), false, rnf)
+						   {
+							   IndexingStrategy = new NonCachingStrategy()
+						   };
 					factory = stdf.ConverterFactory;
 				}
 				else
 				{
-					stdf = new StdfFile(new StdfFileStreamManager(path), factory) {
-						IndexingStrategy = new NonCachingStrategy(),
-					};
+					stdf = new StdfFile(new StdfFileStreamManager(path), factory)
+						   {
+							   IndexingStrategy = new NonCachingStrategy()
+						   };
 				}
 				stdfFileInit?.Invoke(stdf);
 				return compiled(stdf);
@@ -92,16 +94,18 @@ namespace Stdf
 
 				if(factory == null)
 				{
-					stdf = new StdfFile(new StdfFileStreamManager(path), false, rnf) {
-						IndexingStrategy = new NonCachingStrategy(),
-					};
+					stdf = new StdfFile(new StdfFileStreamManager(path), false, rnf)
+						   {
+							   IndexingStrategy = new NonCachingStrategy()
+						   };
 					factory = stdf.ConverterFactory;
 				}
 				else
 				{
-					stdf = new StdfFile(new StdfFileStreamManager(path), factory) {
-						IndexingStrategy = new NonCachingStrategy(),
-					};
+					stdf = new StdfFile(new StdfFileStreamManager(path), factory)
+						   {
+							   IndexingStrategy = new NonCachingStrategy()
+						   };
 				}
 				stdfFileInit?.Invoke(stdf);
 				return compiled(stdf, t1);
@@ -122,16 +126,18 @@ namespace Stdf
 
 				if(factory == null)
 				{
-					stdf = new StdfFile(new StdfFileStreamManager(path), false, rnf) {
-						IndexingStrategy = new NonCachingStrategy(),
-					};
+					stdf = new StdfFile(new StdfFileStreamManager(path), false, rnf)
+						   {
+							   IndexingStrategy = new NonCachingStrategy()
+						   };
 					factory = stdf.ConverterFactory;
 				}
 				else
 				{
-					stdf = new StdfFile(new StdfFileStreamManager(path), factory) {
-						IndexingStrategy = new NonCachingStrategy(),
-					};
+					stdf = new StdfFile(new StdfFileStreamManager(path), factory)
+						   {
+							   IndexingStrategy = new NonCachingStrategy()
+						   };
 				}
 				stdfFileInit?.Invoke(stdf);
 				return compiled(stdf, t1, t2);
@@ -152,16 +158,18 @@ namespace Stdf
 
 				if(factory == null)
 				{
-					stdf = new StdfFile(new StdfFileStreamManager(path), false, rnf) {
-						IndexingStrategy = new NonCachingStrategy(),
-					};
+					stdf = new StdfFile(new StdfFileStreamManager(path), false, rnf)
+						   {
+							   IndexingStrategy = new NonCachingStrategy()
+						   };
 					factory = stdf.ConverterFactory;
 				}
 				else
 				{
-					stdf = new StdfFile(new StdfFileStreamManager(path), factory) {
-						IndexingStrategy = new NonCachingStrategy(),
-					};
+					stdf = new StdfFile(new StdfFileStreamManager(path), factory)
+						   {
+							   IndexingStrategy = new NonCachingStrategy()
+						   };
 				}
 				stdfFileInit?.Invoke(stdf);
 				return compiled(stdf, t1, t2, t3);

@@ -55,17 +55,17 @@ namespace Stdf
 	{
 		public OwnedStdfStreamScope(Stream stream) => Stream = stream ?? throw new ArgumentNullException("stream");
 
-#region IStdfStreamScope Members
+		#region IStdfStreamScope Members
 
 		public Stream Stream { get; }
 
-#endregion
+		#endregion
 
-#region IDisposable Members
+		#region IDisposable Members
 
 		public void Dispose() => Stream.Dispose();
 
-#endregion
+		#endregion
 	}
 
 	/// <summary>
@@ -78,13 +78,13 @@ namespace Stdf
 
 		public StdfFileStreamManager(string path) => _Path = path ?? throw new ArgumentNullException("path");
 
-#region IStdfStreamManager Members
+		#region IStdfStreamManager Members
 
 		public string Name { get => Path.GetFileName(_Path); }
 
 		public IStdfStreamScope GetScope() => new OwnedStdfStreamScope(new FileStream(_Path, FileMode.Open, FileAccess.Read, FileShare.Read));
 
-#endregion
+		#endregion
 	}
 
 	/// <summary>
@@ -111,11 +111,11 @@ namespace Stdf
 		{
 			if(path.EndsWith(".gz", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".gzip", StringComparison.OrdinalIgnoreCase))
 			{
-#if SILVERLIGHT
+				#if SILVERLIGHT
 				throw new NotSupportedException("GZip compression not supported in Silverlight");
-#else
+				#else
 				return new GZipStdfFileStreamManager(path);
-#endif
+				#endif
 			}
 
 			if(path.EndsWith(".stdf", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".std", StringComparison.OrdinalIgnoreCase))
@@ -125,16 +125,16 @@ namespace Stdf
 			throw new ArgumentException("Could not recognize the file stream type from the path provided.", "path");
 		}
 
-#region IStdfStreamManager Members
+		#region IStdfStreamManager Members
 
 		public string Name { get => _InnerManager.Name; }
 
 		public IStdfStreamScope GetScope() => _InnerManager.GetScope();
 
-#endregion
+		#endregion
 	}
 
-#if !SILVERLIGHT
+	#if !SILVERLIGHT
 	/// <summary>
 	///     <see cref="IStdfStreamManager" /> implementation for a GZip compressed STDF <see cref="FileStream" />
 	///     based on a path.
@@ -145,7 +145,7 @@ namespace Stdf
 
 		public GZipStdfFileStreamManager(string path) => _Path = path ?? throw new ArgumentNullException("path");
 
-#region IStdfStreamManager Members
+		#region IStdfStreamManager Members
 
 		public string Name { get => Path.GetFileName(_Path); }
 
@@ -155,7 +155,7 @@ namespace Stdf
 			return new OwnedStdfStreamScope(new GZipStream(stream, CompressionMode.Decompress));
 		}
 
-#endregion
+		#endregion
 	}
-#endif
+	#endif
 }

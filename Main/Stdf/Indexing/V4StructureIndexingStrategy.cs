@@ -129,18 +129,20 @@ namespace Stdf.Indexing
 				//if it's a new Pir/Wir, start new extents
 				if((r.GetType() == typeof(Pir)) && (currentPartExtents == null))
 				{
-					currentPartExtents = new Extents {
-						StartIndex  = index,
-						StartOffset = r.Offset,
-					};
+					currentPartExtents = new Extents
+										 {
+											 StartIndex  = index,
+											 StartOffset = r.Offset
+										 };
 				}
 
 				if((r.GetType() == typeof(Wir)) && (currentWaferExtents == null))
 				{
-					currentWaferExtents = new Extents {
-						StartIndex  = index,
-						StartOffset = r.Offset,
-					};
+					currentWaferExtents = new Extents
+										  {
+											  StartIndex  = index,
+											  StartOffset = r.Offset
+										  };
 				}
 				_AllRecords.Add(r);
 			}
@@ -233,36 +235,105 @@ namespace Stdf.Indexing
 		/// </summary>
 		private class OptimizingVisitor : ExpressionVisitor
 		{
-#region Optimizing Map
+			#region Optimizing Map
 
 			/// <summary>
 			///     This map stores information for how we optimize queries for this strategy
 			/// </summary>
-			private static readonly Dictionary<MethodInfo, MethodInfo> OptimizingMap = new Dictionary<MethodInfo, MethodInfo> {
-				{ typeof(Extensions).GetMethod("GetMir"), typeof(V4StructureIndexingStrategy).GetMethod("GetMir") },
-				{ typeof(Extensions).GetMethod("GetMrr"), typeof(V4StructureIndexingStrategy).GetMethod("GetMrr") },
-				{ typeof(Extensions).GetMethod("GetPcrs", new[] { typeof(IRecordContext) }), typeof(V4StructureIndexingStrategy).GetMethod("GetPcrs",                             new[] { typeof(IRecordContext) }) },
-				{ typeof(Extensions).GetMethod("GetPcrs", new[] { typeof(IRecordContext), typeof(byte), typeof(byte) }), typeof(V4StructureIndexingStrategy).GetMethod("GetPcrs", new[] { typeof(IRecordContext), typeof(byte), typeof(byte) }) },
-				{ typeof(Extensions).GetMethod("GetSummaryPcr"), typeof(V4StructureIndexingStrategy).GetMethod("GetSummaryPcr") },
-				{ typeof(Extensions).GetMethod("GetPrrs"), typeof(V4StructureIndexingStrategy).GetMethod("GetPrrs") },
-				{ typeof(Extensions).GetMethod("GetWir"), typeof(V4StructureIndexingStrategy).GetMethod("GetWir") },
-				{ typeof(Extensions).GetMethod("GetWrr"), typeof(V4StructureIndexingStrategy).GetMethod("GetWrr") },
-				{ typeof(Extensions).GetMethod("GetPrr"), typeof(V4StructureIndexingStrategy).GetMethod("GetPrr") },
-				{ typeof(Extensions).GetMethod("GetPir"), typeof(V4StructureIndexingStrategy).GetMethod("GetPir") },
-				{ typeof(Extensions).GetMethod("GetMatchingPir"), typeof(V4StructureIndexingStrategy).GetMethod("GetMatchingPir") },
-				{ typeof(Extensions).GetMethod("GetMatchingPrr"), typeof(V4StructureIndexingStrategy).GetMethod("GetMatchingPrr") },
-				{ typeof(Extensions).GetMethod("GetChildRecords", new[] { typeof(Pir) }), typeof(V4StructureIndexingStrategy).GetMethod("GetChildRecords", new[] { typeof(Pir) }) },
-				{ typeof(Extensions).GetMethod("GetChildRecords", new[] { typeof(Prr) }), typeof(V4StructureIndexingStrategy).GetMethod("GetChildRecords", new[] { typeof(Prr) }) },
-			};
+			private static readonly Dictionary<MethodInfo, MethodInfo> OptimizingMap = new Dictionary<MethodInfo, MethodInfo>
+																					   {
+																						   {
+																							   typeof(Extensions).GetMethod("GetMir"), typeof(V4StructureIndexingStrategy).GetMethod("GetMir")
+																						   },
+																						   {
+																							   typeof(Extensions).GetMethod("GetMrr"), typeof(V4StructureIndexingStrategy).GetMethod("GetMrr")
+																						   },
+																						   {
+																							   typeof(Extensions).GetMethod("GetPcrs", new[]
+																																	   {
+																																		   typeof(IRecordContext)
+																																	   }),
+																							   typeof(V4StructureIndexingStrategy).GetMethod("GetPcrs", new[]
+																																						{
+																																							typeof(IRecordContext)
+																																						})
+																						   },
+																						   {
+																							   typeof(Extensions).GetMethod("GetPcrs", new[]
+																																	   {
+																																		   typeof(IRecordContext), typeof(byte), typeof(byte)
+																																	   }),
+																							   typeof(V4StructureIndexingStrategy).GetMethod("GetPcrs", new[]
+																																						{
+																																							typeof(IRecordContext), typeof(byte), typeof(byte)
+																																						})
+																						   },
+																						   {
+																							   typeof(Extensions).GetMethod("GetSummaryPcr"), typeof(V4StructureIndexingStrategy).GetMethod("GetSummaryPcr")
+																						   },
+																						   {
+																							   typeof(Extensions).GetMethod("GetPrrs"), typeof(V4StructureIndexingStrategy).GetMethod("GetPrrs")
+																						   },
+																						   {
+																							   typeof(Extensions).GetMethod("GetWir"), typeof(V4StructureIndexingStrategy).GetMethod("GetWir")
+																						   },
+																						   {
+																							   typeof(Extensions).GetMethod("GetWrr"), typeof(V4StructureIndexingStrategy).GetMethod("GetWrr")
+																						   },
+																						   {
+																							   typeof(Extensions).GetMethod("GetPrr"), typeof(V4StructureIndexingStrategy).GetMethod("GetPrr")
+																						   },
+																						   {
+																							   typeof(Extensions).GetMethod("GetPir"), typeof(V4StructureIndexingStrategy).GetMethod("GetPir")
+																						   },
+																						   {
+																							   typeof(Extensions).GetMethod("GetMatchingPir"), typeof(V4StructureIndexingStrategy).GetMethod("GetMatchingPir")
+																						   },
+																						   {
+																							   typeof(Extensions).GetMethod("GetMatchingPrr"), typeof(V4StructureIndexingStrategy).GetMethod("GetMatchingPrr")
+																						   },
+																						   {
+																							   typeof(Extensions).GetMethod("GetChildRecords", new[]
+																																			   {
+																																				   typeof(Pir)
+																																			   }),
+																							   typeof(V4StructureIndexingStrategy).GetMethod("GetChildRecords", new[]
+																																								{
+																																									typeof(Pir)
+																																								})
+																						   },
+																						   {
+																							   typeof(Extensions).GetMethod("GetChildRecords", new[]
+																																			   {
+																																				   typeof(Prr)
+																																			   }),
+																							   typeof(V4StructureIndexingStrategy).GetMethod("GetChildRecords", new[]
+																																								{
+																																									typeof(Prr)
+																																								})
+																						   }
+																					   };
 
-#endregion
+			#endregion
 
 			//some methodinfos we'll use for some tricky generic mappings
-			private static readonly MethodInfo OfExactTypePir = typeof(Extensions).GetMethod("OfExactType", new[] { typeof(IQueryable<StdfRecord>) }).MakeGenericMethod(typeof(Pir));
-			private static readonly MethodInfo OfExactTypePrr = typeof(Extensions).GetMethod("OfExactType", new[] { typeof(IQueryable<StdfRecord>) }).MakeGenericMethod(typeof(Prr));
+			private static readonly MethodInfo OfExactTypePir = typeof(Extensions).GetMethod("OfExactType", new[]
+																											{
+																												typeof(IQueryable<StdfRecord>)
+																											}).MakeGenericMethod(typeof(Pir));
+			private static readonly MethodInfo OfExactTypePrr = typeof(Extensions).GetMethod("OfExactType", new[]
+																											{
+																												typeof(IQueryable<StdfRecord>)
+																											}).MakeGenericMethod(typeof(Prr));
 
-			private static readonly MethodInfo OptOfExactTypePir = typeof(V4StructureIndexingStrategy).GetMethod("OfExactTypePir", new[] { typeof(IQueryable<StdfRecord>) });
-			private static readonly MethodInfo OptOfExactTypePrr = typeof(V4StructureIndexingStrategy).GetMethod("OfExactTypePrr", new[] { typeof(IQueryable<StdfRecord>) });
+			private static readonly MethodInfo OptOfExactTypePir = typeof(V4StructureIndexingStrategy).GetMethod("OfExactTypePir", new[]
+																																   {
+																																	   typeof(IQueryable<StdfRecord>)
+																																   });
+			private static readonly MethodInfo OptOfExactTypePrr = typeof(V4StructureIndexingStrategy).GetMethod("OfExactTypePrr", new[]
+																																   {
+																																	   typeof(IQueryable<StdfRecord>)
+																																   });
 
 			private static readonly MethodInfo                  GetRecordsEnumerable = typeof(StdfFile).GetMethod("GetRecordsEnumerable");
 			private readonly        V4StructureIndexingStrategy _Strategy;
@@ -305,7 +376,7 @@ namespace Stdf.Indexing
 			}
 		}
 
-#region Optimized implementations
+		#region Optimized implementations
 
 		/// <summary>
 		///     Leverages the parts extents to get all Prrs.
@@ -475,6 +546,6 @@ namespace Stdf.Indexing
 			return GetRecordsInExtents(partExtents).SkipWhile(r => r.GetType() == typeof(Pir)).OfType<IHeadSiteIndexable>().Where(r => (r.HeadNumber == prr.HeadNumber) && (r.SiteNumber == prr.SiteNumber)).TakeWhile(r => r.GetType() != typeof(Prr)).Cast<StdfRecord>();
 		}
 
-#endregion
+		#endregion
 	}
 }

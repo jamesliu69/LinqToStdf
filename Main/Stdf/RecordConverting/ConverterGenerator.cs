@@ -108,10 +108,11 @@ namespace Stdf.RecordConverting
 											new TryFinallyNode(assignmentBlock, new DisposeReaderNode()), new ReturnRecordNode());
 
 			//visit the block with an emitting visitor
-			new ConverterEmittingVisitor {
+			new ConverterEmittingVisitor
+			{
 				ILGen        = _ILGen,
 				ConcreteType = _Type,
-				EnableLog    = ConverterLog.IsLogging,
+				EnableLog    = ConverterLog.IsLogging
 			}.Visit(block);
 		}
 

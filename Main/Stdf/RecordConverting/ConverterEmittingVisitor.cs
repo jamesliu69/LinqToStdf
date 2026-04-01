@@ -52,11 +52,11 @@ namespace Stdf.RecordConverting
 			ILGen.Callvirt(_EnsureConvertibleToMethod);
 			return node;
 		}
-#if SILVERLIGHT
+		#if SILVERLIGHT
             static MethodInfo _GetBinaryReaderForContentMethod = typeof(UnknownRecord).GetMethod("GetBinaryReaderForContent");
-#else
+		#else
 		private static readonly MethodInfo _GetBinaryReaderForContentMethod = typeof(UnknownRecord).GetMethod("GetBinaryReaderForContent", BindingFlags.Instance | BindingFlags.Public);
-#endif
+		#endif
 		public override CodeNode VisitInitReaderNode(InitReaderNode node)
 		{
 			Log("Initializing reader");
@@ -137,7 +137,13 @@ namespace Stdf.RecordConverting
 		public override CodeNode VisitSkipType(SkipTypeNode node)
 		{
 			MethodInfo skipTypeMethod;
-			Type[]     argsArray = node.Type.IsArray ? new[] { typeof(int) } : new Type[0];
+
+			Type[] argsArray = node.Type.IsArray
+				? new[]
+				  {
+					  typeof(int)
+				  }
+				: new Type[0];
 
 			if(node.IsNibble)
 			{
@@ -287,7 +293,13 @@ namespace Stdf.RecordConverting
 				throw new InvalidOperationException("Cannot read string outside a FieldAssignmentNode");
 			}
 			MethodInfo readTypeMethod;
-			Type[]     argsArray = node.Type.IsArray ? new[] { typeof(int) } : new Type[0];
+
+			Type[] argsArray = node.Type.IsArray
+				? new[]
+				  {
+					  typeof(int)
+				  }
+				: new Type[0];
 
 			if(node.IsNibble)
 			{

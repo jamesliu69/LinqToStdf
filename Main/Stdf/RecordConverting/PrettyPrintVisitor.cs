@@ -16,9 +16,10 @@ namespace Stdf.RecordConverting
 		{
 			_Output = new StringWriter();
 
-			_Writer = new XmlTextWriter(_Output) {
-				Formatting = Formatting.Indented,
-			};
+			_Writer = new XmlTextWriter(_Output)
+					  {
+						  Formatting = Formatting.Indented
+					  };
 			Visit(node);
 		}
 

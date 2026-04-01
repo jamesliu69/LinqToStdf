@@ -124,7 +124,7 @@ namespace Stdf
 			}
 		}
 
-#region RepairMissingMrr implementation
+		#region RepairMissingMrr implementation
 
 		//TODO: decide whether this should react to a special ErrorRecord, or EndOfStream
 		// This boils down to whether spec violations should be repaired before or after validation.
@@ -141,18 +141,19 @@ namespace Stdf
 				}
 				else if((r.GetType() == typeof(EndOfStreamRecord)) && (mrr == null))
 				{
-					yield return new Mrr {
-						Synthesized = true,
-						Offset      = r.Offset,
-					};
+					yield return new Mrr
+								 {
+									 Synthesized = true,
+									 Offset      = r.Offset
+								 };
 				}
 				yield return r;
 			}
 		}
 
-#endregion
+		#endregion
 
-#region ExpectNoUnknownRecords implementation
+		#region ExpectNoUnknownRecords implementation
 
 		private static IEnumerable<StdfRecord> ExpectOnlyKnownRecordsImpl(IEnumerable<StdfRecord> records)
 		{
@@ -169,9 +170,9 @@ namespace Stdf
 			}
 		}
 
-#endregion
+		#endregion
 
-#region PopulatePtrFieldsWithDefaults implementation
+		#region PopulatePtrFieldsWithDefaults implementation
 
 		private static IEnumerable<StdfRecord> PopulatePtrFieldsWithDefaultsImpl(IEnumerable<StdfRecord> records)
 		{
@@ -249,9 +250,9 @@ namespace Stdf
 			}
 		}
 
-#endregion
+		#endregion
 
-#region CachingFilter implementation
+		#region CachingFilter implementation
 
 		/// <summary>
 		///     Provides the implementation for the caching filter
@@ -296,11 +297,11 @@ namespace Stdf
 			}
 		}
 
-#endregion
+		#endregion
 
 		//generics are great, BTW
 
-#region MissingBinSummaryFilter implementation
+		#region MissingBinSummaryFilter implementation
 
 		/// <summary>
 		///     Provides the implementation for synthesizing summary records from
@@ -355,16 +356,17 @@ namespace Stdf
 			{
 				IEnumerable<T> q = from b in _Brs
 								   group b by b.BinNumber into g
-								   select new T {
-									   Synthesized = true,
-									   Offset      = offset,
-									   HeadNumber  = 255,
-									   SiteNumber  = 0,
-									   BinNumber   = g.Key,
-									   BinName     = g.First().BinName,
-									   BinPassFail = g.First().BinPassFail,
-									   BinCount    = (uint)g.Sum(b => b.BinCount),
-								   };
+								   select new T
+										  {
+											  Synthesized = true,
+											  Offset      = offset,
+											  HeadNumber  = 255,
+											  SiteNumber  = 0,
+											  BinNumber   = g.Key,
+											  BinName     = g.First().BinName,
+											  BinPassFail = g.First().BinPassFail,
+											  BinCount    = (uint)g.Sum(b => b.BinCount)
+										  };
 
 				foreach(T b in q)
 				{
@@ -373,17 +375,18 @@ namespace Stdf
 			}
 		}
 
-#endregion
+		#endregion
 
-#region MissingPcrSummaryFilter implementation
+		#region MissingPcrSummaryFilter implementation
 
 		private class MissingPcrSummaryFilterImpl
 		{
-			private Pcr _Summary = new Pcr {
-				Synthesized = true,
-				HeadNumber  = 255,
-				SiteNumber  = 0,
-			};
+			private Pcr _Summary = new Pcr
+								   {
+									   Synthesized = true,
+									   HeadNumber  = 255,
+									   SiteNumber  = 0
+								   };
 
 			public IEnumerable<StdfRecord> Filter(IEnumerable<StdfRecord> input)
 			{
@@ -416,9 +419,9 @@ namespace Stdf
 			}
 		}
 
-#endregion
+		#endregion
 
-#region MissingTsrSummaryFilter implementation
+		#region MissingTsrSummaryFilter implementation
 
 		private class MissingTsrSummaryFilterImpl
 		{
@@ -454,25 +457,26 @@ namespace Stdf
 			{
 				IEnumerable<Tsr> q = from t in _Tsrs
 									 group t by t.TestNumber into g
-									 select new Tsr {
-										 Synthesized      = true,
-										 Offset           = offset,
-										 HeadNumber       = 255,
-										 SiteNumber       = 0,
-										 TestNumber       = g.Key,
-										 TestName         = g.First().TestName,
-										 TestLabel        = g.First().TestLabel,
-										 AlarmCount       = (uint?)g.Sum(t => t.AlarmCount),
-										 ExecutedCount    = (uint?)g.Sum(t => t.ExecutedCount),
-										 FailedCount      = (uint?)g.Sum(t => t.FailedCount),
-										 SequencerName    = g.First().SequencerName,
-										 TestMax          = g.Max(t => t.TestMax),
-										 TestMin          = g.Min(t => t.TestMin),
-										 TestSum          = g.Sum(t => t.TestSum),
-										 TestSumOfSquares = g.Sum(t => t.TestSumOfSquares),
-										 TestTime         = g.Sum(t => t.TestTime),
-										 TestType         = g.First().TestType,
-									 };
+									 select new Tsr
+											{
+												Synthesized      = true,
+												Offset           = offset,
+												HeadNumber       = 255,
+												SiteNumber       = 0,
+												TestNumber       = g.Key,
+												TestName         = g.First().TestName,
+												TestLabel        = g.First().TestLabel,
+												AlarmCount       = (uint?)g.Sum(t => t.AlarmCount),
+												ExecutedCount    = (uint?)g.Sum(t => t.ExecutedCount),
+												FailedCount      = (uint?)g.Sum(t => t.FailedCount),
+												SequencerName    = g.First().SequencerName,
+												TestMax          = g.Max(t => t.TestMax),
+												TestMin          = g.Min(t => t.TestMin),
+												TestSum          = g.Sum(t => t.TestSum),
+												TestSumOfSquares = g.Sum(t => t.TestSumOfSquares),
+												TestTime         = g.Sum(t => t.TestTime),
+												TestType         = g.First().TestType
+											};
 
 				foreach(Tsr b in q)
 				{
@@ -481,9 +485,9 @@ namespace Stdf
 			}
 		}
 
-#endregion
+		#endregion
 
-#region V4ContentSpec implementation
+		#region V4ContentSpec implementation
 
 		/// <summary>
 		///     node in the state machine representation
@@ -498,115 +502,135 @@ namespace Stdf
 		/// <summary>
 		///     These records are not allowed after the initial sequence, or before the Mrr
 		/// </summary>
-		private static readonly HashSet<RuntimeTypeHandle> _InitialSequenceSet = new HashSet<RuntimeTypeHandle> {
-			typeof(Far).TypeHandle,
-			typeof(Atr).TypeHandle,
-			typeof(Mir).TypeHandle,
-			typeof(Rdr).TypeHandle,
-			typeof(Sdr).TypeHandle,
-			typeof(EndOfStreamRecord).TypeHandle,
-		};
+		private static readonly HashSet<RuntimeTypeHandle> _InitialSequenceSet = new HashSet<RuntimeTypeHandle>
+																				 {
+																					 typeof(Far).TypeHandle,
+																					 typeof(Atr).TypeHandle,
+																					 typeof(Mir).TypeHandle,
+																					 typeof(Rdr).TypeHandle,
+																					 typeof(Sdr).TypeHandle,
+																					 typeof(EndOfStreamRecord).TypeHandle
+																				 };
 
 		/// <summary>
 		///     Uses a state machine to enforce the V4 content spec (initial sequence and mrr at the end)
 		/// </summary>
 		private static IEnumerable<StdfRecord> V4ContentSpecFilter(IEnumerable<StdfRecord> input)
 		{
-#region States
+			#region States
 
 			// Build up the various states that describe the V4 content spec.
 
-			RecordState eofState = new RecordState {
-				Message          = Resources.V4ContentState_AtEOF,
-				ShouldTransition = r => r.GetType() == typeof(EndOfStreamRecord),
-				Routes           = new List<RecordState>(), //we'd better never get here.
-			};
+			RecordState eofState = new RecordState
+								   {
+									   Message          = Resources.V4ContentState_AtEOF,
+									   ShouldTransition = r => r.GetType() == typeof(EndOfStreamRecord),
+									   Routes           = new List<RecordState>() //we'd better never get here.
+								   };
 
-			RecordState mrrState = new RecordState {
-				Message          = Resources.V4ContentState_AfterMrr,
-				ShouldTransition = r => r.GetType() == typeof(Mrr),
-				Routes = new List<RecordState> {
-					eofState,
-				}, //we only expect EOF from here
-			};
+			RecordState mrrState = new RecordState
+								   {
+									   Message          = Resources.V4ContentState_AfterMrr,
+									   ShouldTransition = r => r.GetType() == typeof(Mrr),
+									   Routes = new List<RecordState>
+												{
+													eofState
+												} //we only expect EOF from here
+								   };
 
-			RecordState bodyState = new RecordState {
-				Message = Resources.V4ContentState_StdfBody,
+			RecordState bodyState = new RecordState
+									{
+										Message = Resources.V4ContentState_StdfBody,
 
-				//anything that's not in the initial sequence (or EOS)
-				ShouldTransition = r => !_InitialSequenceSet.Contains(r.GetType().TypeHandle),
-			};
+										//anything that's not in the initial sequence (or EOS)
+										ShouldTransition = r => !_InitialSequenceSet.Contains(r.GetType().TypeHandle)
+									};
 
-			bodyState.Routes = new List<RecordState> {
-				mrrState,
-				bodyState,
-			};
+			bodyState.Routes = new List<RecordState>
+							   {
+								   mrrState,
+								   bodyState
+							   };
 
-			RecordState sdrState = new RecordState {
-				Message          = Resources.V4ContentState_AfterSdr,
-				ShouldTransition = r => r.GetType() == typeof(Sdr),
-			};
+			RecordState sdrState = new RecordState
+								   {
+									   Message          = Resources.V4ContentState_AfterSdr,
+									   ShouldTransition = r => r.GetType() == typeof(Sdr)
+								   };
 
-			sdrState.Routes = new List<RecordState> {
-				sdrState,
-				bodyState,
-			};
+			sdrState.Routes = new List<RecordState>
+							  {
+								  sdrState,
+								  bodyState
+							  };
 
-			RecordState rdrState = new RecordState {
-				Message          = Resources.V4ContentState_AfterRdr,
-				ShouldTransition = r => r.GetType() == typeof(Rdr),
-				Routes = new List<RecordState> {
-					sdrState,
-					bodyState,
-				},
-			};
+			RecordState rdrState = new RecordState
+								   {
+									   Message          = Resources.V4ContentState_AfterRdr,
+									   ShouldTransition = r => r.GetType() == typeof(Rdr),
+									   Routes = new List<RecordState>
+												{
+													sdrState,
+													bodyState
+												}
+								   };
 
-			RecordState mirState = new RecordState {
-				Message          = Resources.V4ContentState_AfterMir,
-				ShouldTransition = r => r.GetType() == typeof(Mir),
-				Routes = new List<RecordState> {
-					rdrState,
-					sdrState,
-					bodyState,
-				},
-			};
+			RecordState mirState = new RecordState
+								   {
+									   Message          = Resources.V4ContentState_AfterMir,
+									   ShouldTransition = r => r.GetType() == typeof(Mir),
+									   Routes = new List<RecordState>
+												{
+													rdrState,
+													sdrState,
+													bodyState
+												}
+								   };
 
-			RecordState atrState = new RecordState {
-				Message          = Resources.V4ContentState_AfterAtr,
-				ShouldTransition = r => r.GetType() == typeof(Atr),
-			};
+			RecordState atrState = new RecordState
+								   {
+									   Message          = Resources.V4ContentState_AfterAtr,
+									   ShouldTransition = r => r.GetType() == typeof(Atr)
+								   };
 
-			atrState.Routes = new List<RecordState> {
-				atrState,
-				mirState,
-			};
+			atrState.Routes = new List<RecordState>
+							  {
+								  atrState,
+								  mirState
+							  };
 
-			RecordState farState = new RecordState {
-				Message          = Resources.V4ContentState_AfterFar,
-				ShouldTransition = r => r.GetType() == typeof(Far),
-				Routes = new List<RecordState> {
-					atrState,
-					mirState,
-				},
-			};
+			RecordState farState = new RecordState
+								   {
+									   Message          = Resources.V4ContentState_AfterFar,
+									   ShouldTransition = r => r.GetType() == typeof(Far),
+									   Routes = new List<RecordState>
+												{
+													atrState,
+													mirState
+												}
+								   };
 
-			RecordState sofState = new RecordState {
-				Message          = Resources.V4ContentState_AtSOF,
-				ShouldTransition = r => r.GetType() == typeof(StartOfStreamRecord),
-				Routes = new List<RecordState> {
-					farState,
-				},
-			};
+			RecordState sofState = new RecordState
+								   {
+									   Message          = Resources.V4ContentState_AtSOF,
+									   ShouldTransition = r => r.GetType() == typeof(StartOfStreamRecord),
+									   Routes = new List<RecordState>
+												{
+													farState
+												}
+								   };
 
-#endregion
+			#endregion
 
 			//we'll start in a pre-far state
-			RecordState currentState = new RecordState {
-				Message = Resources.V4ContentState_BeforeSOF,
-				Routes = new List<RecordState> {
-					sofState,
-				},
-			};
+			RecordState currentState = new RecordState
+									   {
+										   Message = Resources.V4ContentState_BeforeSOF,
+										   Routes = new List<RecordState>
+													{
+														sofState
+													}
+									   };
 
 			foreach(StdfRecord r in input)
 			{
@@ -625,15 +649,16 @@ namespace Stdf
 				//TODO: does IsWritable prevent informational and error records from violating the content spec (we want that)?
 				if(!transitioned && r.IsWritable)
 				{
-					yield return new V4ContentErrorRecord {
-						Offset  = r.Offset,
-						Message = string.Format(Resources.InitialSequenceError, r.GetType().Name, currentState.Message),
-					};
+					yield return new V4ContentErrorRecord
+								 {
+									 Offset  = r.Offset,
+									 Message = string.Format(Resources.InitialSequenceError, r.GetType().Name, currentState.Message)
+								 };
 				}
 				yield return r;
 			}
 		}
 
-#endregion
+		#endregion
 	}
 }

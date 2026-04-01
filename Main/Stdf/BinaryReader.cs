@@ -57,7 +57,7 @@ namespace Stdf
 		/// </summary>
 		public bool AtEndOfStream { get => _Stream.Position >= _Stream.Length; }
 
-#region IDisposable Members
+		#region IDisposable Members
 
 		public void Dispose()
 		{
@@ -67,7 +67,7 @@ namespace Stdf
 			}
 		}
 
-#endregion
+		#endregion
 
 		/// <summary>
 		///     Reads an STDF record header from the stream
@@ -192,9 +192,10 @@ namespace Stdf
 			}
 			int realLength = (length + 7) / 8;
 
-			BitArray bitArray = new BitArray(ReadByteArray(realLength)) {
-				Length = length,
-			};
+			BitArray bitArray = new BitArray(ReadByteArray(realLength))
+								{
+									Length = length
+								};
 			return bitArray;
 		}
 
@@ -543,7 +544,7 @@ namespace Stdf
 		/// </summary>
 		public void SkipNibbleArray(byte length) => Skip((length + 1) / 2);
 
-#region Buffer Management
+		#region Buffer Management
 
 		/// <summary>
 		///     Reads bytes into the buffer and takes care of any endian swapping necessary
@@ -626,6 +627,6 @@ namespace Stdf
 			}
 		}
 
-#endregion
+		#endregion
 	}
 }

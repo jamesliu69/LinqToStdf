@@ -14,9 +14,9 @@ namespace STDF
 {
 	public class CP2020 : IAnalyze
 	{
+		private readonly List<string>    FileName = new List<string>();
 		private          int             CalOffset;
 		private          DataTable?      dt;
-		private readonly List<string>    FileName    = new List<string>();
 		public           List<CChipData> lstChipData = new List<CChipData>();
 
 		public CP2020(string filename)
@@ -53,15 +53,6 @@ namespace STDF
 
 		public int FailPin { get; set; }
 
-		public async Task<string[]> ReadAllLinesAsync(string path)
-		{
-			using(StreamReader reader = new StreamReader(path))
-			{
-				string text = await reader.ReadToEndAsync();
-				return text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-			}
-		}
-
 		public void AnalyzeFile()
 		{
 			try
@@ -76,9 +67,11 @@ namespace STDF
 
 					//string[] files = await ReadAllLinesAsync(file);
 					files = files.Where(file => !string.IsNullOrEmpty(file)).ToArray();
-					string[] boundedLines = files.SkipWhile(line => !line.Trim().StartsWith("==> Test Start")).Skip(1).TakeWhile(line => !line.Trim().StartsWith("==> Test End")).Where(line => /*!line.Contains("JUDGE_V:") &&*/ !line.Contains("P/F   Site              Pin_name        Force      L-Limit      H-Limit      Measure   Min Measure   Max Measure")).ToArray();
-					int      idx          = 0;
-					string   Title        = string.Empty;
+
+					string[] boundedLines = files.SkipWhile(line => !line.Trim().StartsWith("==> Test Start")).Skip(1).TakeWhile(line => !line.Trim().StartsWith("==> Test End"))
+												 .Where(line => /*!line.Contains("JUDGE_V:") &&*/ !line.Contains("P/F   Site              Pin_name        Force      L-Limit      H-Limit      Measure   Min Measure   Max Measure")).ToArray();
+					int    idx   = 0;
+					string Title = string.Empty;
 
 					foreach(string word in boundedLines)
 					{
@@ -93,7 +86,11 @@ namespace STDF
 							idx++;
 							continue;
 						}
-						string[]            spilts      = { "  " };
+
+						string[] spilts =
+						{
+							"  "
+						};
 						IEnumerable<string> Enumerables = word.Split(spilts, StringSplitOptions.None).Where(c => c != "");
 						CChipData           convert     = EnumerableConvert(file, Title, Enumerables.ToArray());
 
@@ -128,13 +125,26 @@ namespace STDF
 		{
 		}
 
+		public async Task<string[]> ReadAllLinesAsync(string path)
+		{
+			using(StreamReader reader = new StreamReader(path))
+			{
+				string text = await reader.ReadToEndAsync();
+
+				return text.Split(new[]
+								  {
+									  "\r\n", "\r", "\n"
+								  }, StringSplitOptions.None);
+			}
+		}
+
 		private CChipData EnumerableConvert(string name, string Title, string[] StrArray)
 		{
 			try
 			{
 				CChipData ChipData = new CChipData();
-				ChipData.FileName      = Path.GetFileNameWithoutExtension(name);
-				ChipData.Comment       = Title.Trim();
+				ChipData.FileName = Path.GetFileNameWithoutExtension(name);
+				ChipData.Comment  = Title.Trim();
 
 				// 确保数组至少有9个元素
 				if(StrArray.Length < 9)
@@ -146,14 +156,14 @@ namespace STDF
 				ChipData.Site          = StrArray[1].Trim();
 				ChipData.PinName       = StrArray[2].Trim();
 				ChipData.strForceValue = StrArray[3].Trim();
-				
+
 				// 直接读取 L-Limit 和 H-Limit，处理空白值
 				string lowLimitRaw  = StrArray[4].Trim();
 				string highLimitRaw = StrArray[5].Trim();
-				
+
 				ChipData.LowLimit  = string.IsNullOrWhiteSpace(lowLimitRaw) ? null : lowLimitRaw;
 				ChipData.HighLimit = string.IsNullOrWhiteSpace(highLimitRaw) ? null : highLimitRaw;
-				
+
 				ChipData.strMeasureValue    = StrArray[6].Trim();
 				ChipData.strMinMeasureValue = StrArray[7].Trim();
 				ChipData.strMaxMeasureValue = StrArray[8].Trim();

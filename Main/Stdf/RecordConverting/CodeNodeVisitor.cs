@@ -79,10 +79,11 @@ namespace Stdf.RecordConverting
 
 		public virtual CodeNode VisitCreateFieldLocalForWriting(CreateFieldLocalForWritingNode node) => node;
 
-		public virtual CodeNode VisitWriteField(WriteFieldNode node) => throw
+		public virtual CodeNode VisitWriteField(WriteFieldNode node) =>
+			throw
 
-			//TODO: do this right;
-			new NotSupportedException("WriteFieldNodes are too complicated to transform during visiting. :)");
+				//TODO: do this right;
+				new NotSupportedException("WriteFieldNodes are too complicated to transform during visiting. :)");
 
 		public virtual CodeNode VisitWriteFixedString(WriteFixedStringNode node)
 		{

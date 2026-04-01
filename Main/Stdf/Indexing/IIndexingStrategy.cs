@@ -16,13 +16,13 @@ namespace Stdf.Indexing
 
 	public class NonCachingStrategy : IIndexingStrategy
 	{
-#region IIndexingStrategy Members
+		#region IIndexingStrategy Members
 
 		public IEnumerable<StdfRecord> CacheRecords(IEnumerable<StdfRecord> records) => records;
 
 		public Expression TransformQuery(Expression query) => query;
 
-#endregion
+		#endregion
 	}
 
 	public abstract class CachingIndexingStrategy : IIndexingStrategy

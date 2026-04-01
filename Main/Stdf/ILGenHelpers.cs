@@ -80,12 +80,12 @@ namespace Stdf
 			}
 			else if(type == typeof(ushort))
 			{
-				ilgen.Ldc_I4((int)(ushort)value);
+				ilgen.Ldc_I4((ushort)value);
 				ilgen.Conv_I2();
 			}
 			else if(type == typeof(short))
 			{
-				ilgen.Ldc_I4((int)(short)value);
+				ilgen.Ldc_I4((short)value);
 				ilgen.Conv_I2();
 			}
 			else if(type == typeof(uint))
@@ -254,13 +254,13 @@ namespace Stdf
 		public static void Nop(this ILGenerator ilgen) => ilgen.Emit(OpCodes.Nop);
 
 		/// <seealso cref="OpCodes.Newobj" />
-		public static void Newobj<T>(this ILGenerator ilgen, params Type[] parameters) => Newobj(ilgen, typeof(T), parameters);
+		public static void Newobj<T>(this ILGenerator ilgen, params Type[] parameters) => ilgen.Newobj(typeof(T), parameters);
 
 		/// <seealso cref="OpCodes.Newobj" />
 		public static void Newobj(this ILGenerator ilgen, Type type, params Type[] parameters) => ilgen.Emit(OpCodes.Newobj, type.GetConstructor(parameters));
 
 		/// <seealso cref="OpCodes.Newarr" />
-		public static void Newarr<T>(this ILGenerator ilgen) => Newarr(ilgen, typeof(T));
+		public static void Newarr<T>(this ILGenerator ilgen) => ilgen.Newarr(typeof(T));
 
 		public static void Constrained<T>(this ILGenerator ilgen) => ilgen.Constrained(typeof(T));
 

@@ -398,7 +398,7 @@ namespace Stdf
 			WriteUInt32(seconds);
 		}
 
-#region Buffer Management
+		#region Buffer Management
 
 		/// <summary>
 		///     Writes bytes into the buffer and takes care of any endian swapping necessary
@@ -468,6 +468,6 @@ namespace Stdf
 			}
 		}
 
-#endregion
+		#endregion
 	}
 }

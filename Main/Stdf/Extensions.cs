@@ -34,14 +34,14 @@ namespace Stdf
 
 		public static IQueryable<TRecord> OfExactType<TRecord>(this IQueryable<StdfRecord> source) where TRecord : StdfRecord => source.Provider.CreateQuery<TRecord>(Expression.Call(((MethodInfo)MethodBase.GetCurrentMethod()).MakeGenericMethod(typeof(TRecord)), source.Expression));
 
-#region Extending Wrr
+		#region Extending Wrr
 
 		/// <summary>
 		///     Gets the <see cref="Prr">Prrs</see> for this wafer.
 		/// </summary>
 		public static IEnumerable<Prr> GetPrrs(this Wrr wrr) => from prr in wrr.StdfFile.GetRecords().OfExactType<Prr>() where prr.HeadNumber == wrr.HeadNumber select prr;
 
-#endregion
+		#endregion
 
 		/// <summary>
 		///     Combines two uint?'s with the sematics desirable
@@ -81,7 +81,7 @@ namespace Stdf
 		/// <param name="other">The algorithm to chain to the first</param>
 		public static SeekAlgorithm Chain(this SeekAlgorithm first, SeekAlgorithm other) => (input, endian, callback) => other(first(input, endian, callback), endian, callback);
 
-#region extending IRecordContext
+		#region extending IRecordContext
 
 		/// <summary>
 		///     Gets the <see cref="Mir" /> for the record context.
@@ -159,15 +159,15 @@ namespace Stdf
 		/// </summary>
 		public static IEnumerable<Tsr> GetSummaryTsrs(IRecordContext record) => from r in record.StdfFile.GetRecords().OfExactType<Tsr>() where r.HeadNumber == 255 select r;
 
-#region Helpers
+		#region Helpers
 
 		private static IEnumerable<T> GetBinRecords<T>(IRecordContext record, byte head, byte site) where T : BinSummaryRecord => from r in record.StdfFile.GetRecords().OfExactType<T>() where (r.HeadNumber == head) && (r.SiteNumber == site) select r;
 
-#endregion
+		#endregion
 
-#endregion
+		#endregion
 
-#region extending StdfRecord
+		#region extending StdfRecord
 
 		/// <summary>
 		///     returns records that occur before the given record
@@ -183,9 +183,9 @@ namespace Stdf
 		/// <returns>All the records after the marker record</returns>
 		public static IEnumerable<StdfRecord> After(this StdfRecord record) => record.StdfFile.GetRecords().SkipWhile(r => r.Offset <= record.Offset);
 
-#endregion
+		#endregion
 
-#region extending IHeadIndexable
+		#region extending IHeadIndexable
 
 		/// <summary>
 		///     Gets the <see cref="Wir" /> for the current head
@@ -197,9 +197,9 @@ namespace Stdf
 		/// </summary>
 		public static Wrr GetWrr(this IHeadIndexable record) => (from wrr in record.StdfFile.GetRecords().OfExactType<Wrr>() where wrr.HeadNumber == record.HeadNumber select wrr).FirstOrDefault();
 
-#endregion
+		#endregion
 
-#region extending IHeadSiteIndexable
+		#region extending IHeadSiteIndexable
 
 		/// <summary>
 		///     Gets the current Prr associated with the head/site
@@ -211,9 +211,9 @@ namespace Stdf
 		/// </summary>
 		public static Pir GetPir(this IHeadSiteIndexable record) => (from pir in record.StdfFile.GetRecords().OfExactType<Pir>() where (pir.HeadNumber == record.HeadNumber) && (pir.SiteNumber == record.SiteNumber) select pir).FirstOrDefault();
 
-#endregion
+		#endregion
 
-#region extending PIR/PRR
+		#region extending PIR/PRR
 
 		public static Prr GetMatchingPrr(this Pir pir) => pir.After().OfExactType<Prr>().Where(r => (r.HeadNumber == pir.HeadNumber) && (r.SiteNumber == pir.SiteNumber)).FirstOrDefault();
 
@@ -239,6 +239,6 @@ namespace Stdf
 		/// </returns>
 		public static IEnumerable<StdfRecord> GetChildRecords(this Prr prr) => prr.GetMatchingPir().GetChildRecords();
 
-#endregion
+		#endregion
 	}
 }

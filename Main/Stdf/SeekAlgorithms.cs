@@ -78,13 +78,16 @@ namespace Stdf
 		/// </summary>
 		public static SeekAlgorithm Identity { get => (a, endian, callback) => a; }
 
-#region LookForPirs implementation
+		#region LookForPirs implementation
 
 		private static IEnumerable<byte> LookForPirsImpl(IEnumerable<byte> bytes, Endian endian, BackUpCallback backupCallback)
 		{
 			//the state machine can be simplified since the searching sequence
 			//doesn't contain the same byte twice.
-			byte[] pirHeader = new byte[] { 0, 0, 5, 10 };
+			byte[] pirHeader =
+			{
+				0, 0, 5, 10
+			};
 
 			//TODO: did I get this right?
 			pirHeader[endian == Endian.Little ? 0 : 1] = 2;
@@ -118,6 +121,6 @@ namespace Stdf
 			}
 		}
 
-#endregion
+		#endregion
 	}
 }

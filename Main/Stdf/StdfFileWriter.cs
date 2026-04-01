@@ -40,9 +40,10 @@ namespace Stdf
 
 			if(debug)
 			{
-				ConverterFactory = new RecordConverterFactory {
-					Debug = debug,
-				};
+				ConverterFactory = new RecordConverterFactory
+								   {
+									   Debug = debug
+								   };
 				StdfV4Specification.RegisterRecords(ConverterFactory);
 			}
 			else
@@ -57,7 +58,7 @@ namespace Stdf
 
 		public RecordConverterFactory ConverterFactory { get; }
 
-#region IDisposable Members
+		#region IDisposable Members
 
 		public void Dispose()
 		{
@@ -67,7 +68,7 @@ namespace Stdf
 			}
 		}
 
-#endregion
+		#endregion
 
 		/// <summary>
 		///     Writes a single record to the file, returning the number of bytes written
