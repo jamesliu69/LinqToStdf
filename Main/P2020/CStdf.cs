@@ -65,6 +65,7 @@ namespace STDF
 			_stdfWriter.WriteRecord(atr);
 
 			#region MIR
+			// MIR（Master Information Record）：記錄整批測試作業的主資訊，例如批號、開始時間與測試程式版本。
 
 			Mir mir = new Mir();
 			mir.SetupTime            = DateTime.Parse(_fileParam.LotSTART);
@@ -110,6 +111,7 @@ namespace STDF
 			#endregion
 
 			#region SDR
+			// SDR（Site Description Record）：描述測試站台與設備配置資訊，定義 Head/Site 與硬體識別資料。
 
 			Sdr sdr = new Sdr();
 			sdr.HeadNumber = 1;
@@ -140,6 +142,7 @@ namespace STDF
 			#endregion
 
 			#region Prm
+			// PMR（Pin Map Record）：定義量測通道與實體/邏輯腳位對應，供後續測試結果參照。
 
 			Pmr pmr = new Pmr();
 			pmr.PinIndex     = 1;
@@ -154,6 +157,7 @@ namespace STDF
 			#endregion
 
 			#region PGR
+			// PGR（Pin Group Record）：將多個腳位索引分組，方便以群組方式描述測試腳位集合。
 
 			Pgr pgr = new Pgr();
 			pgr.GroupIndex = 1;
@@ -168,6 +172,7 @@ namespace STDF
 			#endregion
 
 			#region PTR
+			// PTR（Parametric Test Record）群組：以 PIR/PTR/PRR 串接每顆料件的進站、量測結果與出站資訊。
 
 			for(int i = 0; i < _p2020.ChipDataList.Count; i++)
 			{
@@ -228,6 +233,7 @@ namespace STDF
 			#endregion
 
 			#region NO TSR
+			// TSR（Test Synopsis Record）：提供特定測試項目的統計摘要（執行次數、失敗數、統計值等）。
 
 			byte summarySiteNumber = _p2020.ChipDataList.Count > 0 ? Convert.ToByte(_p2020.ChipDataList[0].Site) : (byte)1;
 			Tsr tsr = new Tsr();
@@ -251,6 +257,7 @@ namespace STDF
 			#endregion
 
 			#region NO HBR
+			// HBR（Hardware Bin Record）：彙整硬體 Bin 分類結果與數量，用於硬體分 bin 統計。
 
 			Hbr hbr = new Hbr();
 			hbr.HeadNumber  = 1;
@@ -264,6 +271,7 @@ namespace STDF
 			#endregion
 
 			#region NO SBR
+			// SBR（Software Bin Record）：彙整軟體 Bin 分類結果與數量，用於軟體分 bin 統計。
 
 			Sbr sbr = new Sbr();
 			sbr.HeadNumber  = 1;
@@ -277,6 +285,7 @@ namespace STDF
 			#endregion
 
 			#region PCR
+			// PCR（Part Count Record）：記錄測試數量統計（如測試顆數、良率相關計數）的站點摘要。
 
 			Pcr pcr = new Pcr();
 			pcr.HeadNumber = 1;
@@ -286,6 +295,7 @@ namespace STDF
 			#endregion
 
 			#region MRR
+			// MRR（Master Results Record）：標記整批測試結束資訊，例如完工時間與結束說明。
 
 			Mrr mrr = new Mrr();
 			mrr.FinishTime      = DateTime.Parse(_fileParam.LotEND);
