@@ -28,15 +28,15 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-			this.btnGenerateStdf = new System.Windows.Forms.Button();
+			this.btnGenerateStdf  = new System.Windows.Forms.Button();
 			this.btnAnalyzeSource = new System.Windows.Forms.Button();
-			this.txtInputPath = new System.Windows.Forms.TextBox();
+			this.txtInputPath     = new System.Windows.Forms.TextBox();
 			this.SuspendLayout();
 
 			// 
 			// btnGenerateStdf
 			// 
-			this.btnGenerateStdf.Location                =  new System.Drawing.Point(128, 129);
+			this.btnGenerateStdf.Location                =  new System.Drawing.Point(22, 58);
 			this.btnGenerateStdf.Name                    =  "btnGenerateStdf";
 			this.btnGenerateStdf.Size                    =  new System.Drawing.Size(96, 23);
 			this.btnGenerateStdf.TabIndex                =  0;
@@ -47,7 +47,7 @@
 			// 
 			// btnAnalyzeSource
 			// 
-			this.btnAnalyzeSource.Location                =  new System.Drawing.Point(128, 24);
+			this.btnAnalyzeSource.Location                =  new System.Drawing.Point(22, 29);
 			this.btnAnalyzeSource.Name                    =  "btnAnalyzeSource";
 			this.btnAnalyzeSource.Size                    =  new System.Drawing.Size(96, 23);
 			this.btnAnalyzeSource.TabIndex                =  1;
@@ -58,7 +58,7 @@
 			// 
 			// txtInputPath
 			// 
-			this.txtInputPath.Location =  new System.Drawing.Point(497, 158);
+			this.txtInputPath.Location =  new System.Drawing.Point(124, 31);
 			this.txtInputPath.Name     =  "txtInputPath";
 			this.txtInputPath.Size     =  new System.Drawing.Size(100, 22);
 			this.txtInputPath.TabIndex =  2;
@@ -69,12 +69,12 @@
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
 			this.AutoScaleMode       = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize          = new System.Drawing.Size(800, 450);
+			this.ClientSize          = new System.Drawing.Size(556, 222);
 			this.Controls.Add(this.txtInputPath);
 			this.Controls.Add(this.btnAnalyzeSource);
 			this.Controls.Add(this.btnGenerateStdf);
 			this.Name = "Form1";
-			this.Text = "Form1";
+			this.Text = "frmMain";
 			this.ResumeLayout(false);
 			this.PerformLayout();
 		}

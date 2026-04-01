@@ -125,9 +125,9 @@ namespace STDF
 
 #region PTR
 
-			for(int i = 1; i < _P2020.lstChipData.Count; i++)
+			for(int i = 0; i < _P2020.lstChipData.Count; i++)
 			{
-				CChipData chip = _P2020.lstChipData[i - 1];
+				CChipData chip = _P2020.lstChipData[i];
 				Pir       pir  = new Pir();
 				pir.HeadNumber = 1;
 				pir.SiteNumber = Convert.ToByte(chip.Site);
@@ -139,10 +139,6 @@ namespace STDF
 				ptr.TestFlags       = chip.PassOrFail == "PASS" ? (byte)1 : (byte)0;
 				ptr.ParametricFlags = 0;
 				float? result = float.Parse(Regex.Match(chip.strMaxMeasureValue, @"[-+]?\d+\.?\d*").Value);
-
-				if(result < 0)
-				{
-				}
 				ptr.Result                   = result;
 				ptr.TestText                 = chip.Comment;
 				ptr.AlarmId                  = " ";

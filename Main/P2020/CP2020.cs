@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Collections.Generic;
@@ -14,7 +14,6 @@ namespace STDF
 {
 	public class CP2020 : IAnalyze
 	{
-		private          IAnalyze        _AnalyzeImplementation;
 		private          int             CalOffset;
 		private          DataTable?      dt;
 		private readonly List<string>    FileName    = new List<string>();
@@ -42,7 +41,7 @@ namespace STDF
 		{
 		}
 
-		public event EventHandler? evtSelectItem { add => _AnalyzeImplementation.evtSelectItem += value; remove => _AnalyzeImplementation.evtSelectItem -= value; }
+		public event EventHandler? evtSelectItem;
 
 		public event EventHandler? evtErrorArise;
 
@@ -95,7 +94,7 @@ namespace STDF
 							continue;
 						}
 						string[]            spilts      = { "  " };
-						IEnumerable<string> Enumerables = word.Split(spilts, StringSplitOptions.RemoveEmptyEntries).Where(c => c != "");
+						IEnumerable<string> Enumerables = word.Split(spilts, StringSplitOptions.None).Where(c => c != "");
 						CChipData           convert     = EnumerableConvert(file, Title, Enumerables.ToArray());
 
 						if(convert.PassOrFail.ToUpper() == "PASS")
@@ -134,50 +133,36 @@ namespace STDF
 			try
 			{
 				CChipData ChipData = new CChipData();
+				ChipData.FileName      = Path.GetFileNameWithoutExtension(name);
+				ChipData.Comment       = Title.Trim();
 
+				// 确保数组至少有9个元素
 				if(StrArray.Length < 9)
 				{
-					ChipData.FileName      = Path.GetFileNameWithoutExtension(name);
-					ChipData.PassOrFail    = StrArray[0].Trim();
-					ChipData.Site          = StrArray[1].Trim();
-					ChipData.PinName       = StrArray[2].Trim();
-					ChipData.strForceValue = StrArray[3].Trim();
+					throw new InvalidOperationException($"数据格式错误: 列数不足 (实际: {StrArray.Length}, 需要: 9)");
+				}
 
-					if(StrArray[4].StartsWith("-"))
-					{
-						ChipData.LowLimit  = StrArray[4].Trim();
-						ChipData.HighLimit = StrArray[4].Remove(0, 1).Trim();
-					}
-					else
-					{
-						ChipData.LowLimit  = ("-" + StrArray[4]).Trim();
-						ChipData.HighLimit = StrArray[4].Trim();
-					}
-					ChipData.strMeasureValue    = StrArray[5].Trim();
-					ChipData.strMinMeasureValue = StrArray[6].Trim();
-					ChipData.strMaxMeasureValue = StrArray[7].Trim();
-					ChipData.Comment            = Title.Trim();
-					return ChipData;
-				}
-				else
-				{
-					ChipData.FileName           = Path.GetFileNameWithoutExtension(name);
-					ChipData.PassOrFail         = StrArray[0].Trim();
-					ChipData.Site               = StrArray[1].Trim();
-					ChipData.PinName            = StrArray[2].Trim();
-					ChipData.strForceValue      = StrArray[3].Trim();
-					ChipData.LowLimit           = StrArray[4].Trim();
-					ChipData.HighLimit          = StrArray[5].Trim();
-					ChipData.strMeasureValue    = StrArray[6].Trim();
-					ChipData.strMinMeasureValue = StrArray[7].Trim();
-					ChipData.strMaxMeasureValue = StrArray[8].Trim();
-					ChipData.Comment            = Title.Trim();
-					return ChipData;
-				}
+				ChipData.PassOrFail    = StrArray[0].Trim();
+				ChipData.Site          = StrArray[1].Trim();
+				ChipData.PinName       = StrArray[2].Trim();
+				ChipData.strForceValue = StrArray[3].Trim();
+				
+				// 直接读取 L-Limit 和 H-Limit，处理空白值
+				string lowLimitRaw  = StrArray[4].Trim();
+				string highLimitRaw = StrArray[5].Trim();
+				
+				ChipData.LowLimit  = string.IsNullOrWhiteSpace(lowLimitRaw) ? null : lowLimitRaw;
+				ChipData.HighLimit = string.IsNullOrWhiteSpace(highLimitRaw) ? null : highLimitRaw;
+				
+				ChipData.strMeasureValue    = StrArray[6].Trim();
+				ChipData.strMinMeasureValue = StrArray[7].Trim();
+				ChipData.strMaxMeasureValue = StrArray[8].Trim();
+
+				return ChipData;
 			}
 			catch(Exception e)
 			{
-				MessageBox.Show(e.Message + "\r\n" + e.StackTrace);
+				MessageBox.Show($"EnumerableConvert 错误:\n文件: {name}\n标题: {Title}\n数据: {string.Join(" | ", StrArray)}\n\n{e.Message}\n{e.StackTrace}");
 			}
 			return null;
 		}
