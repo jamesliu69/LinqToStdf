@@ -134,9 +134,9 @@ namespace STDF
 				atr.CommandLine  = "";
 				ExecuteWithLogging("WriteRecord", _logPath, null, null, null, null, "ATR", () => _stdfWriter.WriteRecord(atr));
 
-				#region MIR
+				#region MIR（Master Information Record）：記錄整批測試作業的主資訊，例如批號、開始時間與測試程式版本。
 
-				// MIR（Master Information Record）：記錄整批測試作業的主資訊，例如批號、開始時間與測試程式版本。
+
 				workflowStage = "DoWork.WriteMIR";
 
 				Mir mir = new Mir();
@@ -191,9 +191,8 @@ namespace STDF
 
 				#endregion
 
-				#region SDR
+				#region SDR（Site Description Record）：描述測試站台與設備配置資訊，定義 Head/Site 與硬體識別資料。
 
-				// SDR（Site Description Record）：描述測試站台與設備配置資訊，定義 Head/Site 與硬體識別資料。
 				workflowStage = "DoWork.WriteSDR";
 
 				Sdr sdr = new Sdr();
@@ -220,9 +219,8 @@ namespace STDF
 
 				#endregion
 
-				#region Prm
+				#region Prm（Pin Map Record）：定義量測通道與實體/邏輯腳位對應，供後續測試結果參照。
 
-				// PMR（Pin Map Record）：定義量測通道與實體/邏輯腳位對應，供後續測試結果參照。
 				workflowStage = "DoWork.WritePMR";
 
 				if(pinMap.Count > 0)
@@ -255,9 +253,8 @@ namespace STDF
 
 				#endregion
 
-				#region PGR
+				#region PGR（Pin Group Record）：將多個腳位索引分組，方便以群組方式描述測試腳位集合。
 
-				// PGR（Pin Group Record）：將多個腳位索引分組，方便以群組方式描述測試腳位集合。
 				workflowStage = "DoWork.WritePGR";
 
 				Pgr pgr = new Pgr();
@@ -274,9 +271,8 @@ namespace STDF
 
 				#endregion
 
-				#region PTR
+				#region PTR（Parametric Test Record）群組：以 PIR/PTR/PRR 串接每顆料件的進站、量測結果與出站資訊。
 
-				// PTR（Parametric Test Record）群組：以 PIR/PTR/PRR 串接每顆料件的進站、量測結果與出站資訊。
 				workflowStage = "DoWork.WritePIR_PTR_PRR";
 
 				Dictionary<string, uint>      testNumberMap  = new Dictionary<string, uint>(StringComparer.OrdinalIgnoreCase);
@@ -409,9 +405,8 @@ namespace STDF
 
 				#endregion
 
-				#region NO TSR
+				#region TSR （Test Synopsis Record）：提供特定測試項目的統計摘要（執行次數、失敗數、統計值等）。
 
-				// TSR（Test Synopsis Record）：提供特定測試項目的統計摘要（執行次數、失敗數、統計值等）。
 				workflowStage = "DoWork.WriteTSR";
 
 				byte summarySiteNumber = siteNumbers[0];
@@ -439,9 +434,8 @@ namespace STDF
 
 				#endregion
 
-				#region NO HBR
+				#region HBR（Hardware Bin Record）：彙整硬體 Bin 分類結果與數量，用於硬體分 bin 統計。
 
-				// HBR（Hardware Bin Record）：彙整硬體 Bin 分類結果與數量，用於硬體分 bin 統計。
 				workflowStage = "DoWork.WriteHBR";
 
 				foreach(BinSummary bin in BuildBinSummaries(_fileParam.HardWareBin, _p2020.ChipDataList))
@@ -458,9 +452,8 @@ namespace STDF
 
 				#endregion
 
-				#region NO SBR
+				#region SBR（Software Bin Record）：彙整軟體 Bin 分類結果與數量，用於軟體分 bin 統計。
 
-				// SBR（Software Bin Record）：彙整軟體 Bin 分類結果與數量，用於軟體分 bin 統計。
 				workflowStage = "DoWork.WriteSBR";
 
 				foreach(BinSummary bin in BuildBinSummaries(_fileParam.SoftWareBin, _p2020.ChipDataList))
@@ -477,9 +470,8 @@ namespace STDF
 
 				#endregion
 
-				#region PCR
+				#region PCR （Part Count Record）：記錄測試數量統計（如測試顆數、良率相關計數）的站點摘要。
 
-				// PCR（Part Count Record）：記錄測試數量統計（如測試顆數、良率相關計數）的站點摘要。
 				workflowStage = "DoWork.WritePCR";
 
 				Pcr pcr = new Pcr();
@@ -489,9 +481,8 @@ namespace STDF
 
 				#endregion
 
-				#region MRR
+				#region MRR（Master Results Record）：標記整批測試結束資訊，例如完工時間與結束說明。
 
-				// MRR（Master Results Record）：標記整批測試結束資訊，例如完工時間與結束說明。
 				workflowStage = "DoWork.WriteMRR";
 
 				Mrr mrr = new Mrr();
