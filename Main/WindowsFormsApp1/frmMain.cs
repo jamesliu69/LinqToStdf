@@ -19,6 +19,7 @@ namespace WindowsFormsApp1
 			// 以目前指定的 P2020 測試資料夾產生 STDF 檔案。
 			string inputFolder = @"D:\P2020 Log\2023-08-26-10-53-30";
 			string outputPath  = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "testSTDF.stdf");
+
 			try
 			{
 				CStdf stdfConverter = new CStdf(inputFolder, outputPath);
@@ -34,8 +35,7 @@ namespace WindowsFormsApp1
 		private static void LogEntryPointException(string stage, Exception ex, string inputFolder, string outputPath)
 		{
 			string safeMessage = ex?.Message?.Replace(Environment.NewLine, " ");
-			Console.Error.WriteLine(
-				$"{LogTag} stage=\"{stage}\" op=UIEntryPoint inputFolder=\"{inputFolder ?? "N/A"}\" outputPath=\"{outputPath ?? "N/A"}\" target=\"DoWork\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
+			Console.Error.WriteLine($"{LogTag} stage=\"{stage}\" op=UIEntryPoint inputFolder=\"{inputFolder ?? "N/A"}\" outputPath=\"{outputPath ?? "N/A"}\" target=\"DoWork\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
 		}
 	}
 }

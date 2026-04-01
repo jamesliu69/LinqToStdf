@@ -14,7 +14,7 @@ namespace STDF
 			try
 			{
 				string logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
-				string logFilePath  = Path.Combine(logDirectory, $"stdf-trace-{DateTime.Now:yyyy-MM-dd}.log");
+				string logFilePath  = Path.Combine(logDirectory,                          $"stdf-trace-{DateTime.Now:yyyy-MM-dd}.log");
 
 				lock(SyncRoot)
 				{

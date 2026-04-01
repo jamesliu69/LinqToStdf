@@ -61,6 +61,7 @@ namespace STDF
 				foreach(string logFilePath in _fileNames)
 				{
 					string[] logLines;
+
 					try
 					{
 						// 讀取原始資料列，後續依 STDF 需要的欄位結構解析。
@@ -74,6 +75,7 @@ namespace STDF
 					}
 
 					int testStartIndex = Array.FindIndex(logLines, line => line.Trim().StartsWith("==> Test Start"));
+
 					if(testStartIndex < 0)
 					{
 						InvalidDataException ex = new InvalidDataException("缺少 Test Start 標記，無法擷取測試資料區段。");
@@ -82,6 +84,7 @@ namespace STDF
 					}
 
 					int testEndIndex = Array.FindIndex(logLines, testStartIndex + 1, line => line.Trim().StartsWith("==> Test End"));
+
 					if(testEndIndex < 0)
 					{
 						InvalidDataException ex = new InvalidDataException($"缺少 Test End 標記，Test Start index={testStartIndex}。");
@@ -99,9 +102,10 @@ namespace STDF
 					// 只保留 Test Start / Test End 之間的資料。
 					string[] dataLines = logLines
 										 .Skip(testStartIndex + 1)
-										 .Take(testEndIndex - testStartIndex - 1)
+										 .Take(testEndIndex   - testStartIndex - 1)
 										 .Where(line => !line.Contains("P/F   Site              Pin_name        Force      L-Limit      H-Limit      Measure   Min Measure   Max Measure"))
 										 .ToArray();
+
 					if(dataLines.Length == 0)
 					{
 						InvalidDataException ex = new InvalidDataException($"Test Start/Test End 之間資料為空，start={testStartIndex}, end={testEndIndex}。");
@@ -115,6 +119,7 @@ namespace STDF
 					for(int dataLineIndex = 0; dataLineIndex < dataLines.Length; dataLineIndex++)
 					{
 						string dataLine = dataLines[dataLineIndex];
+
 						if(dataLine.Contains("<<<<<<---------------     Test Item :"))
 						{
 							testItemTitle = dataLine.Replace("<<<<<<---------------     Test Item : OSitem_", string.Empty).Replace("--------------->>>>>>", string.Empty).Trim();
@@ -221,8 +226,9 @@ namespace STDF
 		private static void LogException(string operation, Exception ex, string filePath, string section, string testItem, string site, string pin, string rawInputValue, string keyRawValue, int lineNumber)
 		{
 			string safeMessage = ex?.Message?.Replace(Environment.NewLine, " ");
-			TraceLogger.WriteLine(
-				$"{LogTag} op={operation} filePath=\"{filePath ?? "N/A"}\" section=\"{section ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" line=\"{lineNumber}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" keyRaw=\"{keyRawValue ?? "N/A"}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
+
+			TraceLogger.WriteLine($"{LogTag} op={operation} filePath=\"{filePath ?? "N/A"}\" section=\"{section ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" line=\"{lineNumber}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" keyRaw=\"{keyRawValue ?? "N/A"
+			}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
 		}
 
 		public void Dispose()

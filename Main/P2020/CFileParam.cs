@@ -9,11 +9,11 @@ namespace STDF
 	public class CFileParam
 	{
 		private const string LogTag = "[STDF-TRACE-ERR]";
-		public const string split = "********************************************************************";
-		public       string ATEID;
-		public       string Customer;
-		public       string DeviceID;
-		public       string FileName;
+		public const  string split  = "********************************************************************";
+		public        string ATEID;
+		public        string Customer;
+		public        string DeviceID;
+		public        string FileName;
 
 		public string FilePath;
 		public string HandlerID;
@@ -56,6 +56,7 @@ namespace STDF
 			StringBuilder summaryBuilder = new StringBuilder();
 			string[]      logLines;
 			List<string>  logLineList;
+
 			try
 			{
 				logLines = File.ReadAllLines(FileName);
@@ -124,6 +125,7 @@ namespace STDF
 				{
 					IEnumerable<string> siteTokens  = headerParts[0].Trim().Split(' ').Where(c => c != "");
 					IEnumerable<string> countTokens = siteTokens.Skip(3);
+
 					try
 					{
 						SiteCount = Convert.ToInt32(countTokens.ElementAt(0).Substring(0, countTokens.ElementAt(0).IndexOf("(")));
@@ -177,6 +179,7 @@ namespace STDF
 				if(headerParts[0].Contains("[HARDWARE BIN]"))
 				{
 					int hardwareBinStartIndex = logLineList.IndexOf("[HARDWARE BIN]");
+
 					if(hardwareBinStartIndex < 0)
 					{
 						InvalidDataException ex = new InvalidDataException("找不到 [HARDWARE BIN] 區段起點。");
@@ -185,6 +188,7 @@ namespace STDF
 					}
 
 					int hardwareBinMarkerIndex = logLineList.FindIndex(hardwareBinStartIndex + 1, line => line.StartsWith("**************"));
+
 					if(hardwareBinMarkerIndex < 0)
 					{
 						InvalidDataException ex = new InvalidDataException($"[HARDWARE BIN] 缺少結尾 marker，startIndex={hardwareBinStartIndex}。");
@@ -192,8 +196,9 @@ namespace STDF
 						throw ex;
 					}
 
-					int hardwareRangeStart = hardwareBinStartIndex + 2;
+					int hardwareRangeStart = hardwareBinStartIndex  + 2;
 					int hardwareRangeCount = hardwareBinMarkerIndex - hardwareRangeStart;
+
 					if(hardwareRangeStart < 0 || hardwareRangeStart > logLineList.Count || hardwareRangeCount < 0 || hardwareRangeStart + hardwareRangeCount > logLineList.Count)
 					{
 						InvalidDataException ex = new InvalidDataException($"[HARDWARE BIN] 範圍越界，start={hardwareRangeStart}, count={hardwareRangeCount}, total={logLineList.Count}。");
@@ -215,6 +220,7 @@ namespace STDF
 						try
 						{
 							List<string> splitValues = binLine.Split(' ').Where(c => c != "").ToList();
+
 							if(splitValues.Count == 0 || string.IsNullOrWhiteSpace(splitValues[0]))
 							{
 								InvalidDataException ex = new InvalidDataException($"Hardware bin 列格式錯誤，無法取得 key: '{binLine}'");
@@ -235,6 +241,7 @@ namespace STDF
 				if(headerParts[0].Contains("[SOFTWARE BIN]"))
 				{
 					int softwareBinStartIndex = logLineList.IndexOf("[SOFTWARE BIN]");
+
 					if(softwareBinStartIndex < 0)
 					{
 						InvalidDataException ex = new InvalidDataException("找不到 [SOFTWARE BIN] 區段起點。");
@@ -243,6 +250,7 @@ namespace STDF
 					}
 
 					int softwareBinMarkerIndex = logLineList.FindIndex(softwareBinStartIndex + 1, line => line.StartsWith("**************"));
+
 					if(softwareBinMarkerIndex < 0)
 					{
 						InvalidDataException ex = new InvalidDataException($"[SOFTWARE BIN] 缺少結尾 marker，startIndex={softwareBinStartIndex}。");
@@ -250,8 +258,9 @@ namespace STDF
 						throw ex;
 					}
 
-					int softwareRangeStart = softwareBinStartIndex + 2;
+					int softwareRangeStart = softwareBinStartIndex  + 2;
 					int softwareRangeCount = softwareBinMarkerIndex - softwareRangeStart;
+
 					if(softwareRangeStart < 0 || softwareRangeStart > logLineList.Count || softwareRangeCount < 0 || softwareRangeStart + softwareRangeCount > logLineList.Count)
 					{
 						InvalidDataException ex = new InvalidDataException($"[SOFTWARE BIN] 範圍越界，start={softwareRangeStart}, count={softwareRangeCount}, total={logLineList.Count}。");
@@ -273,6 +282,7 @@ namespace STDF
 						try
 						{
 							List<string> splitValues = binLine.Split(' ').Where(c => c != "").ToList();
+
 							if(splitValues.Count == 0 || string.IsNullOrWhiteSpace(splitValues[0]))
 							{
 								InvalidDataException ex = new InvalidDataException($"Software bin 列格式錯誤，無法取得 key: '{binLine}'");
@@ -295,8 +305,9 @@ namespace STDF
 		private static void LogException(string operation, Exception ex, string filePath, string section, string testItem, string site, string pin, string rawInputValue, string keyRawValue, int lineNumber)
 		{
 			string safeMessage = ex?.Message?.Replace(Environment.NewLine, " ");
-			TraceLogger.WriteLine(
-				$"{LogTag} op={operation} filePath=\"{filePath ?? "N/A"}\" section=\"{section ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" line=\"{lineNumber}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" keyRaw=\"{keyRawValue ?? "N/A"}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
+
+			TraceLogger.WriteLine($"{LogTag} op={operation} filePath=\"{filePath ?? "N/A"}\" section=\"{section ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" line=\"{lineNumber}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" keyRaw=\"{keyRawValue ?? "N/A"
+			}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
 		}
 	}
 }

@@ -62,7 +62,6 @@
 			this.txtInputPath.Name     =  "txtInputPath";
 			this.txtInputPath.Size     =  new System.Drawing.Size(100, 22);
 			this.txtInputPath.TabIndex =  2;
-			this.txtInputPath.KeyDown  += new System.Windows.Forms.KeyEventHandler(this.txtInputPath_KeyDown);
 
 			// 
 			// Form1
