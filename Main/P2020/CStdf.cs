@@ -180,7 +180,10 @@ namespace STDF
 				ptr.TestNumber      = 1;
 				ptr.HeadNumber      = 1;
 				ptr.SiteNumber      = Convert.ToByte(chip.Site);
-				ptr.TestFlags       = chip.PassOrFail == "PASS" ? (byte)1 : (byte)0;
+				string passOrFailText = chip.PassOrFail?.Trim() ?? string.Empty;
+				bool   isPass         = passOrFailText.Equals("PASS", StringComparison.OrdinalIgnoreCase) ||
+										passOrFailText.Equals("Pass", StringComparison.OrdinalIgnoreCase);
+				ptr.TestFlags       = isPass ? (byte)1 : (byte)0;
 				ptr.ParametricFlags = 0;
 				float? measurementValue = float.Parse(Regex.Match(chip.strMaxMeasureValue, @"[-+]?\d+\.?\d*").Value);
 				ptr.Result                   = measurementValue;
@@ -198,19 +201,10 @@ namespace STDF
 					float? lowLimitValue = float.Parse(Regex.Match(lowLimitText, @"[-+]?\d+\.?\d*").Value);
 					ptr.LowLimit = lowLimitValue;
 				}
-				else
-				{
-					ptr.LowLimit = 0;
-				}
-
 				if(!string.IsNullOrWhiteSpace(highLimitText))
 				{
 					float? highLimitValue = float.Parse(Regex.Match(highLimitText, @"[-+]?\d+\.?\d*").Value);
 					ptr.HighLimit = highLimitValue;
-				}
-				else
-				{
-					ptr.HighLimit = 0;
 				}
 				string unitsText = string.Empty;
 
@@ -235,9 +229,10 @@ namespace STDF
 
 			#region NO TSR
 
+			byte summarySiteNumber = _p2020.ChipDataList.Count > 0 ? Convert.ToByte(_p2020.ChipDataList[0].Site) : (byte)1;
 			Tsr tsr = new Tsr();
 			tsr.HeadNumber       = 1;
-			tsr.SiteNumber       = (byte?)_fileParam.SiteCount;
+			tsr.SiteNumber       = summarySiteNumber;
 			tsr.TestType         = "P";
 			tsr.TestNumber       = 1000;
 			tsr.ExecutedCount    = 0;
@@ -259,7 +254,7 @@ namespace STDF
 
 			Hbr hbr = new Hbr();
 			hbr.HeadNumber  = 1;
-			hbr.SiteNumber  = (byte?)_fileParam.SiteCount;
+			hbr.SiteNumber  = summarySiteNumber;
 			hbr.BinNumber   = 2;
 			hbr.BinCount    = 2;
 			hbr.BinPassFail = "P";
@@ -272,7 +267,7 @@ namespace STDF
 
 			Sbr sbr = new Sbr();
 			sbr.HeadNumber  = 1;
-			sbr.SiteNumber  = (byte?)_fileParam.SiteCount;
+			sbr.SiteNumber  = summarySiteNumber;
 			sbr.BinNumber   = 2;
 			sbr.BinCount    = 2;
 			sbr.BinPassFail = "P";
@@ -285,7 +280,7 @@ namespace STDF
 
 			Pcr pcr = new Pcr();
 			pcr.HeadNumber = 1;
-			pcr.SiteNumber = (byte?)_fileParam.SiteCount;
+			pcr.SiteNumber = summarySiteNumber;
 			_stdfWriter.WriteRecord(pcr);
 
 			#endregion
