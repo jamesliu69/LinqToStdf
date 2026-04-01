@@ -284,8 +284,8 @@ namespace STDF
 		{
 			// 可在這裡切換不同 P2020 資料來源做轉檔測試。
 			Stopwatch s           = new Stopwatch();
-			string    inputFolder = @"C:\STDFATDF\2023-09-18-02-59-16\New";
-			string    summaryPath = @"C:\Users\USER1\Documents\Pti_Doc\Project\Tester STDF\P2020 8 Site\2023-09-06-14-06-02.txt";
+			string    inputFolder = @"D:\Pti_Doc\AutoScan Log\2026-04-01-16-39-45";
+			string    summaryPath = @"D:\Pti_Doc\AutoScan Log\2026-04-01-16-39-45\2026-04-01-16-39-45.log";
 
 			try
 			{

@@ -17,7 +17,7 @@ namespace WindowsFormsApp1
 		private void GenerateStdfButton_Click(object sender, EventArgs e)
 		{
 			// 以目前指定的 P2020 測試資料夾產生 STDF 檔案。
-			string inputFolder = @"D:\P2020 Log\2023-08-26-10-53-30";
+			string inputFolder = @"D:\Pti_Doc\AutoScan Log\2026-04-01-16-39-45";
 			string outputPath  = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "testSTDF.stdf");
 
 			try

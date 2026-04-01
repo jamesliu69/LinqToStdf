@@ -45,12 +45,21 @@ namespace STDF
 
 				try
 				{
-					logFiles = Directory.GetFiles(_logPath, "*.log");
+					logFiles = Directory.GetFiles(_logPath, "*.log")
+									 .Where(path => Path.GetFileName(path).IndexOf("Summary", StringComparison.OrdinalIgnoreCase) < 0)
+									 .ToArray();
 				}
 				catch(Exception ex)
 				{
 					LogException("LoadLogFiles", ex, _logPath, null, null, null, null, "P2020LogFiles", "AnalyzeFile.LoadLogFiles", _logPath, _outputPath);
 					throw;
+				}
+
+				if(logFiles.Length == 0)
+				{
+					InvalidDataException ex = new InvalidDataException("找不到可供解析的測試 Log（*.log，且檔名不含 Summary）。");
+					LogException("LoadLogFiles", ex, _logPath, null, null, null, null, "P2020LogFiles", "AnalyzeFile.LoadLogFiles", _logPath, _outputPath);
+					throw ex;
 				}
 
 				_p2020 = CP2020.CreateInstance(logFiles, 0);
@@ -59,11 +68,22 @@ namespace STDF
 
 				try
 				{
-					summaryPath = Directory.GetFiles(_logPath, "*.txt")[0];
+					summaryPath = Directory.GetFiles(_logPath, "*.txt").FirstOrDefault();
+
+					if(string.IsNullOrWhiteSpace(summaryPath))
+					{
+						summaryPath = Directory.GetFiles(_logPath, "*.log")
+											  .FirstOrDefault(path => Path.GetFileName(path).IndexOf("Summary", StringComparison.OrdinalIgnoreCase) >= 0);
+					}
+
+					if(string.IsNullOrWhiteSpace(summaryPath))
+					{
+						throw new InvalidDataException("找不到 Summary 檔案（支援 *.txt 或 *Summary*.log）。");
+					}
 				}
 				catch(Exception ex)
 				{
-					LogException("LoadSummaryFile", ex, _logPath, null, null, null, null, "SummaryTxt", "AnalyzeFile.LoadSummaryFile", _logPath, _outputPath);
+					LogException("LoadSummaryFile", ex, _logPath, null, null, null, null, "SummaryFile", "AnalyzeFile.LoadSummaryFile", _logPath, _outputPath);
 					throw;
 				}
 

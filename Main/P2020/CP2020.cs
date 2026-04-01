@@ -16,7 +16,7 @@ namespace STDF
 	public class CP2020 : IAnalyze
 	{
 		private const string LogTag = "[STDF-TRACE-ERR]";
-		private readonly Regex _dataLineRegex = new Regex(@"^\s*(?<passOrFail>\S+)\s+(?<site>\S+)\s+(?<pinName>\S+)\s+(?<forceValue>\S+)\s+(?<lowLimit>\S*)\s+(?<highLimit>\S*)\s+(?<measureValue>\S+)\s+(?<minMeasureValue>\S+)\s+(?<maxMeasureValue>\S+)\s*$",
+		private readonly Regex _dataLineRegex = new Regex(@"^\s*(?<passOrFail>\S+)\s+(?<site>\S+)\s+(?<pinName>.+?)\s+(?<forceValue>\S+)\s+(?<lowLimit>\S*)\s+(?<highLimit>\S*)\s+(?<measureValue>\S+)\s+(?<minMeasureValue>\S+)\s+(?<maxMeasureValue>\S+)\s*$",
 														  RegexOptions.Compiled | RegexOptions.CultureInvariant);
 		private readonly List<string> _fileNames = new List<string>();
 
@@ -57,6 +57,7 @@ namespace STDF
 			try
 			{
 				ChipDataList.Clear();
+				int parsedLogCount = 0;
 
 				foreach(string logFilePath in _fileNames)
 				{
@@ -78,25 +79,25 @@ namespace STDF
 
 					if(testStartIndex < 0)
 					{
-						InvalidDataException ex = new InvalidDataException("缺少 Test Start 標記，無法擷取測試資料區段。");
-						LogException("ExtractTestRange", ex, logFilePath, "DataLines", string.Empty, string.Empty, string.Empty, "marker=Test Start", string.Empty, testStartIndex);
-						throw ex;
+						InvalidDataException ex = new InvalidDataException("缺少 Test Start 標記，略過此檔案。");
+						LogException("ExtractTestRange.Skip", ex, logFilePath, "DataLines", string.Empty, string.Empty, string.Empty, "marker=Test Start", string.Empty, testStartIndex);
+						continue;
 					}
 
 					int testEndIndex = Array.FindIndex(logLines, testStartIndex + 1, line => line.Trim().StartsWith("==> Test End"));
 
 					if(testEndIndex < 0)
 					{
-						InvalidDataException ex = new InvalidDataException($"缺少 Test End 標記，Test Start index={testStartIndex}。");
-						LogException("ExtractTestRange", ex, logFilePath, "DataLines", string.Empty, string.Empty, string.Empty, $"startIndex={testStartIndex}; marker=Test End", string.Empty, testEndIndex);
-						throw ex;
+						InvalidDataException ex = new InvalidDataException($"缺少 Test End 標記，略過此檔案。Test Start index={testStartIndex}。");
+						LogException("ExtractTestRange.Skip", ex, logFilePath, "DataLines", string.Empty, string.Empty, string.Empty, $"startIndex={testStartIndex}; marker=Test End", string.Empty, testEndIndex);
+						continue;
 					}
 
 					if(testEndIndex <= testStartIndex + 1)
 					{
-						InvalidDataException ex = new InvalidDataException($"Test Start/Test End 之間無可用資料，start={testStartIndex}, end={testEndIndex}。");
-						LogException("ExtractTestRange", ex, logFilePath, "DataLines", string.Empty, string.Empty, string.Empty, $"startIndex={testStartIndex}; endIndex={testEndIndex}", string.Empty, testEndIndex);
-						throw ex;
+						InvalidDataException ex = new InvalidDataException($"Test Start/Test End 之間無可用資料，略過此檔案。start={testStartIndex}, end={testEndIndex}。");
+						LogException("ExtractTestRange.Skip", ex, logFilePath, "DataLines", string.Empty, string.Empty, string.Empty, $"startIndex={testStartIndex}; endIndex={testEndIndex}", string.Empty, testEndIndex);
+						continue;
 					}
 
 					// 只保留 Test Start / Test End 之間的資料。
@@ -108,10 +109,12 @@ namespace STDF
 
 					if(dataLines.Length == 0)
 					{
-						InvalidDataException ex = new InvalidDataException($"Test Start/Test End 之間資料為空，start={testStartIndex}, end={testEndIndex}。");
-						LogException("ExtractTestRange", ex, logFilePath, "DataLines", string.Empty, string.Empty, string.Empty, $"startIndex={testStartIndex}; endIndex={testEndIndex}; dataLineCount=0", string.Empty, testEndIndex);
-						throw ex;
+						InvalidDataException ex = new InvalidDataException($"Test Start/Test End 之間資料為空，略過此檔案。start={testStartIndex}, end={testEndIndex}。");
+						LogException("ExtractTestRange.Skip", ex, logFilePath, "DataLines", string.Empty, string.Empty, string.Empty, $"startIndex={testStartIndex}; endIndex={testEndIndex}; dataLineCount=0", string.Empty, testEndIndex);
+						continue;
 					}
+
+					parsedLogCount++;
 
 					int    currentJudgeIndex = 0;
 					string testItemTitle     = string.Empty;
@@ -141,6 +144,13 @@ namespace STDF
 
 						ChipDataList.Add(chipData);
 					}
+				}
+
+				if(parsedLogCount == 0)
+				{
+					InvalidDataException ex = new InvalidDataException("找不到可解析的測試 Log（需包含 Test Start/Test End 區段）。");
+					LogException("AnalyzeFile.NoValidTestLog", ex, string.Join(";", _fileNames), "ChipDataList", string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, -1);
+					throw ex;
 				}
 
 				DictCount = ChipDataList.Count;
