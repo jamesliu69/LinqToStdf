@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace STDF
 {
@@ -53,9 +54,7 @@ namespace STDF
 
 		public void AnalyzeFile()
 		{
-			StringBuilder summaryBuilder = new StringBuilder();
-			string[]      logLines;
-			List<string>  logLineList;
+			string[] logLines;
 
 			try
 			{
@@ -66,240 +65,243 @@ namespace STDF
 				LogException("ReadSummaryFile", ex, FileName, "SummaryHeader", null, null, null, null, null, -1);
 				throw;
 			}
-			logLineList = logLines.ToList();
 
-			for(int headerLineIndex = 0; headerLineIndex < logLines.Length; headerLineIndex++)
+			ResultPass.Clear();
+			ResultFail.Clear();
+			HardWareBin.Clear();
+			SoftWareBin.Clear();
+			ResultTotal = null;
+			TestItemName = "O/S_Test";
+			SiteCount = 1;
+
+			for(int lineIndex = 0; lineIndex < logLines.Length; lineIndex++)
 			{
-				string   headerLine  = logLines[headerLineIndex];
-				string[] headerParts = headerLine.Split(':');
+				string rawLine = logLines[lineIndex];
+				string line = rawLine?.Trim() ?? string.Empty;
 
-				if(headerParts.Length < 2)
+				if(string.IsNullOrWhiteSpace(line))
 				{
 					continue;
 				}
 
-				switch(headerParts[0].Trim())
+				if(TryParseHeaderField(line, out string headerName, out string headerValue))
 				{
-					case "File Path":
-						FilePath = headerParts[1].Trim().Replace("----------", "");
-						break;
-					case "LoadBoard Name":
-						LoadBoardName = headerParts[1].Trim().Replace("----------", "");
-						break;
-					case "Lot Number":
-						LotNumber = headerParts[1].Trim().Replace("----------", "");
-						break;
-					case "Device ID":
-						DeviceID = headerParts[1].Trim().Replace("----------", "");
-						break;
-					case "Operator":
-						Operator = headerParts[1].Trim().Replace("----------", "");
-						break;
-					case "Customer":
-						Customer = headerParts[1].Trim().Replace("----------", "");
-						break;
-					case "Test Program Name":
-						TestProgramName = headerParts[1].Trim().Replace("----------", "");
-						break;
-					case "Sample Rate":
-						SampleRate = headerParts[1].Trim().Replace("----------", "");
-						break;
-					case "Test Cycle":
-						TestCycle = headerParts[1].Trim().Replace("----------", "");
-						break;
-					case "ATE ID":
-						ATEID = headerParts[1].Trim().Replace("-", "");
-						break;
-					case "Handler ID":
-						HandlerID = headerParts[1].Trim().Replace("----------", "");
-						break;
-					case "Lot START":
-						LotSTART = headerLine.Remove(0, headerLine.IndexOf(":") + 1).Trim();
-						break;
-					case "Lot END":
-						LotEND = headerLine.Remove(0, headerLine.IndexOf(":") + 1).Trim();
-						break;
+					ApplyHeaderValue(headerName, headerValue);
+					continue;
 				}
 
-				if(headerParts[0].Contains("Total (By Sites)"))
+				if(line.StartsWith("Total (By Sites)", StringComparison.OrdinalIgnoreCase))
 				{
-					IEnumerable<string> siteTokens  = headerParts[0].Trim().Split(' ').Where(c => c != "");
-					IEnumerable<string> countTokens = siteTokens.Skip(3);
-
-					try
+					List<string> countTokens = ExtractCountTokens(line);
+					ResultTotal = countTokens.ToArray();
+					if(countTokens.Count > 1)
 					{
-						SiteCount = Convert.ToInt32(countTokens.ElementAt(0).Substring(0, countTokens.ElementAt(0).IndexOf("(")));
+						SiteCount = countTokens.Count - 1;
 					}
-					catch(Exception ex)
-					{
-						LogException("ParseSiteCount", ex, FileName, "Result", TestItemName, null, null, headerLine, headerParts[0], headerLineIndex + 1);
-						throw;
-					}
-				}
-				else if(headerParts[0].Contains("Pass  (By Sites)"))
-				{
-					IEnumerable<string> siteTokens   = headerParts[0].Trim().Split(' ').Where(c => c != "");
-					IEnumerable<string> resultTokens = siteTokens.Skip(4);
-
-					foreach(string siteValue in resultTokens)
-					{
-						try
-						{
-							ResultPass.Add(siteValue.Substring(0, resultTokens.ElementAt(0).IndexOf("(")));
-						}
-						catch(Exception ex)
-						{
-							LogException("ParsePassBySite", ex, FileName, "Result", TestItemName, null, null, headerLine, siteValue, headerLineIndex + 1);
-							throw;
-						}
-					}
-				}
-				else if(headerParts[0].Contains("Fail  (By Sites)"))
-				{
-					IEnumerable<string> siteTokens   = headerParts[0].Trim().Split(' ').Where(c => c != "");
-					IEnumerable<string> resultTokens = siteTokens.Skip(4);
-
-					foreach(string siteValue in resultTokens)
-					{
-						try
-						{
-							ResultFail.Add(siteValue.Substring(0, resultTokens.ElementAt(0).IndexOf("(")));
-						}
-						catch(Exception ex)
-						{
-							LogException("ParseFailBySite", ex, FileName, "Result", TestItemName, null, null, headerLine, siteValue, headerLineIndex + 1);
-							throw;
-						}
-					}
+					continue;
 				}
 
-				// 每筆資料重新清理，避免前一輪結果殘留。
-				HardWareBin.Clear();
-
-				if(headerParts[0].Contains("[HARDWARE BIN]"))
+				if(line.StartsWith("Pass  (By Sites)", StringComparison.OrdinalIgnoreCase))
 				{
-					int hardwareBinStartIndex = logLineList.IndexOf("[HARDWARE BIN]");
-
-					if(hardwareBinStartIndex < 0)
-					{
-						InvalidDataException ex = new InvalidDataException("找不到 [HARDWARE BIN] 區段起點。");
-						LogException("ParseHardwareBin", ex, FileName, "HARDWARE BIN", TestItemName, null, null, "marker=[HARDWARE BIN]", null, headerLineIndex + 1);
-						throw ex;
-					}
-
-					int hardwareBinMarkerIndex = logLineList.FindIndex(hardwareBinStartIndex + 1, line => line.StartsWith("**************"));
-
-					if(hardwareBinMarkerIndex < 0)
-					{
-						InvalidDataException ex = new InvalidDataException($"[HARDWARE BIN] 缺少結尾 marker，startIndex={hardwareBinStartIndex}。");
-						LogException("ParseHardwareBin", ex, FileName, "HARDWARE BIN", TestItemName, null, null, $"startIndex={hardwareBinStartIndex}; marker=**************", null, hardwareBinStartIndex + 1);
-						throw ex;
-					}
-
-					int hardwareRangeStart = hardwareBinStartIndex  + 2;
-					int hardwareRangeCount = hardwareBinMarkerIndex - hardwareRangeStart;
-
-					if(hardwareRangeStart < 0 || hardwareRangeStart > logLineList.Count || hardwareRangeCount < 0 || hardwareRangeStart + hardwareRangeCount > logLineList.Count)
-					{
-						InvalidDataException ex = new InvalidDataException($"[HARDWARE BIN] 範圍越界，start={hardwareRangeStart}, count={hardwareRangeCount}, total={logLineList.Count}。");
-						LogException("ParseHardwareBin", ex, FileName, "HARDWARE BIN", TestItemName, null, null, $"startIndex={hardwareBinStartIndex}; markerIndex={hardwareBinMarkerIndex}; rangeStart={hardwareRangeStart}; rangeCount={hardwareRangeCount}", null, hardwareRangeStart + 1);
-						throw ex;
-					}
-
-					if(hardwareRangeCount == 0)
-					{
-						InvalidDataException ex = new InvalidDataException($"[HARDWARE BIN] 區段為空，start={hardwareBinStartIndex}, marker={hardwareBinMarkerIndex}。");
-						LogException("ParseHardwareBin", ex, FileName, "HARDWARE BIN", TestItemName, null, null, $"rangeStart={hardwareRangeStart}; rangeCount=0", null, hardwareRangeStart + 1);
-						throw ex;
-					}
-
-					List<string> hardwareBinLines = logLineList.GetRange(hardwareRangeStart, hardwareRangeCount);
-
-					foreach(string binLine in hardwareBinLines)
-					{
-						try
-						{
-							List<string> splitValues = binLine.Split(' ').Where(c => c != "").ToList();
-
-							if(splitValues.Count == 0 || string.IsNullOrWhiteSpace(splitValues[0]))
-							{
-								InvalidDataException ex = new InvalidDataException($"Hardware bin 列格式錯誤，無法取得 key: '{binLine}'");
-								LogException("ParseHardwareBin", ex, FileName, "HARDWARE BIN", TestItemName, null, null, binLine, splitValues.Count > 0 ? splitValues[0] : null, hardwareRangeStart + hardwareBinLines.IndexOf(binLine) + 1);
-								throw ex;
-							}
-
-							HardWareBin[splitValues[0]] = splitValues.Skip(3).ToList();
-						}
-						catch(Exception ex)
-						{
-							LogException("ParseHardwareBin", ex, FileName, "HARDWARE BIN", TestItemName, null, null, binLine, null, hardwareRangeStart + hardwareBinLines.IndexOf(binLine) + 1);
-							throw;
-						}
-					}
+					List<string> countTokens = ExtractCountTokens(line);
+					ResultPass.AddRange(countTokens.Skip(1));
+					continue;
 				}
 
-				if(headerParts[0].Contains("[SOFTWARE BIN]"))
+				if(line.StartsWith("Fail  (By Sites)", StringComparison.OrdinalIgnoreCase))
 				{
-					int softwareBinStartIndex = logLineList.IndexOf("[SOFTWARE BIN]");
-
-					if(softwareBinStartIndex < 0)
-					{
-						InvalidDataException ex = new InvalidDataException("找不到 [SOFTWARE BIN] 區段起點。");
-						LogException("ParseSoftwareBin", ex, FileName, "SOFTWARE BIN", TestItemName, null, null, "marker=[SOFTWARE BIN]", null, headerLineIndex + 1);
-						throw ex;
-					}
-
-					int softwareBinMarkerIndex = logLineList.FindIndex(softwareBinStartIndex + 1, line => line.StartsWith("**************"));
-
-					if(softwareBinMarkerIndex < 0)
-					{
-						InvalidDataException ex = new InvalidDataException($"[SOFTWARE BIN] 缺少結尾 marker，startIndex={softwareBinStartIndex}。");
-						LogException("ParseSoftwareBin", ex, FileName, "SOFTWARE BIN", TestItemName, null, null, $"startIndex={softwareBinStartIndex}; marker=**************", null, softwareBinStartIndex + 1);
-						throw ex;
-					}
-
-					int softwareRangeStart = softwareBinStartIndex  + 2;
-					int softwareRangeCount = softwareBinMarkerIndex - softwareRangeStart;
-
-					if(softwareRangeStart < 0 || softwareRangeStart > logLineList.Count || softwareRangeCount < 0 || softwareRangeStart + softwareRangeCount > logLineList.Count)
-					{
-						InvalidDataException ex = new InvalidDataException($"[SOFTWARE BIN] 範圍越界，start={softwareRangeStart}, count={softwareRangeCount}, total={logLineList.Count}。");
-						LogException("ParseSoftwareBin", ex, FileName, "SOFTWARE BIN", TestItemName, null, null, $"startIndex={softwareBinStartIndex}; markerIndex={softwareBinMarkerIndex}; rangeStart={softwareRangeStart}; rangeCount={softwareRangeCount}", null, softwareRangeStart + 1);
-						throw ex;
-					}
-
-					if(softwareRangeCount == 0)
-					{
-						InvalidDataException ex = new InvalidDataException($"[SOFTWARE BIN] 區段為空，start={softwareBinStartIndex}, marker={softwareBinMarkerIndex}。");
-						LogException("ParseSoftwareBin", ex, FileName, "SOFTWARE BIN", TestItemName, null, null, $"rangeStart={softwareRangeStart}; rangeCount=0", null, softwareRangeStart + 1);
-						throw ex;
-					}
-
-					List<string> softwareBinLines = logLineList.GetRange(softwareRangeStart, softwareRangeCount);
-
-					foreach(string binLine in softwareBinLines)
-					{
-						try
-						{
-							List<string> splitValues = binLine.Split(' ').Where(c => c != "").ToList();
-
-							if(splitValues.Count == 0 || string.IsNullOrWhiteSpace(splitValues[0]))
-							{
-								InvalidDataException ex = new InvalidDataException($"Software bin 列格式錯誤，無法取得 key: '{binLine}'");
-								LogException("ParseSoftwareBin", ex, FileName, "SOFTWARE BIN", TestItemName, null, null, binLine, splitValues.Count > 0 ? splitValues[0] : null, softwareRangeStart + softwareBinLines.IndexOf(binLine) + 1);
-								throw ex;
-							}
-
-							SoftWareBin[splitValues[0]] = splitValues.Skip(3).ToList();
-						}
-						catch(Exception ex)
-						{
-							LogException("ParseSoftwareBin", ex, FileName, "SOFTWARE BIN", TestItemName, null, null, binLine, null, softwareRangeStart + softwareBinLines.IndexOf(binLine) + 1);
-							throw;
-						}
-					}
+					List<string> countTokens = ExtractCountTokens(line);
+					ResultFail.AddRange(countTokens.Skip(1));
+					continue;
 				}
 			}
+
+			Dictionary<string, IEnumerable<string>> hardwareBins = ParseBinSection(logLines, "[HARDWARE BIN]");
+			foreach(KeyValuePair<string, IEnumerable<string>> item in hardwareBins)
+			{
+				HardWareBin[item.Key] = item.Value;
+			}
+
+			Dictionary<string, IEnumerable<string>> softwareBins = ParseBinSection(logLines, "[SOFTWARE BIN]");
+			foreach(KeyValuePair<string, IEnumerable<string>> item in softwareBins)
+			{
+				SoftWareBin[item.Key] = item.Value;
+			}
+
+			string parsedTestItemName = ParseFirstTestItemName(logLines);
+			if(!string.IsNullOrWhiteSpace(parsedTestItemName))
+			{
+				TestItemName = parsedTestItemName;
+			}
+		}
+
+		private static bool TryParseHeaderField(string line, out string headerName, out string headerValue)
+		{
+			headerName = null;
+			headerValue = null;
+			int delimiterIndex = line.IndexOf(':');
+
+			if(delimiterIndex <= 0)
+			{
+				return false;
+			}
+
+			headerName = line.Substring(0, delimiterIndex).Trim();
+			headerValue = line.Substring(delimiterIndex + 1).Trim();
+			return true;
+		}
+
+		private void ApplyHeaderValue(string headerName, string headerValue)
+		{
+			string normalized = headerValue?.Replace("----------", string.Empty).Trim() ?? string.Empty;
+
+			switch(headerName)
+			{
+				case "File Path":
+					FilePath = normalized;
+					break;
+				case "LoadBoard Name":
+					LoadBoardName = normalized;
+					break;
+				case "Lot Number":
+					LotNumber = normalized;
+					break;
+				case "Device ID":
+					DeviceID = normalized;
+					break;
+				case "Operator":
+					Operator = normalized;
+					break;
+				case "Customer":
+					Customer = normalized;
+					break;
+				case "Test Program Name":
+					TestProgramName = normalized;
+					break;
+				case "Sample Rate":
+					SampleRate = normalized;
+					break;
+				case "Test Cycle":
+					TestCycle = normalized;
+					break;
+				case "ATE ID":
+					ATEID = normalized.Replace("-", string.Empty);
+					break;
+				case "Handler ID":
+					HandlerID = normalized;
+					break;
+				case "Lot START":
+					LotSTART = normalized;
+					break;
+				case "Lot END":
+					LotEND = normalized;
+					break;
+			}
+		}
+
+		private static List<string> ExtractCountTokens(string line)
+		{
+			MatchCollection matches = Regex.Matches(line ?? string.Empty, @"(?<count>\d+)\(\d+(?:\.\d+)?%\)");
+			List<string>    counts  = new List<string>(matches.Count);
+
+			foreach(Match match in matches)
+			{
+				if(match.Groups["count"].Success)
+				{
+					counts.Add(match.Groups["count"].Value);
+				}
+			}
+
+			return counts;
+		}
+
+		private Dictionary<string, IEnumerable<string>> ParseBinSection(string[] lines, string sectionName)
+		{
+			Dictionary<string, IEnumerable<string>> bins = new Dictionary<string, IEnumerable<string>>();
+			int sectionIndex = Array.FindIndex(lines, line => string.Equals(line?.Trim(), sectionName, StringComparison.OrdinalIgnoreCase));
+
+			if(sectionIndex < 0)
+			{
+				return bins;
+			}
+
+			for(int lineIndex = sectionIndex + 2; lineIndex < lines.Length; lineIndex++)
+			{
+				string rawLine = lines[lineIndex];
+				string line = rawLine?.Trim() ?? string.Empty;
+
+				if(string.IsNullOrWhiteSpace(line))
+				{
+					continue;
+				}
+
+				if(line.StartsWith("****************************************************************", StringComparison.Ordinal) || line.StartsWith("[", StringComparison.Ordinal))
+				{
+					break;
+				}
+
+				try
+				{
+					List<string> tokens = Regex.Matches(rawLine, @"\S+").Cast<Match>().Select(match => match.Value).ToList();
+
+					if(tokens.Count < 3)
+					{
+						continue;
+					}
+
+					if(tokens[0].Equals("Bin", StringComparison.OrdinalIgnoreCase))
+					{
+						continue;
+					}
+
+					string key = tokens[0];
+					if(tokens.Count > 1 && tokens[1].StartsWith("(", StringComparison.Ordinal) && tokens[1].EndsWith(")", StringComparison.Ordinal))
+					{
+						key = $"{tokens[0]} {tokens[1]}";
+					}
+					bins[key] = tokens.Skip(2).ToList();
+				}
+				catch(Exception ex)
+				{
+					LogException("ParseBinSection", ex, FileName, sectionName, TestItemName, null, null, rawLine, null, lineIndex + 1);
+					throw;
+				}
+			}
+
+			return bins;
+		}
+
+		private static string ParseFirstTestItemName(string[] lines)
+		{
+			int testItemSectionIndex = Array.FindIndex(lines, line => string.Equals(line?.Trim(), "[TEST ITEM]", StringComparison.OrdinalIgnoreCase));
+			if(testItemSectionIndex < 0)
+			{
+				return null;
+			}
+
+			for(int lineIndex = testItemSectionIndex + 2; lineIndex < lines.Length; lineIndex++)
+			{
+				string rawLine = lines[lineIndex];
+				string line = rawLine?.Trim() ?? string.Empty;
+
+				if(string.IsNullOrWhiteSpace(line))
+				{
+					continue;
+				}
+
+				if(line.StartsWith("****************************************************************", StringComparison.Ordinal) || line.StartsWith("[", StringComparison.Ordinal))
+				{
+					break;
+				}
+
+				Match nameMatch = Regex.Match(rawLine, @"^(?<name>.+?)\s+\d+\(\d+(?:\.\d+)?%\)");
+				if(nameMatch.Success)
+				{
+					return nameMatch.Groups["name"].Value.Trim();
+				}
+			}
+
+			return null;
 		}
 
 		private static void LogException(string operation, Exception ex, string filePath, string section, string testItem, string site, string pin, string rawInputValue, string keyRawValue, int lineNumber)

@@ -65,9 +65,7 @@ namespace STDF
 
 					try
 					{
-						// 讀取原始資料列，後續依 STDF 需要的欄位結構解析。
 						logLines = File.ReadAllLines(logFilePath);
-						logLines = logLines.Where(line => !string.IsNullOrWhiteSpace(line)).ToArray();
 					}
 					catch(Exception ex)
 					{
@@ -75,75 +73,68 @@ namespace STDF
 						throw;
 					}
 
-					int testStartIndex = Array.FindIndex(logLines, line => line.Trim().StartsWith("==> Test Start"));
+					int    currentPartIndex = 0;
+					bool   inTestBlock      = false;
+					string testItemTitle    = string.Empty;
 
-					if(testStartIndex < 0)
+					for(int lineIndex = 0; lineIndex < logLines.Length; lineIndex++)
 					{
-						InvalidDataException ex = new InvalidDataException("缺少 Test Start 標記，略過此檔案。");
-						LogException("ExtractTestRange.Skip", ex, logFilePath, "DataLines", string.Empty, string.Empty, string.Empty, "marker=Test Start", string.Empty, testStartIndex);
-						continue;
+						string rawLine = logLines[lineIndex];
+						string line    = rawLine?.Trim() ?? string.Empty;
+
+						if(line.StartsWith("==> Test Start", StringComparison.OrdinalIgnoreCase))
+						{
+							currentPartIndex++;
+							inTestBlock   = true;
+							testItemTitle = string.Empty;
+							continue;
+						}
+
+						if(!inTestBlock)
+						{
+							continue;
+						}
+
+						if(line.StartsWith("==> Test End", StringComparison.OrdinalIgnoreCase))
+						{
+							inTestBlock = false;
+							continue;
+						}
+
+						if(string.IsNullOrWhiteSpace(rawLine))
+						{
+							continue;
+						}
+
+						if(rawLine.Contains("<<<<<<---------------     Test Item :"))
+						{
+							testItemTitle = ExtractTestItemTitle(rawLine);
+							continue;
+						}
+
+						if(rawLine.Contains("JUDGE_V:") || rawLine.Contains("P/F   Site"))
+						{
+							continue;
+						}
+
+						if(!_dataLineRegex.IsMatch(rawLine))
+						{
+							continue;
+						}
+
+						CChipData chipData = EnumerableConvert(logFilePath, testItemTitle, rawLine, lineIndex + 1);
+						chipData.Id = currentPartIndex;
+						ChipDataList.Add(chipData);
 					}
 
-					int testEndIndex = Array.FindIndex(logLines, testStartIndex + 1, line => line.Trim().StartsWith("==> Test End"));
-
-					if(testEndIndex < 0)
+					if(currentPartIndex == 0)
 					{
-						InvalidDataException ex = new InvalidDataException($"缺少 Test End 標記，略過此檔案。Test Start index={testStartIndex}。");
-						LogException("ExtractTestRange.Skip", ex, logFilePath, "DataLines", string.Empty, string.Empty, string.Empty, $"startIndex={testStartIndex}; marker=Test End", string.Empty, testEndIndex);
-						continue;
-					}
-
-					if(testEndIndex <= testStartIndex + 1)
-					{
-						InvalidDataException ex = new InvalidDataException($"Test Start/Test End 之間無可用資料，略過此檔案。start={testStartIndex}, end={testEndIndex}。");
-						LogException("ExtractTestRange.Skip", ex, logFilePath, "DataLines", string.Empty, string.Empty, string.Empty, $"startIndex={testStartIndex}; endIndex={testEndIndex}", string.Empty, testEndIndex);
-						continue;
-					}
-
-					// 只保留 Test Start / Test End 之間的資料。
-					string[] dataLines = logLines
-										 .Skip(testStartIndex + 1)
-										 .Take(testEndIndex   - testStartIndex - 1)
-										 .Where(line => !line.Contains("P/F   Site              Pin_name        Force      L-Limit      H-Limit      Measure   Min Measure   Max Measure"))
-										 .ToArray();
-
-					if(dataLines.Length == 0)
-					{
-						InvalidDataException ex = new InvalidDataException($"Test Start/Test End 之間資料為空，略過此檔案。start={testStartIndex}, end={testEndIndex}。");
-						LogException("ExtractTestRange.Skip", ex, logFilePath, "DataLines", string.Empty, string.Empty, string.Empty, $"startIndex={testStartIndex}; endIndex={testEndIndex}; dataLineCount=0", string.Empty, testEndIndex);
+						InvalidDataException ex = new InvalidDataException("缺少 Test Start/Test End 區段，略過此檔案。");
+						LogException("ExtractTestRange.Skip", ex, logFilePath, "DataLines", string.Empty, string.Empty, string.Empty, "marker=Test Start/Test End", string.Empty, -1);
 						continue;
 					}
 
 					parsedLogCount++;
-
-					int    currentJudgeIndex = 0;
-					string testItemTitle     = string.Empty;
-
-					for(int dataLineIndex = 0; dataLineIndex < dataLines.Length; dataLineIndex++)
-					{
-						string dataLine = dataLines[dataLineIndex];
-
-						if(dataLine.Contains("<<<<<<---------------     Test Item :"))
-						{
-							testItemTitle = dataLine.Replace("<<<<<<---------------     Test Item : OSitem_", string.Empty).Replace("--------------->>>>>>", string.Empty).Trim();
-							continue;
-						}
-
-						if(dataLine.Contains("JUDGE_V:"))
-						{
-							currentJudgeIndex++;
-							continue;
-						}
-
-						CChipData chipData = EnumerableConvert(logFilePath, testItemTitle, dataLine, dataLineIndex + testStartIndex + 2);
-
-						if(string.Equals(chipData.PassOrFail, "PASS", StringComparison.OrdinalIgnoreCase))
-						{
-							chipData.Id = currentJudgeIndex;
-						}
-
-						ChipDataList.Add(chipData);
-					}
 				}
 
 				if(parsedLogCount == 0)
@@ -162,6 +153,36 @@ namespace STDF
 				MessageBox.Show(e.Message + "\r\n" + e.StackTrace);
 				throw;
 			}
+		}
+
+		private static string ExtractTestItemTitle(string rawLine)
+		{
+			if(string.IsNullOrWhiteSpace(rawLine))
+			{
+				return string.Empty;
+			}
+
+			Match match = Regex.Match(rawLine, @"Test\s*Item\s*:\s*(?<name>.+?)\s*-{5,}>+");
+
+			if(match.Success)
+			{
+				return match.Groups["name"].Value.Replace("OSitem_", string.Empty).Trim();
+			}
+
+			int markerIndex = rawLine.IndexOf("Test Item :", StringComparison.OrdinalIgnoreCase);
+			if(markerIndex < 0)
+			{
+				return rawLine.Trim();
+			}
+
+			string suffix   = rawLine.Substring(markerIndex + "Test Item :".Length);
+			int    endIndex = suffix.IndexOf("--------------->>>>>>", StringComparison.Ordinal);
+			if(endIndex >= 0)
+			{
+				suffix = suffix.Substring(0, endIndex);
+			}
+
+			return suffix.Replace("OSitem_", string.Empty).Trim();
 		}
 
 		public void GroupBySite()

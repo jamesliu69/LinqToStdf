@@ -299,126 +299,119 @@ namespace STDF
 				Dictionary<uint, TestSummary> testSummaries  = new Dictionary<uint, TestSummary>();
 				uint                          nextTestNumber = 1;
 
-				for(int i = 0; i < chipDataList.Count; i++)
+				List<PartSiteSummary> partSiteSummaries = BuildPartSiteSummaries(chipDataList);
+				if(partSiteSummaries.Count == 0)
 				{
-					CChipData chip      = chipDataList[i];
-					int       chipTotal = chipDataList.Count;
-					workflowStage = $"DoWork.ProcessChip[{i + 1}/{chipTotal}]";
+					InvalidDataException ex = new InvalidDataException("找不到可輸出的 Part/Site 資料。請確認來源 Log 具備 Test Start/Test End 與量測資料列。");
+					LogException("BuildPartSiteSummaries", ex, _fileParam.FilePath, _fileParam.TestItemName, null, null, "partSiteSummaries=0", "PIR/PTR/PRR", workflowStage, _logPath, _outputPath);
+					throw ex;
+				}
+
+				List<CChipData>       partOutcomeList   = partSiteSummaries.Select(part => new CChipData
+																	   {
+																		   PassOrFail = part.IsPass ? "PASS" : "FAIL"
+																	   })
+																	   .ToList();
+				List<BinSummary>      hardwareBins      = BuildBinSummaries(_fileParam.HardWareBin, partOutcomeList).ToList();
+				List<BinSummary>      softwareBins      = BuildBinSummaries(_fileParam.SoftWareBin, partOutcomeList).ToList();
+				foreach(PartSiteSummary part in partSiteSummaries)
+				{
+					workflowStage = $"DoWork.ProcessPart[id={part.PartIndex},site={part.SiteNumber}]";
+					CChipData firstChip = part.Chips[0];
 
 					try
 					{
 						Pir pir = new Pir();
 						pir.HeadNumber = 1;
-						byte siteNumber;
+						pir.SiteNumber = part.SiteNumber;
+						ExecuteWithLogging("WriteRecord", firstChip.FileName, firstChip.Comment, firstChip.Site, firstChip.PinName, null, "PIR", () => _stdfWriter.WriteRecord(pir));
 
-						try
+						foreach(CChipData chip in part.Chips)
 						{
-							siteNumber = Convert.ToByte(chip.Site);
-						}
-						catch(Exception ex)
-						{
-							LogException("ConvertSite", ex, chip.FileName, chip.Comment, chip.Site, chip.PinName, $"loop={i + 1}/{chipTotal};siteRaw={chip.Site}", "PIR.SiteNumber", workflowStage, _logPath, _outputPath);
-							throw;
-						}
-						pir.SiteNumber = siteNumber;
-						ExecuteWithLogging("WriteRecord", chip.FileName, chip.Comment, chip.Site, chip.PinName, null, "PIR", () => _stdfWriter.WriteRecord(pir));
+							string testName = string.IsNullOrWhiteSpace(chip.Comment) ? "Unnamed_Test" : chip.Comment.Trim();
 
-						string testName = string.IsNullOrWhiteSpace(chip.Comment) ? "Unnamed_Test" : chip.Comment.Trim();
+							if(!testNumberMap.TryGetValue(testName, out uint testNumber))
+							{
+								testNumber              = nextTestNumber++;
+								testNumberMap[testName] = testNumber;
+							}
 
-						if(!testNumberMap.TryGetValue(testName, out uint testNumber))
-						{
-							testNumber              = nextTestNumber++;
-							testNumberMap[testName] = testNumber;
-						}
+							bool isPass = IsPassResult(chip.PassOrFail);
+							Ptr  ptr    = new Ptr();
+							ptr.TestNumber      = testNumber;
+							ptr.HeadNumber      = 1;
+							ptr.SiteNumber      = part.SiteNumber;
+							ptr.TestFlags       = BuildPtrTestFlags(isPass, chip.PassOrFail);
+							ptr.ParametricFlags = 0;
+							float? measurementValue;
 
-						string passOrFailText = chip.PassOrFail?.Trim() ?? string.Empty;
-						bool   isPass         = passOrFailText.Equals("PASS", StringComparison.OrdinalIgnoreCase);
+							try
+							{
+								measurementValue = TryExtractFloat(chip.strMeasureValue) ?? TryExtractFloat(chip.strMaxMeasureValue) ?? TryExtractFloat(chip.strMinMeasureValue);
+							}
+							catch(Exception ex)
+							{
+								LogException("ValueConversion", ex, chip.FileName, chip.Comment, chip.Site, chip.PinName, $"part={part.PartIndex};site={part.SiteNumber};values={chip.strMaxMeasureValue}|{chip.strMeasureValue}|{chip.strMinMeasureValue}", "PTR.Result",
+											 workflowStage, _logPath, _outputPath);
+								throw;
+							}
+							ptr.Result = measurementValue;
+							ptr.TestText = chip.Comment;
+							ptr.AlarmId  = " ";
 
-						Ptr ptr = new Ptr();
-						ptr.TestNumber      = testNumber;
-						ptr.HeadNumber      = 1;
-						ptr.SiteNumber      = siteNumber;
-						ptr.TestFlags       = isPass ? (byte)1 : (byte)0;
-						ptr.ParametricFlags = 0;
-						float? measurementValue;
+							if(TryExtractFloat(chip.LowLimit) is float lowLimitValue)
+							{
+								ptr.LowLimit = lowLimitValue;
+							}
 
-						try
-						{
-							measurementValue = TryExtractFloat(chip.strMeasureValue) ?? TryExtractFloat(chip.strMaxMeasureValue) ?? TryExtractFloat(chip.strMinMeasureValue);
-						}
-						catch(Exception ex)
-						{
-							LogException("ValueConversion",                                                                                             ex,           chip.FileName, chip.Comment, chip.Site, chip.PinName,
-										 $"loop={i + 1}/{chipTotal};values={chip.strMaxMeasureValue}|{chip.strMeasureValue}|{chip.strMinMeasureValue}", "PTR.Result", workflowStage, _logPath,     _outputPath);
-							throw;
-						}
-						ptr.Result                   = measurementValue;
-						ptr.TestText                 = chip.Comment;
-						ptr.AlarmId                  = " ";
-						ptr.OptionalFlags            = 0;
-						ptr.ResultScalingExponent    = 6;
-						ptr.LowLimitScalingExponent  = 6;
-						ptr.HighLimitScalingExponent = 6;
-						string lowLimitText  = chip.LowLimit;
-						string highLimitText = chip.HighLimit;
+							if(TryExtractFloat(chip.HighLimit) is float highLimitValue)
+							{
+								ptr.HighLimit = highLimitValue;
+							}
+							ptr.Units = ExtractUnits(chip.LowLimit, chip.HighLimit);
+							ExecuteWithLogging("WriteRecord", chip.FileName, chip.Comment, chip.Site, chip.PinName, chip.strMeasureValue, "PTR", () => _stdfWriter.WriteRecord(ptr));
 
-						if(TryExtractFloat(lowLimitText) is float lowLimitValue)
-						{
-							ptr.LowLimit = lowLimitValue;
-						}
+							if(!testSummaries.TryGetValue(testNumber, out TestSummary summary))
+							{
+								summary = new TestSummary
+										  {
+											  TestNumber = testNumber,
+											  TestName   = testName
+										  };
+								testSummaries[testNumber] = summary;
+							}
+							summary.ExecutedCount++;
 
-						if(TryExtractFloat(highLimitText) is float highLimitValue)
-						{
-							ptr.HighLimit = highLimitValue;
-						}
-						string unitsText = string.Empty;
+							if(!isPass)
+							{
+								summary.FailedCount++;
+							}
 
-						if(!string.IsNullOrWhiteSpace(chip.LowLimit))
-						{
-							unitsText = Regex.Replace(chip.LowLimit, "[^a-zA-Z]", "");
-						}
-
-						if(string.IsNullOrWhiteSpace(unitsText))
-						{
-							unitsText = string.IsNullOrWhiteSpace(chip.HighLimit) ? string.Empty : Regex.Replace(chip.HighLimit, "[^a-zA-Z]", "");
-						}
-						ptr.Units = unitsText;
-						ExecuteWithLogging("WriteRecord", chip.FileName, chip.Comment, chip.Site, chip.PinName, chip.strMeasureValue, "PTR", () => _stdfWriter.WriteRecord(ptr));
-
-						if(!testSummaries.TryGetValue(testNumber, out TestSummary summary))
-						{
-							summary = new TestSummary
-									  {
-										  TestNumber = testNumber,
-										  TestName   = testName
-									  };
-							testSummaries[testNumber] = summary;
-						}
-						summary.ExecutedCount++;
-
-						if(!isPass)
-						{
-							summary.FailedCount++;
-						}
-
-						if(measurementValue.HasValue)
-						{
-							summary.HasMeasurement = true;
-							float measured = measurementValue.Value;
-							summary.TestMin          =  summary.TestMin.HasValue ? Math.Min(summary.TestMin.Value, measured) : measured;
-							summary.TestMax          =  summary.TestMax.HasValue ? Math.Max(summary.TestMax.Value, measured) : measured;
-							summary.TestSum          += measured;
-							summary.TestSumOfSquares += measured * measured;
+							if(measurementValue.HasValue)
+							{
+								summary.HasMeasurement = true;
+								float measured = measurementValue.Value;
+								summary.TestMin          = summary.TestMin.HasValue ? Math.Min(summary.TestMin.Value, measured) : measured;
+								summary.TestMax          = summary.TestMax.HasValue ? Math.Max(summary.TestMax.Value, measured) : measured;
+								summary.TestSum          += measured;
+								summary.TestSumOfSquares += measured * measured;
+							}
 						}
 
 						Prr prr = new Prr();
 						prr.HeadNumber = 1;
-						prr.SiteNumber = siteNumber;
-						ExecuteWithLogging("WriteRecord", chip.FileName, chip.Comment, chip.Site, chip.PinName, chip.PassOrFail, "PRR", () => _stdfWriter.WriteRecord(prr));
+						prr.SiteNumber = part.SiteNumber;
+						prr.TestCount  = (ushort)Math.Min(part.Chips.Count, ushort.MaxValue);
+						prr.HardBin    = ResolveBinNumberForOutcome(hardwareBins, part.IsPass);
+						prr.SoftBin    = ResolveBinNumberForOutcome(softwareBins, part.IsPass);
+						prr.Failed     = !part.IsPass;
+						prr.PartId     = $"{firstChip.FileName}-{part.PartIndex.ToString(CultureInfo.InvariantCulture)}-S{part.SiteNumber.ToString(CultureInfo.InvariantCulture)}";
+						ExecuteWithLogging("WriteRecord", firstChip.FileName, firstChip.Comment, firstChip.Site, firstChip.PinName, part.IsPass ? "PASS" : "FAIL", "PRR", () => _stdfWriter.WriteRecord(prr));
 					}
 					catch(Exception ex)
 					{
-						LogException("ProcessChip", ex, chip.FileName, chip.Comment, chip.Site, chip.PinName, $"loop={i + 1}/{chipTotal}", "PIR/PTR/PRR", workflowStage, _logPath, _outputPath);
+						LogException("ProcessPart", ex, firstChip.FileName, firstChip.Comment, firstChip.Site, firstChip.PinName, $"part={part.PartIndex};site={part.SiteNumber};rows={part.Chips.Count}", "PIR/PTR/PRR", workflowStage, _logPath,
+									 _outputPath);
 						throw;
 					}
 				}
@@ -429,7 +422,7 @@ namespace STDF
 
 				workflowStage = "DoWork.WriteTSR";
 
-				byte summarySiteNumber = siteNumbers[0];
+				byte summarySiteNumber = 0;
 
 				foreach(TestSummary summary in testSummaries.OrderBy(c => c.Key).Select(c => c.Value))
 				{
@@ -458,7 +451,7 @@ namespace STDF
 
 				workflowStage = "DoWork.WriteHBR";
 
-				foreach(BinSummary bin in BuildBinSummaries(_fileParam.HardWareBin, _p2020.ChipDataList))
+				foreach(BinSummary bin in hardwareBins)
 				{
 					Hbr hbr = new Hbr();
 					hbr.HeadNumber  = 1;
@@ -476,7 +469,7 @@ namespace STDF
 
 				workflowStage = "DoWork.WriteSBR";
 
-				foreach(BinSummary bin in BuildBinSummaries(_fileParam.SoftWareBin, _p2020.ChipDataList))
+				foreach(BinSummary bin in softwareBins)
 				{
 					Sbr sbr = new Sbr();
 					sbr.HeadNumber  = 1;
@@ -494,10 +487,33 @@ namespace STDF
 
 				workflowStage = "DoWork.WritePCR";
 
-				Pcr pcr = new Pcr();
-				pcr.HeadNumber = 1;
-				pcr.SiteNumber = summarySiteNumber;
-				ExecuteWithLogging("WriteRecord", _fileParam.FilePath, _fileParam.TestItemName, summarySiteNumber.ToString(), null, null, "PCR", () => _stdfWriter.WriteRecord(pcr));
+				foreach(IGrouping<byte, PartSiteSummary> siteGroup in partSiteSummaries.GroupBy(part => part.SiteNumber).OrderBy(group => group.Key))
+				{
+					uint sitePartCount = (uint)siteGroup.Count();
+					uint siteGoodCount = (uint)siteGroup.Count(part => part.IsPass);
+
+					Pcr pcr = new Pcr();
+					pcr.HeadNumber      = 1;
+					pcr.SiteNumber      = siteGroup.Key;
+					pcr.PartCount       = sitePartCount;
+					pcr.GoodCount       = siteGoodCount;
+					pcr.FunctionalCount = siteGoodCount;
+					pcr.RetestCount     = 0;
+					pcr.AbortCount      = 0;
+					ExecuteWithLogging("WriteRecord", _fileParam.FilePath, _fileParam.TestItemName, siteGroup.Key.ToString(CultureInfo.InvariantCulture), null, null, "PCR", () => _stdfWriter.WriteRecord(pcr));
+				}
+
+				uint totalPartCount = (uint)partSiteSummaries.Count;
+				uint totalGoodCount = (uint)partSiteSummaries.Count(part => part.IsPass);
+				Pcr  lotPcr         = new Pcr();
+				lotPcr.HeadNumber      = 1;
+				lotPcr.SiteNumber      = 0;
+				lotPcr.PartCount       = totalPartCount;
+				lotPcr.GoodCount       = totalGoodCount;
+				lotPcr.FunctionalCount = totalGoodCount;
+				lotPcr.RetestCount     = 0;
+				lotPcr.AbortCount      = 0;
+				ExecuteWithLogging("WriteRecord", _fileParam.FilePath, _fileParam.TestItemName, "0", null, null, "PCR", () => _stdfWriter.WriteRecord(lotPcr));
 
 				#endregion
 
@@ -550,6 +566,91 @@ namespace STDF
 			return float.TryParse(match.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out float value) ? value : null;
 		}
 
+		private static bool IsPassResult(string passOrFailText) => string.Equals(passOrFailText?.Trim(), "PASS", StringComparison.OrdinalIgnoreCase);
+
+		private static byte BuildPtrTestFlags(bool isPass, string passOrFailText)
+		{
+			const byte passFailInvalidMask = 0x10;
+			const byte failMask            = 0x80;
+
+			if(!string.Equals(passOrFailText?.Trim(), "PASS", StringComparison.OrdinalIgnoreCase) &&
+			   !string.Equals(passOrFailText?.Trim(), "FAIL", StringComparison.OrdinalIgnoreCase))
+			{
+				return passFailInvalidMask;
+			}
+
+			return isPass ? (byte)0 : failMask;
+		}
+
+		private static string ExtractUnits(string lowLimitText, string highLimitText)
+		{
+			string unitsText = string.Empty;
+
+			if(!string.IsNullOrWhiteSpace(lowLimitText))
+			{
+				unitsText = Regex.Replace(lowLimitText, "[^a-zA-Z]", string.Empty);
+			}
+
+			if(string.IsNullOrWhiteSpace(unitsText) && !string.IsNullOrWhiteSpace(highLimitText))
+			{
+				unitsText = Regex.Replace(highLimitText, "[^a-zA-Z]", string.Empty);
+			}
+
+			return unitsText;
+		}
+
+		private static List<PartSiteSummary> BuildPartSiteSummaries(IEnumerable<CChipData> chipDataList)
+		{
+			List<PartSiteSummary> summaries = new List<PartSiteSummary>();
+
+			foreach(IGrouping<string, CChipData> group in chipDataList
+														 .Where(chip => chip != null && chip.Id > 0)
+														 .GroupBy(chip => $"{chip.FileName}|{chip.Id}|{NormalizeSite(chip.Site)}"))
+			{
+				List<CChipData> chips = group.ToList();
+				if(chips.Count == 0)
+				{
+					continue;
+				}
+
+				CChipData firstChip = chips[0];
+				summaries.Add(new PartSiteSummary
+							  {
+								  PartIndex  = firstChip.Id,
+								  SiteNumber = NormalizeSite(firstChip.Site),
+								  Chips      = chips,
+								  IsPass     = chips.All(chip => IsPassResult(chip.PassOrFail))
+							  });
+			}
+
+			return summaries
+				  .OrderBy(summary => summary.PartIndex)
+				  .ThenBy(summary => summary.SiteNumber)
+				  .ToList();
+		}
+
+		private static byte NormalizeSite(string siteRaw)
+		{
+			return byte.TryParse(siteRaw, NumberStyles.Integer, CultureInfo.InvariantCulture, out byte siteNumber)
+				? siteNumber
+				: (byte)1;
+		}
+
+		private static ushort ResolveBinNumberForOutcome(IEnumerable<BinSummary> bins, bool isPass)
+		{
+			string expectedPassFail = isPass ? "P" : "F";
+			BinSummary matched = bins.FirstOrDefault(bin => string.Equals(bin.BinPassFail, expectedPassFail, StringComparison.OrdinalIgnoreCase));
+
+			if(matched != null)
+			{
+				return matched.BinNumber;
+			}
+
+			ushort defaultBinNumber = isPass ? (ushort)1 : (ushort)2;
+			BinSummary firstBin = bins.OrderBy(bin => bin.BinNumber).FirstOrDefault();
+			return firstBin?.BinNumber ?? defaultBinNumber;
+		}
+
 		private void ExecuteWithLogging(string operation, string filePath, string testItem, string site, string pin, string rawInputValue, string targetRecord, Action action)
 		{
 			try
@@ -600,7 +701,7 @@ namespace STDF
 					}
 
 					uint? parsedBinCount = tokens
-										   .Select(token => uint.TryParse(token, out uint value) ? (uint?)value : null)
+										   .Select(TryParseCountToken)
 										   .FirstOrDefault(value => value.HasValue);
 					uint binCount = parsedBinCount ?? 0;
 
@@ -612,7 +713,7 @@ namespace STDF
 					string binPassFail = tokens.Select(NormalizePassFailToken).FirstOrDefault(token => token != null) ?? InferPassFailFromBinNumber(binNumber);
 
 					string binName = tokens.FirstOrDefault(token =>
-															   !uint.TryParse(token, out uint _) && NormalizePassFailToken(token) == null)
+															   !TryParseCountToken(token).HasValue && NormalizePassFailToken(token) == null)
 								  ?? item.Key;
 
 					bins.Add(new BinSummary
@@ -721,6 +822,17 @@ namespace STDF
 			return null;
 		}
 
+		private static uint? TryParseCountToken(string token)
+		{
+			if(string.IsNullOrWhiteSpace(token))
+			{
+				return null;
+			}
+
+			Match match = Regex.Match(token, @"\d+");
+			return match.Success && uint.TryParse(match.Value, out uint value) ? (uint?)value : null;
+		}
+
 		private static string InferPassFailFromBinNumber(ushort binNumber) => binNumber == 1 ? "P" : "F";
 
 		private sealed class TestSummary
@@ -749,6 +861,14 @@ namespace STDF
 			public ushort PinIndex    { get; set; }
 			public string RawPinName  { get; set; }
 			public string LogicalName { get; set; }
+		}
+
+		private sealed class PartSiteSummary
+		{
+			public int             PartIndex  { get; set; }
+			public byte            SiteNumber { get; set; }
+			public bool            IsPass     { get; set; }
+			public List<CChipData> Chips      { get; set; } = new List<CChipData>();
 		}
 	}
 }
