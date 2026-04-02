@@ -90,10 +90,11 @@ namespace STDF
 					continue;
 				}
 
-				if(line.StartsWith("Total (By Sites)", StringComparison.OrdinalIgnoreCase))
-				{
-					List<string> countTokens = ExtractCountTokens(line);
-					ResultTotal = countTokens.ToArray();
+			if(line.StartsWith("Total (By Sites)", StringComparison.OrdinalIgnoreCase))
+			{
+				// Summary 區的 count 文字格式是 N(%)，這裡只取 N 供 STDF 彙總使用。
+				List<string> countTokens = ExtractCountTokens(line);
+				ResultTotal = countTokens.ToArray();
 					if(countTokens.Count > 1)
 					{
 						SiteCount = countTokens.Count - 1;
@@ -242,6 +243,7 @@ namespace STDF
 
 				try
 				{
+					// Bin 區每列會同時帶 bin 名稱、數量與 pass/fail 標記，後續由 CStdf 轉成 HBR/SBR。
 					List<string> tokens = Regex.Matches(rawLine, @"\S+").Cast<Match>().Select(match => match.Value).ToList();
 
 					if(tokens.Count < 3)
@@ -297,6 +299,7 @@ namespace STDF
 				Match nameMatch = Regex.Match(rawLine, @"^(?<name>.+?)\s+\d+\(\d+(?:\.\d+)?%\)");
 				if(nameMatch.Success)
 				{
+					// 取第一個 Test Item 名稱做為整份 Summary 的代表名稱。
 					return nameMatch.Groups["name"].Value.Trim();
 				}
 			}

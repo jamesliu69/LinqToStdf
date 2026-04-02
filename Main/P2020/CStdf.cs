@@ -307,6 +307,7 @@ namespace STDF
 					throw ex;
 				}
 
+				// 先把每個 Part 的 PASS/FAIL 彙成 bin 用的輸入，再產生 HBR/SBR 與 PRR。
 				List<CChipData>       partOutcomeList   = partSiteSummaries.Select(part => new CChipData
 																	   {
 																		   PassOrFail = part.IsPass ? "PASS" : "FAIL"
@@ -401,6 +402,7 @@ namespace STDF
 						Prr prr = new Prr();
 						prr.HeadNumber = 1;
 						prr.SiteNumber = part.SiteNumber;
+						// PRR 要帶完整的 part disposition，包含測試數量與最終 bin。
 						prr.TestCount  = (ushort)Math.Min(part.Chips.Count, ushort.MaxValue);
 						prr.HardBin    = ResolveBinNumberForOutcome(hardwareBins, part.IsPass);
 						prr.SoftBin    = ResolveBinNumberForOutcome(softwareBins, part.IsPass);
@@ -492,6 +494,7 @@ namespace STDF
 					uint sitePartCount = (uint)siteGroup.Count();
 					uint siteGoodCount = (uint)siteGroup.Count(part => part.IsPass);
 
+					// PCR 以 site 為單位記錄 part count / good count，避免整批資料被壓成單一站點。
 					Pcr pcr = new Pcr();
 					pcr.HeadNumber      = 1;
 					pcr.SiteNumber      = siteGroup.Key;

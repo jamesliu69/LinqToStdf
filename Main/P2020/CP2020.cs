@@ -84,6 +84,7 @@ namespace STDF
 
 						if(line.StartsWith("==> Test Start", StringComparison.OrdinalIgnoreCase))
 						{
+							// 每個 Test Start 對應一個 DUT/Part，後續的 PIR/PRR 會以此分組。
 							currentPartIndex++;
 							inTestBlock   = true;
 							testItemTitle = string.Empty;
@@ -108,6 +109,7 @@ namespace STDF
 
 						if(rawLine.Contains("<<<<<<---------------     Test Item :"))
 						{
+							// Test Item 標題會影響 STDF 的 TestName 與後續 TSR 彙總。
 							testItemTitle = ExtractTestItemTitle(rawLine);
 							continue;
 						}
@@ -122,6 +124,7 @@ namespace STDF
 							continue;
 						}
 
+						// 只保留真正的量測列，避免把標頭或空白列誤當成測試資料。
 						CChipData chipData = EnumerableConvert(logFilePath, testItemTitle, rawLine, lineIndex + 1);
 						chipData.Id = currentPartIndex;
 						ChipDataList.Add(chipData);
