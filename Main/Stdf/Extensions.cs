@@ -102,7 +102,7 @@ namespace Stdf
 		///     Gets the <see cref="Pcr">Pcrs</see> for the record context
 		///     with the given head and site.
 		/// </summary>
-		public static IEnumerable<Pcr> GetPcrs(this IRecordContext record, byte headNumber, byte siteNumber) => from r in record.StdfFile.GetRecords().OfExactType<Pcr>() where (r.HeadNumber == headNumber) && (r.SiteNumber == siteNumber) select r;
+		public static IEnumerable<Pcr> GetPcrs(this IRecordContext record, byte headNumber, byte siteNumber) => from r in record.StdfFile.GetRecords().OfExactType<Pcr>() where r.HeadNumber == headNumber && r.SiteNumber == siteNumber select r;
 
 		/// <summary>
 		///     Gets the summary (head 255) <see cref="Pcr" /> for the record context.
@@ -152,7 +152,7 @@ namespace Stdf
 		///     Gets the <see cref="Tsr">Tsrs</see> for the record context
 		///     with the given head and site.
 		/// </summary>
-		public static IEnumerable<Tsr> GetTsrs(this IRecordContext record, byte headNumber, byte siteNumber) => from r in record.StdfFile.GetRecords().OfExactType<Tsr>() where (r.HeadNumber == headNumber) && (r.SiteNumber == siteNumber) select r;
+		public static IEnumerable<Tsr> GetTsrs(this IRecordContext record, byte headNumber, byte siteNumber) => from r in record.StdfFile.GetRecords().OfExactType<Tsr>() where r.HeadNumber == headNumber && r.SiteNumber == siteNumber select r;
 
 		/// <summary>
 		///     Gets the summary (head 255) <see cref="Tsr">Tsrs</see> for the record context.
@@ -161,7 +161,7 @@ namespace Stdf
 
 		#region Helpers
 
-		private static IEnumerable<T> GetBinRecords<T>(IRecordContext record, byte head, byte site) where T : BinSummaryRecord => from r in record.StdfFile.GetRecords().OfExactType<T>() where (r.HeadNumber == head) && (r.SiteNumber == site) select r;
+		private static IEnumerable<T> GetBinRecords<T>(IRecordContext record, byte head, byte site) where T : BinSummaryRecord => from r in record.StdfFile.GetRecords().OfExactType<T>() where r.HeadNumber == head && r.SiteNumber == site select r;
 
 		#endregion
 
@@ -204,20 +204,20 @@ namespace Stdf
 		/// <summary>
 		///     Gets the current Prr associated with the head/site
 		/// </summary>
-		public static Prr GetPrr(this IHeadSiteIndexable record) => (from prr in record.StdfFile.GetRecords().OfExactType<Prr>() where (prr.HeadNumber == record.HeadNumber) && (prr.SiteNumber == record.SiteNumber) select prr).FirstOrDefault();
+		public static Prr GetPrr(this IHeadSiteIndexable record) => (from prr in record.StdfFile.GetRecords().OfExactType<Prr>() where prr.HeadNumber == record.HeadNumber && prr.SiteNumber == record.SiteNumber select prr).FirstOrDefault();
 
 		/// <summary>
 		///     Gets the current Pir associated with the head/site
 		/// </summary>
-		public static Pir GetPir(this IHeadSiteIndexable record) => (from pir in record.StdfFile.GetRecords().OfExactType<Pir>() where (pir.HeadNumber == record.HeadNumber) && (pir.SiteNumber == record.SiteNumber) select pir).FirstOrDefault();
+		public static Pir GetPir(this IHeadSiteIndexable record) => (from pir in record.StdfFile.GetRecords().OfExactType<Pir>() where pir.HeadNumber == record.HeadNumber && pir.SiteNumber == record.SiteNumber select pir).FirstOrDefault();
 
 		#endregion
 
 		#region extending PIR/PRR
 
-		public static Prr GetMatchingPrr(this Pir pir) => pir.After().OfExactType<Prr>().Where(r => (r.HeadNumber == pir.HeadNumber) && (r.SiteNumber == pir.SiteNumber)).FirstOrDefault();
+		public static Prr GetMatchingPrr(this Pir pir) => pir.After().OfExactType<Prr>().Where(r => r.HeadNumber == pir.HeadNumber && r.SiteNumber == pir.SiteNumber).FirstOrDefault();
 
-		public static Pir GetMatchingPir(this Prr prr) => prr.Before().OfExactType<Pir>().Where(r => (r.HeadNumber == prr.HeadNumber) && (r.SiteNumber == prr.SiteNumber)).LastOrDefault();
+		public static Pir GetMatchingPir(this Prr prr) => prr.Before().OfExactType<Pir>().Where(r => r.HeadNumber == prr.HeadNumber && r.SiteNumber == prr.SiteNumber).LastOrDefault();
 
 		/// <summary>
 		///     Gets the records associated with this pir
@@ -227,7 +227,7 @@ namespace Stdf
 		///     The records associated with the part (between the <see cref="Pir" />
 		///     and <see cref="Prr" /> and sharing the same head/site information.
 		/// </returns>
-		public static IEnumerable<StdfRecord> GetChildRecords(this Pir pir) => pir.After().OfType<IHeadSiteIndexable>().Where(r => (r.HeadNumber == pir.HeadNumber) && (r.SiteNumber == pir.SiteNumber)).TakeWhile(r => r.GetType() != typeof(Prr)).Cast<StdfRecord>();
+		public static IEnumerable<StdfRecord> GetChildRecords(this Pir pir) => pir.After().OfType<IHeadSiteIndexable>().Where(r => r.HeadNumber == pir.HeadNumber && r.SiteNumber == pir.SiteNumber).TakeWhile(r => r.GetType() != typeof(Prr)).Cast<StdfRecord>();
 
 		/// <summary>
 		///     Gets the records associated with this prr

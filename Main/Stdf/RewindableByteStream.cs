@@ -145,7 +145,7 @@ namespace Stdf
 				//if we have bytes to read, and we are rewound,
 				//read an appropriate number of bytes from
 				//the memoized stream.
-				if((count > 0) && (_Rewound > 0))
+				if(count > 0 && _Rewound > 0)
 				{
 					int countToRead = Math.Min(count, _Rewound);
 					totalRead = _MemoizedData.Read(buffer, offset, countToRead);

@@ -110,12 +110,12 @@ namespace Stdf
 
 		internal StdfFile(IStdfStreamManager streamManager, bool debug, RecordsAndFields recordsAndFields) : this(streamManager, PrivateImpl.None)
 		{
-			if(debug || (recordsAndFields != null))
+			if(debug || recordsAndFields != null)
 			{
 				ConverterFactory = new RecordConverterFactory(recordsAndFields)
-								   {
-									   Debug = debug
-								   };
+				{
+					Debug = debug,
+				};
 				StdfV4Specification.RegisterRecords(ConverterFactory);
 			}
 			else
@@ -305,16 +305,16 @@ namespace Stdf
 					if(_Stream.Read(far, 6) < 6)
 					{
 						yield return new StartOfStreamRecord
-									 {
-										 Endian         = Endian.Unknown,
-										 ExpectedLength = _Stream.Length
-									 };
+						{
+							Endian         = Endian.Unknown,
+							ExpectedLength = _Stream.Length,
+						};
 
 						yield return new FormatErrorRecord
-									 {
-										 Message     = Resources.FarReadError,
-										 Recoverable = false
-									 };
+						{
+							Message     = Resources.FarReadError,
+							Recoverable = false,
+						};
 						yield return new EndOfStreamRecord();
 						yield break;
 					}
@@ -325,21 +325,21 @@ namespace Stdf
 					if(length != 2)
 					{
 						yield return new StartOfStreamRecord
-									 {
-										 Endian         = endian,
-										 ExpectedLength = _Stream.Length
-									 };
+						{
+							Endian         = endian,
+							ExpectedLength = _Stream.Length,
+						};
 
 						yield return new FormatErrorRecord
-									 {
-										 Message     = Resources.FarLengthError,
-										 Recoverable = false
-									 };
+						{
+							Message     = Resources.FarLengthError,
+							Recoverable = false,
+						};
 
 						yield return new EndOfStreamRecord
-									 {
-										 Offset = 2
-									 };
+						{
+							Offset = 2,
+						};
 						yield break;
 					}
 
@@ -347,22 +347,22 @@ namespace Stdf
 					if(far[2] != 0)
 					{
 						yield return new StartOfStreamRecord
-									 {
-										 Endian         = endian,
-										 ExpectedLength = _Stream.Length
-									 };
+						{
+							Endian         = endian,
+							ExpectedLength = _Stream.Length,
+						};
 
 						yield return new FormatErrorRecord
-									 {
-										 Offset      = 2,
-										 Message     = Resources.FarRecordTypeError,
-										 Recoverable = false
-									 };
+						{
+							Offset      = 2,
+							Message     = Resources.FarRecordTypeError,
+							Recoverable = false,
+						};
 
 						yield return new EndOfStreamRecord
-									 {
-										 Offset = 6
-									 };
+						{
+							Offset = 6,
+						};
 						yield break;
 					}
 
@@ -370,37 +370,37 @@ namespace Stdf
 					if(far[3] != 10)
 					{
 						yield return new StartOfStreamRecord
-									 {
-										 Endian         = endian,
-										 ExpectedLength = _Stream.Length
-									 };
+						{
+							Endian         = endian,
+							ExpectedLength = _Stream.Length,
+						};
 
 						yield return new FormatErrorRecord
-									 {
-										 Offset      = 3,
-										 Message     = Resources.FarRecordSubTypeError,
-										 Recoverable = false
-									 };
+						{
+							Offset      = 3,
+							Message     = Resources.FarRecordSubTypeError,
+							Recoverable = false,
+						};
 
 						yield return new EndOfStreamRecord
-									 {
-										 Offset = 3
-									 };
+						{
+							Offset = 3,
+						};
 						yield break;
 					}
 
 					//OK we're satisfied, let's go
 					yield return new StartOfStreamRecord
-								 {
-									 Endian         = endian,
-									 ExpectedLength = _Stream.Length
-								 };
+					{
+						Endian         = endian,
+						ExpectedLength = _Stream.Length,
+					};
 
 					yield return new Far
-								 {
-									 CpuType     = far[4],
-									 StdfVersion = far[5]
-								 };
+					{
+						CpuType     = far[4],
+						StdfVersion = far[5],
+					};
 
 					//flush the memory
 					_Stream.Flush();
@@ -434,11 +434,11 @@ namespace Stdf
 
 							//spit out the corrupt data
 							yield return new CorruptDataRecord
-										 {
-											 CorruptData = _Stream.DumpDataToCurrentOffset(),
-											 Offset      = corruptOffset,
-											 Recoverable = recoverable
-										 };
+							{
+								CorruptData = _Stream.DumpDataToCurrentOffset(),
+								Offset      = corruptOffset,
+								Recoverable = recoverable,
+							};
 
 							//the data's gone out the door, so flush it
 							_Stream.Flush();
@@ -448,16 +448,16 @@ namespace Stdf
 								//we got to the end without finding anything
 								//spit out a format error
 								yield return new FormatErrorRecord
-											 {
-												 Message     = Resources.EOFInSeekMode,
-												 Recoverable = false,
-												 Offset      = _Stream.Offset
-											 };
+								{
+									Message     = Resources.EOFInSeekMode,
+									Recoverable = false,
+									Offset      = _Stream.Offset,
+								};
 
 								yield return new EndOfStreamRecord
-											 {
-												 Offset = _Stream.Offset
-											 };
+								{
+									Offset = _Stream.Offset,
+								};
 								yield break;
 							}
 							_InSeekMode = false;
@@ -476,28 +476,28 @@ namespace Stdf
 								//to the begining of the header.  If there's still
 								//data, we're corrupt
 								yield return new CorruptDataRecord
-											 {
-												 Offset = position,
+								{
+									Offset = position,
 
-												 //TODO: leverage the data in the stream.
-												 //we know we've hit the end, so we can just dump
-												 //the remaining memoized data
-												 CorruptData = _Stream.DumpRemainingData(),
-												 Recoverable = false
-											 };
+									//TODO: leverage the data in the stream.
+									//we know we've hit the end, so we can just dump
+									//the remaining memoized data
+									CorruptData = _Stream.DumpRemainingData(),
+									Recoverable = false,
+								};
 
 								yield return new FormatErrorRecord
-											 {
-												 Message     = Resources.EOFInHeader,
-												 Recoverable = false,
-												 Offset      = position
-											 };
+								{
+									Message     = Resources.EOFInHeader,
+									Recoverable = false,
+									Offset      = position,
+								};
 							}
 
 							yield return new EndOfStreamRecord
-										 {
-											 Offset = _Stream.Offset
-										 };
+							{
+								Offset = _Stream.Offset,
+							};
 							yield break;
 						}
 						byte[] contents = new byte[header.Value.Length];
@@ -509,25 +509,25 @@ namespace Stdf
 							_Stream.Rewind(_Stream.Offset - position);
 
 							yield return new CorruptDataRecord
-										 {
-											 Offset      = position,
-											 CorruptData = _Stream.DumpRemainingData(),
-											 Recoverable = false
-										 };
+							{
+								Offset      = position,
+								CorruptData = _Stream.DumpRemainingData(),
+								Recoverable = false,
+							};
 
 							yield return new FormatErrorRecord
-										 {
-											 Message     = Resources.EOFInRecordContent,
-											 Recoverable = false,
-											 Offset      = position
-										 };
+							{
+								Message     = Resources.EOFInRecordContent,
+								Recoverable = false,
+								Offset      = position,
+							};
 						}
 						else
 						{
 							UnknownRecord ur = new UnknownRecord(header.Value.RecordType, contents, endian)
-											   {
-												   Offset = position
-											   };
+							{
+								Offset = position,
+							};
 							StdfRecord r = ConverterFactory.Convert(ur);
 
 							if(r.GetType() != typeof(UnknownRecord))
@@ -554,7 +554,7 @@ namespace Stdf
 
 		private enum PrivateImpl
 		{
-			None = 0
+			None = 0,
 		}
 
 		internal abstract class Queryable
@@ -562,17 +562,15 @@ namespace Stdf
 			public abstract IEnumerable Enumerable { get; }
 			public abstract Expression  Expression { get; }
 
-			internal static IQueryable Create(Type elementType, IEnumerable sequence, Func<Expression, Expression> transform) =>
-				(IQueryable)Activator.CreateInstance(typeof(Queryable<>).MakeGenericType(elementType), BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new object[]
-																																												   {
-																																													   sequence, transform
-																																												   }, null);
+			internal static IQueryable Create(Type elementType, IEnumerable sequence, Func<Expression, Expression> transform) => (IQueryable)Activator.CreateInstance(typeof(Queryable<>).MakeGenericType(elementType), BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new object[]
+			{
+				sequence, transform,
+			}, null);
 
-			internal static IQueryable Create(Type elementType, Expression expression, Func<Expression, Expression> transform) =>
-				(IQueryable)Activator.CreateInstance(typeof(Queryable<>).MakeGenericType(elementType), BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new object[]
-																																												   {
-																																													   expression, transform
-																																												   }, null);
+			internal static IQueryable Create(Type elementType, Expression expression, Func<Expression, Expression> transform) => (IQueryable)Activator.CreateInstance(typeof(Queryable<>).MakeGenericType(elementType), BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, new object[]
+			{
+				expression, transform,
+			}, null);
 		}
 
 		internal class Queryable<T> : Queryable, IOrderedQueryable<T>, IQueryProvider

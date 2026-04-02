@@ -86,9 +86,9 @@ namespace STDF
 				sdr.SiteGroup  = 1;
 
 				sdr.SiteNumbers = new byte[]
-								  {
-									  1
-								  };
+				{
+					1,
+				};
 				sdr.HandlerType   = "";
 				sdr.HandlerId     = "";
 				sdr.CardType      = "";
@@ -130,9 +130,9 @@ namespace STDF
 				pgr.GroupName  = "G1_OPPN";
 
 				pgr.PinIndexes = new ushort[]
-								 {
-									 1
-								 };
+				{
+					1,
+				};
 				stdfWriter.WriteRecord(pgr);
 
 				#endregion

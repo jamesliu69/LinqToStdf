@@ -7,21 +7,21 @@ namespace WindowsFormsApp1
 {
 	public partial class frmMain : Form
 	{
-		private const string LogTag = "[STDF-TRACE-ERR]";
+		private const    string LogTag              = "[STDF-TRACE-ERR]";
 		private readonly string _defaultInputFolder = @"D:\Pti_Doc\AutoScan Log\2026-04-01-16-39-45";
-		private readonly string _defaultOutputPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "testSTDF.stdf");
+		private readonly string _defaultOutputPath  = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "testSTDF.stdf");
 
 		public frmMain()
 		{
 			InitializeComponent();
 			txtInputFolder.Text = _defaultInputFolder;
-			txtOutputPath.Text = _defaultOutputPath;
+			txtOutputPath.Text  = _defaultOutputPath;
 		}
 
 		private void btnGenerateStdf_Click(object sender, EventArgs e)
 		{
 			string inputFolder = txtInputFolder.Text?.Trim();
-			string outputPath = txtOutputPath.Text?.Trim();
+			string outputPath  = txtOutputPath.Text?.Trim();
 
 			if(string.IsNullOrWhiteSpace(inputFolder))
 			{
@@ -32,7 +32,7 @@ namespace WindowsFormsApp1
 
 			if(string.IsNullOrWhiteSpace(outputPath))
 			{
-				outputPath = _defaultOutputPath;
+				outputPath         = _defaultOutputPath;
 				txtOutputPath.Text = outputPath;
 			}
 
@@ -42,7 +42,6 @@ namespace WindowsFormsApp1
 				txtInputFolder.Focus();
 				return;
 			}
-
 			string outputDirectory = Path.GetDirectoryName(outputPath);
 
 			if(!string.IsNullOrWhiteSpace(outputDirectory))
@@ -52,8 +51,8 @@ namespace WindowsFormsApp1
 
 			if(string.IsNullOrWhiteSpace(Path.GetExtension(outputPath)))
 			{
-				outputPath += ".stdf";
-				txtOutputPath.Text = outputPath;
+				outputPath         += ".stdf";
+				txtOutputPath.Text =  outputPath;
 			}
 
 			try
@@ -80,16 +79,15 @@ namespace WindowsFormsApp1
 		{
 			using(FolderBrowserDialog dialog = new FolderBrowserDialog())
 			{
-				dialog.Description = "請選取 P2020 測試資料夾";
+				dialog.Description         = "請選取 P2020 測試資料夾";
 				dialog.ShowNewFolderButton = false;
-				dialog.SelectedPath = Directory.Exists(txtInputFolder.Text) ? txtInputFolder.Text : _defaultInputFolder;
+				dialog.SelectedPath        = Directory.Exists(txtInputFolder.Text) ? txtInputFolder.Text : _defaultInputFolder;
 
 				if(dialog.ShowDialog(this) == DialogResult.OK)
 				{
 					txtInputFolder.Text = dialog.SelectedPath;
 				}
 			}
-
 		}
 
 		//設定輸出路徑+檔案名稱
@@ -97,11 +95,10 @@ namespace WindowsFormsApp1
 		{
 			using(SaveFileDialog dialog = new SaveFileDialog())
 			{
-				dialog.Title = "設定輸出路徑與檔案名稱";
-				dialog.Filter = "STDF 檔案 (*.stdf)|*.stdf|所有檔案 (*.*)|*.*";
-				dialog.DefaultExt = "stdf";
+				dialog.Title        = "設定輸出路徑與檔案名稱";
+				dialog.Filter       = "STDF 檔案 (*.stdf)|*.stdf|所有檔案 (*.*)|*.*";
+				dialog.DefaultExt   = "stdf";
 				dialog.AddExtension = true;
-
 				string currentOutputPath = txtOutputPath.Text?.Trim();
 
 				if(!string.IsNullOrWhiteSpace(currentOutputPath))
@@ -112,13 +109,12 @@ namespace WindowsFormsApp1
 					{
 						dialog.InitialDirectory = currentDirectory;
 					}
-
 					dialog.FileName = Path.GetFileName(currentOutputPath);
 				}
 				else
 				{
 					dialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-					dialog.FileName = Path.GetFileName(_defaultOutputPath);
+					dialog.FileName         = Path.GetFileName(_defaultOutputPath);
 				}
 
 				if(dialog.ShowDialog(this) == DialogResult.OK)
@@ -126,7 +122,6 @@ namespace WindowsFormsApp1
 					txtOutputPath.Text = dialog.FileName;
 				}
 			}
-
 		}
 	}
 }

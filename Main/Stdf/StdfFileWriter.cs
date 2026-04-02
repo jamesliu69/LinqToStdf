@@ -41,9 +41,9 @@ namespace Stdf
 			if(debug)
 			{
 				ConverterFactory = new RecordConverterFactory
-								   {
-									   Debug = debug
-								   };
+				{
+					Debug = debug,
+				};
 				StdfV4Specification.RegisterRecords(ConverterFactory);
 			}
 			else

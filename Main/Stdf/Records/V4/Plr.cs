@@ -8,13 +8,7 @@ using System.IO;
 
 namespace Stdf.Records.V4
 {
-	[FieldLayout(FieldIndex = 0, FieldType = typeof(ushort)), ArrayFieldLayout(FieldIndex = 1, FieldType = typeof(ushort), ArrayLengthFieldIndex = 0, RecordProperty = "GroupIndexes"),
-	 ArrayFieldLayout(                                                         FieldIndex = 2, FieldType = typeof(ushort), IsOptional = true,         MissingValue = ushort.MinValue, ArrayLengthFieldIndex = 0, AllowTruncation = true, RecordProperty = "GroupModes"),
-	 ArrayFieldLayout(                                                         FieldIndex = 3, FieldType = typeof(byte),   IsOptional = true,         MissingValue = byte.MinValue,   ArrayLengthFieldIndex = 0, AllowTruncation = true, RecordProperty = "GroupRadixes"),
-	 ArrayFieldLayout(                                                         FieldIndex = 4, FieldType = typeof(string), IsOptional = true,         MissingValue = "",              ArrayLengthFieldIndex = 0, AllowTruncation = true, RecordProperty = "ProgramStatesRight"),
-	 ArrayFieldLayout(                                                         FieldIndex = 5, FieldType = typeof(string), IsOptional = true,         MissingValue = "",              ArrayLengthFieldIndex = 0, AllowTruncation = true, RecordProperty = "ReturnStatesRight"),
-	 ArrayFieldLayout(                                                         FieldIndex = 6, FieldType = typeof(string), IsOptional = true,         MissingValue = "",              ArrayLengthFieldIndex = 0, AllowTruncation = true, RecordProperty = "ProgramStatesLeft"),
-	 ArrayFieldLayout(                                                         FieldIndex = 7, FieldType = typeof(string), IsOptional = true,         MissingValue = "",              ArrayLengthFieldIndex = 0, AllowTruncation = true, RecordProperty = "ReturnStatesLeft")]
+	[FieldLayout(FieldIndex = 0, FieldType = typeof(ushort)), ArrayFieldLayout(FieldIndex = 1, FieldType = typeof(ushort), ArrayLengthFieldIndex = 0, RecordProperty = "GroupIndexes"), ArrayFieldLayout(FieldIndex = 2, FieldType = typeof(ushort), IsOptional = true, MissingValue = ushort.MinValue, ArrayLengthFieldIndex = 0, AllowTruncation = true, RecordProperty = "GroupModes"), ArrayFieldLayout(FieldIndex = 3, FieldType = typeof(byte), IsOptional = true, MissingValue = byte.MinValue, ArrayLengthFieldIndex = 0, AllowTruncation = true, RecordProperty = "GroupRadixes"), ArrayFieldLayout(FieldIndex = 4, FieldType = typeof(string), IsOptional = true, MissingValue = "", ArrayLengthFieldIndex = 0, AllowTruncation = true, RecordProperty = "ProgramStatesRight"), ArrayFieldLayout(FieldIndex = 5, FieldType = typeof(string), IsOptional = true, MissingValue = "", ArrayLengthFieldIndex = 0, AllowTruncation = true, RecordProperty = "ReturnStatesRight"), ArrayFieldLayout(FieldIndex = 6, FieldType = typeof(string), IsOptional = true, MissingValue = "", ArrayLengthFieldIndex = 0, AllowTruncation = true, RecordProperty = "ProgramStatesLeft"), ArrayFieldLayout(FieldIndex = 7, FieldType = typeof(string), IsOptional = true, MissingValue = "", ArrayLengthFieldIndex = 0, AllowTruncation = true, RecordProperty = "ReturnStatesLeft")]
 	public class Plr : StdfRecord
 	{
 		public override RecordType RecordType { get => new RecordType(1, 63); }
@@ -49,7 +43,7 @@ namespace Stdf.Records.V4
 					ushort[] groupModes = reader.ReadUInt16Array(groupCount, false);
 
 					// Expand a truncated array, filling with missing value
-					if((groupModes != null) && (groupModes.Length < groupCount))
+					if(groupModes != null && groupModes.Length < groupCount)
 					{
 						int i = groupModes.Length;
 						Array.Resize(ref groupModes, groupCount);
@@ -67,7 +61,7 @@ namespace Stdf.Records.V4
 					byte[] groupRadixes = reader.ReadByteArray(groupCount, false);
 
 					// Expand a truncated array, filling with missing value
-					if((groupRadixes != null) && (groupRadixes.Length < groupCount))
+					if(groupRadixes != null && groupRadixes.Length < groupCount)
 					{
 						int i = groupRadixes.Length;
 						Array.Resize(ref groupRadixes, groupCount);
@@ -85,7 +79,7 @@ namespace Stdf.Records.V4
 					string[] programStatesRight = reader.ReadStringArray(groupCount, false);
 
 					// Expand a truncated array, filling with missing value
-					if((programStatesRight != null) && (programStatesRight.Length < groupCount))
+					if(programStatesRight != null && programStatesRight.Length < groupCount)
 					{
 						int i = programStatesRight.Length;
 						Array.Resize(ref programStatesRight, groupCount);
@@ -103,7 +97,7 @@ namespace Stdf.Records.V4
 					string[] returnStatesRight = reader.ReadStringArray(groupCount, false);
 
 					// Expand a truncated array, filling with missing value
-					if((returnStatesRight != null) && (returnStatesRight.Length < groupCount))
+					if(returnStatesRight != null && returnStatesRight.Length < groupCount)
 					{
 						int i = returnStatesRight.Length;
 						Array.Resize(ref returnStatesRight, groupCount);
@@ -121,7 +115,7 @@ namespace Stdf.Records.V4
 					string[] programStatesLeft = reader.ReadStringArray(groupCount, false);
 
 					// Expand a truncated array, filling with missing value
-					if((programStatesLeft != null) && (programStatesLeft.Length < groupCount))
+					if(programStatesLeft != null && programStatesLeft.Length < groupCount)
 					{
 						int i = programStatesLeft.Length;
 						Array.Resize(ref programStatesLeft, groupCount);
@@ -139,7 +133,7 @@ namespace Stdf.Records.V4
 					string[] returnStatesLeft = reader.ReadStringArray(groupCount, false);
 
 					// Expand a truncated array, filling with missing value
-					if((returnStatesLeft != null) && (returnStatesLeft.Length < groupCount))
+					if(returnStatesLeft != null && returnStatesLeft.Length < groupCount)
 					{
 						int i = returnStatesLeft.Length;
 						Array.Resize(ref returnStatesLeft, groupCount);
@@ -202,7 +196,7 @@ namespace Stdf.Records.V4
 				if(plr.ProgramStatesLeft != null)
 				{
 					// Check for larger, or not equal group length ifwriting has occurred
-					if((plr.ProgramStatesLeft.Length > groupCount) || (fieldsWritten && (plr.ProgramStatesLeft.Length != groupCount)))
+					if(plr.ProgramStatesLeft.Length > groupCount || (fieldsWritten && plr.ProgramStatesLeft.Length != groupCount))
 					{
 						throw new InvalidOperationException(string.Format(Resources.SharedLengthViolation, 6));
 					}
@@ -223,7 +217,7 @@ namespace Stdf.Records.V4
 				if(plr.ReturnStatesRight != null)
 				{
 					// Check for larger, or not equal group length ifwriting has occurred
-					if((plr.ReturnStatesRight.Length > groupCount) || (fieldsWritten && (plr.ReturnStatesRight.Length != groupCount)))
+					if(plr.ReturnStatesRight.Length > groupCount || (fieldsWritten && plr.ReturnStatesRight.Length != groupCount))
 					{
 						throw new InvalidOperationException(string.Format(Resources.SharedLengthViolation, 5));
 					}
@@ -244,7 +238,7 @@ namespace Stdf.Records.V4
 				if(plr.ProgramStatesRight != null)
 				{
 					// Check for larger, or not equal group length ifwriting has occurred
-					if((plr.ProgramStatesRight.Length > groupCount) || (fieldsWritten && (plr.ProgramStatesRight.Length != groupCount)))
+					if(plr.ProgramStatesRight.Length > groupCount || (fieldsWritten && plr.ProgramStatesRight.Length != groupCount))
 					{
 						throw new InvalidOperationException(string.Format(Resources.SharedLengthViolation, 4));
 					}
@@ -265,7 +259,7 @@ namespace Stdf.Records.V4
 				if(plr.GroupRadixes != null)
 				{
 					// Check for larger, or not equal group length ifwriting has occurred
-					if((plr.GroupRadixes.Length > groupCount) || (fieldsWritten && (plr.GroupRadixes.Length != groupCount)))
+					if(plr.GroupRadixes.Length > groupCount || (fieldsWritten && plr.GroupRadixes.Length != groupCount))
 					{
 						throw new InvalidOperationException(string.Format(Resources.SharedLengthViolation, 3));
 					}
@@ -286,7 +280,7 @@ namespace Stdf.Records.V4
 				if(plr.GroupModes != null)
 				{
 					// Check for larger, or not equal group length ifwriting has occurred
-					if((plr.GroupModes.Length > groupCount) || (fieldsWritten && (plr.GroupModes.Length != groupCount)))
+					if(plr.GroupModes.Length > groupCount || (fieldsWritten && plr.GroupModes.Length != groupCount))
 					{
 						throw new InvalidOperationException(string.Format(Resources.SharedLengthViolation, 2));
 					}
@@ -305,7 +299,7 @@ namespace Stdf.Records.V4
 
 				// Field 1: GroupIndexes
 				// Check for larger, or not equal group length ifwriting has occurred
-				if((plr.GroupIndexes.Length > groupCount) || (fieldsWritten && (plr.GroupIndexes.Length != groupCount)))
+				if(plr.GroupIndexes.Length > groupCount || (fieldsWritten && plr.GroupIndexes.Length != groupCount))
 				{
 					throw new InvalidOperationException(string.Format(Resources.SharedLengthViolation, 1));
 				}

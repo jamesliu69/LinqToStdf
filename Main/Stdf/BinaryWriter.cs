@@ -119,7 +119,7 @@ namespace Stdf
 		{
 			Debug.Assert(writeFunc != null, "The provided writeFunc delegate is null");
 
-			if((arr == null) || (arr.Length == 0))
+			if(arr == null || arr.Length == 0)
 			{
 				return;
 			}
@@ -151,7 +151,7 @@ namespace Stdf
 		/// </summary>
 		public void WriteNibbleArray(byte[] value)
 		{
-			if((value == null) || (value.Length == 0))
+			if(value == null || value.Length == 0)
 			{
 				return;
 			}
@@ -444,7 +444,7 @@ namespace Stdf
 		{
 			Debug.Assert(length >= 0, "length must be >= 0");
 
-			if((_Buffer == null) || (_Buffer.Length < length))
+			if(_Buffer == null || _Buffer.Length < length)
 			{
 				_Buffer = new byte[length];
 			}

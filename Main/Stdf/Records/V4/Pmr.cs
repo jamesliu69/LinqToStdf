@@ -7,10 +7,7 @@ using System;
 
 namespace Stdf.Records.V4
 {
-	[FieldLayout(FieldIndex = 0, FieldType = typeof(ushort), RecordProperty = "Index"), FieldLayout(FieldIndex = 1, FieldType = typeof(ushort), MissingValue = ushort.MinValue, RecordProperty = "ChannelType"), StringFieldLayout(FieldIndex = 2, IsOptional = true, RecordProperty = "ChannelName"),
-	 StringFieldLayout(FieldIndex = 3, IsOptional = true, RecordProperty = "PhysicalName"), StringFieldLayout(FieldIndex = 4, IsOptional = true, RecordProperty = "LogicalName"),
-	 FieldLayout(FieldIndex = 5, FieldType = typeof(byte), IsOptional = true, MissingValue = (byte)1, PersistMissingValue = true, RecordProperty = "HeadNumber"),
-	 FieldLayout(FieldIndex = 6, FieldType = typeof(byte), IsOptional = true, MissingValue = (byte)1, PersistMissingValue = true, RecordProperty = "SiteNumber")]
+	[FieldLayout(FieldIndex = 0, FieldType = typeof(ushort), RecordProperty = "Index"), FieldLayout(FieldIndex = 1, FieldType = typeof(ushort), MissingValue = ushort.MinValue, RecordProperty = "ChannelType"), StringFieldLayout(FieldIndex = 2, IsOptional = true, RecordProperty = "ChannelName"), StringFieldLayout(FieldIndex = 3, IsOptional = true, RecordProperty = "PhysicalName"), StringFieldLayout(FieldIndex = 4, IsOptional = true, RecordProperty = "LogicalName"), FieldLayout(FieldIndex = 5, FieldType = typeof(byte), IsOptional = true, MissingValue = (byte)1, PersistMissingValue = true, RecordProperty = "HeadNumber"), FieldLayout(FieldIndex = 6, FieldType = typeof(byte), IsOptional = true, MissingValue = (byte)1, PersistMissingValue = true, RecordProperty = "SiteNumber")]
 	public class Pmr : StdfRecord
 	{
 		public override RecordType RecordType { get => new RecordType(1, 60); }

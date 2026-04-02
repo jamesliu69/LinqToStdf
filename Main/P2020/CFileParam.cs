@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace STDF
@@ -65,19 +64,18 @@ namespace STDF
 				LogException("ReadSummaryFile", ex, FileName, "SummaryHeader", null, null, null, null, null, -1);
 				throw;
 			}
-
 			ResultPass.Clear();
 			ResultFail.Clear();
 			HardWareBin.Clear();
 			SoftWareBin.Clear();
-			ResultTotal = null;
+			ResultTotal  = null;
 			TestItemName = "O/S_Test";
-			SiteCount = 1;
+			SiteCount    = 1;
 
 			for(int lineIndex = 0; lineIndex < logLines.Length; lineIndex++)
 			{
 				string rawLine = logLines[lineIndex];
-				string line = rawLine?.Trim() ?? string.Empty;
+				string line    = rawLine?.Trim() ?? string.Empty;
 
 				if(string.IsNullOrWhiteSpace(line))
 				{
@@ -90,11 +88,12 @@ namespace STDF
 					continue;
 				}
 
-			if(line.StartsWith("Total (By Sites)", StringComparison.OrdinalIgnoreCase))
-			{
-				// Summary 區的 count 文字格式是 N(%)，這裡只取 N 供 STDF 彙總使用。
-				List<string> countTokens = ExtractCountTokens(line);
-				ResultTotal = countTokens.ToArray();
+				if(line.StartsWith("Total (By Sites)", StringComparison.OrdinalIgnoreCase))
+				{
+					// Summary 區的 count 文字格式是 N(%)，這裡只取 N 供 STDF 彙總使用。
+					List<string> countTokens = ExtractCountTokens(line);
+					ResultTotal = countTokens.ToArray();
+
 					if(countTokens.Count > 1)
 					{
 						SiteCount = countTokens.Count - 1;
@@ -113,23 +112,22 @@ namespace STDF
 				{
 					List<string> countTokens = ExtractCountTokens(line);
 					ResultFail.AddRange(countTokens.Skip(1));
-					continue;
 				}
 			}
-
 			Dictionary<string, IEnumerable<string>> hardwareBins = ParseBinSection(logLines, "[HARDWARE BIN]");
+
 			foreach(KeyValuePair<string, IEnumerable<string>> item in hardwareBins)
 			{
 				HardWareBin[item.Key] = item.Value;
 			}
-
 			Dictionary<string, IEnumerable<string>> softwareBins = ParseBinSection(logLines, "[SOFTWARE BIN]");
+
 			foreach(KeyValuePair<string, IEnumerable<string>> item in softwareBins)
 			{
 				SoftWareBin[item.Key] = item.Value;
 			}
-
 			string parsedTestItemName = ParseFirstTestItemName(logLines);
+
 			if(!string.IsNullOrWhiteSpace(parsedTestItemName))
 			{
 				TestItemName = parsedTestItemName;
@@ -138,7 +136,7 @@ namespace STDF
 
 		private static bool TryParseHeaderField(string line, out string headerName, out string headerValue)
 		{
-			headerName = null;
+			headerName  = null;
 			headerValue = null;
 			int delimiterIndex = line.IndexOf(':');
 
@@ -146,8 +144,7 @@ namespace STDF
 			{
 				return false;
 			}
-
-			headerName = line.Substring(0, delimiterIndex).Trim();
+			headerName  = line.Substring(0, delimiterIndex).Trim();
 			headerValue = line.Substring(delimiterIndex + 1).Trim();
 			return true;
 		}
@@ -212,14 +209,13 @@ namespace STDF
 					counts.Add(match.Groups["count"].Value);
 				}
 			}
-
 			return counts;
 		}
 
 		private Dictionary<string, IEnumerable<string>> ParseBinSection(string[] lines, string sectionName)
 		{
-			Dictionary<string, IEnumerable<string>> bins = new Dictionary<string, IEnumerable<string>>();
-			int sectionIndex = Array.FindIndex(lines, line => string.Equals(line?.Trim(), sectionName, StringComparison.OrdinalIgnoreCase));
+			Dictionary<string, IEnumerable<string>> bins         = new Dictionary<string, IEnumerable<string>>();
+			int                                     sectionIndex = Array.FindIndex(lines, line => string.Equals(line?.Trim(), sectionName, StringComparison.OrdinalIgnoreCase));
 
 			if(sectionIndex < 0)
 			{
@@ -229,7 +225,7 @@ namespace STDF
 			for(int lineIndex = sectionIndex + 2; lineIndex < lines.Length; lineIndex++)
 			{
 				string rawLine = lines[lineIndex];
-				string line = rawLine?.Trim() ?? string.Empty;
+				string line    = rawLine?.Trim() ?? string.Empty;
 
 				if(string.IsNullOrWhiteSpace(line))
 				{
@@ -255,8 +251,8 @@ namespace STDF
 					{
 						continue;
 					}
-
 					string key = tokens[0];
+
 					if(tokens.Count > 1 && tokens[1].StartsWith("(", StringComparison.Ordinal) && tokens[1].EndsWith(")", StringComparison.Ordinal))
 					{
 						key = $"{tokens[0]} {tokens[1]}";
@@ -269,13 +265,13 @@ namespace STDF
 					throw;
 				}
 			}
-
 			return bins;
 		}
 
 		private static string ParseFirstTestItemName(string[] lines)
 		{
 			int testItemSectionIndex = Array.FindIndex(lines, line => string.Equals(line?.Trim(), "[TEST ITEM]", StringComparison.OrdinalIgnoreCase));
+
 			if(testItemSectionIndex < 0)
 			{
 				return null;
@@ -284,7 +280,7 @@ namespace STDF
 			for(int lineIndex = testItemSectionIndex + 2; lineIndex < lines.Length; lineIndex++)
 			{
 				string rawLine = lines[lineIndex];
-				string line = rawLine?.Trim() ?? string.Empty;
+				string line    = rawLine?.Trim() ?? string.Empty;
 
 				if(string.IsNullOrWhiteSpace(line))
 				{
@@ -295,24 +291,21 @@ namespace STDF
 				{
 					break;
 				}
-
 				Match nameMatch = Regex.Match(rawLine, @"^(?<name>.+?)\s+\d+\(\d+(?:\.\d+)?%\)");
+
 				if(nameMatch.Success)
 				{
 					// 取第一個 Test Item 名稱做為整份 Summary 的代表名稱。
 					return nameMatch.Groups["name"].Value.Trim();
 				}
 			}
-
 			return null;
 		}
 
 		private static void LogException(string operation, Exception ex, string filePath, string section, string testItem, string site, string pin, string rawInputValue, string keyRawValue, int lineNumber)
 		{
 			string safeMessage = ex?.Message?.Replace(Environment.NewLine, " ");
-
-			TraceLogger.WriteLine($"{LogTag} op={operation} filePath=\"{filePath ?? "N/A"}\" section=\"{section ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" line=\"{lineNumber}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" keyRaw=\"{keyRawValue ?? "N/A"
-			}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
+			TraceLogger.WriteLine($"{LogTag} op={operation} filePath=\"{filePath ?? "N/A"}\" section=\"{section ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" line=\"{lineNumber}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" keyRaw=\"{keyRawValue ?? "N/A"}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
 		}
 	}
 }

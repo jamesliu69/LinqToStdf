@@ -17,7 +17,7 @@ namespace Stdf
 	public enum ConverterType
 	{
 		Converter,
-		Unconverter
+		Unconverter,
 	}
 
 	/// <summary>
@@ -273,7 +273,7 @@ namespace Stdf
 		/// </summary>
 		public void SaveDynamicAssembly()
 		{
-			if(!Debug || (_DynamicAssembly == null))
+			if(!Debug || _DynamicAssembly == null)
 			{
 				throw new InvalidOperationException(Resources.InvalidSaveAssembly);
 			}
@@ -297,7 +297,7 @@ namespace Stdf
 			Converter<UnknownRecord, StdfRecord> converter = null;
 
 			//only bother creating a converter if we need to parse fields
-			if((_RecordsAndFields == null) || _RecordsAndFields.TypeHasFields(type))
+			if(_RecordsAndFields == null || _RecordsAndFields.TypeHasFields(type))
 			{
 				//TODO:consider making the pattern more clear here
 				return ur =>

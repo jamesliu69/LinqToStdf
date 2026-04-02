@@ -6,11 +6,7 @@ using Stdf.Attributes;
 
 namespace Stdf.Records.V4
 {
-	[FieldLayout(FieldIndex = 0, FieldType = typeof(float), IsOptional = true, MissingValue = (float)0, RecordProperty = "WaferSize"), FieldLayout(FieldIndex = 1, FieldType = typeof(float), IsOptional = true, MissingValue = (float)0, RecordProperty = "DieHeight"),
-	 FieldLayout(FieldIndex = 2, FieldType = typeof(float), IsOptional = true, MissingValue = (float)0, RecordProperty = "DieWidth"), FieldLayout(FieldIndex = 3, FieldType = typeof(byte), IsOptional = true, MissingValue = byte.MinValue, RecordProperty = "Units"),
-	 StringFieldLayout(FieldIndex = 4, IsOptional = true, Length = 1, MissingValue = " ", RecordProperty = "Flat"), FieldLayout(FieldIndex = 5, FieldType = typeof(short), IsOptional = true, MissingValue = short.MinValue, RecordProperty = "CenterX"),
-	 FieldLayout(FieldIndex = 6, FieldType = typeof(short), IsOptional = true, MissingValue = short.MinValue, RecordProperty = "CenterY"), StringFieldLayout(FieldIndex = 7, IsOptional = true, Length = 1, MissingValue = " ", RecordProperty = "PositiveX"),
-	 StringFieldLayout(FieldIndex = 8, IsOptional = true, Length = 1, MissingValue = " ", RecordProperty = "PositiveY")]
+	[FieldLayout(FieldIndex = 0, FieldType = typeof(float), IsOptional = true, MissingValue = (float)0, RecordProperty = "WaferSize"), FieldLayout(FieldIndex = 1, FieldType = typeof(float), IsOptional = true, MissingValue = (float)0, RecordProperty = "DieHeight"), FieldLayout(FieldIndex = 2, FieldType = typeof(float), IsOptional = true, MissingValue = (float)0, RecordProperty = "DieWidth"), FieldLayout(FieldIndex = 3, FieldType = typeof(byte), IsOptional = true, MissingValue = byte.MinValue, RecordProperty = "Units"), StringFieldLayout(FieldIndex = 4, IsOptional = true, Length = 1, MissingValue = " ", RecordProperty = "Flat"), FieldLayout(FieldIndex = 5, FieldType = typeof(short), IsOptional = true, MissingValue = short.MinValue, RecordProperty = "CenterX"), FieldLayout(FieldIndex = 6, FieldType = typeof(short), IsOptional = true, MissingValue = short.MinValue, RecordProperty = "CenterY"), StringFieldLayout(FieldIndex = 7, IsOptional = true, Length = 1, MissingValue = " ", RecordProperty = "PositiveX"), StringFieldLayout(FieldIndex = 8, IsOptional = true, Length = 1, MissingValue = " ", RecordProperty = "PositiveY")]
 	public class Wcr : StdfRecord
 	{
 		public override RecordType RecordType { get => new RecordType(2, 30); }

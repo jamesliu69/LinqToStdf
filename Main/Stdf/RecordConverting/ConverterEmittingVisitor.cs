@@ -140,9 +140,9 @@ namespace Stdf.RecordConverting
 
 			Type[] argsArray = node.Type.IsArray
 				? new[]
-				  {
-					  typeof(int)
-				  }
+				{
+					typeof(int),
+				}
 				: new Type[0];
 
 			if(node.IsNibble)
@@ -296,9 +296,9 @@ namespace Stdf.RecordConverting
 
 			Type[] argsArray = node.Type.IsArray
 				? new[]
-				  {
-					  typeof(int)
-				  }
+				{
+					typeof(int),
+				}
 				: new Type[0];
 
 			if(node.IsNibble)

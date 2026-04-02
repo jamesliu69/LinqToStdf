@@ -31,18 +31,18 @@ namespace Stdf.RecordConverting
 
 			UnconverterShellNode node = new UnconverterShellNode(new BlockNode(from pair in _Fields.AsEnumerable().Reverse()
 
-																			   //don't generate code for dependency properties
-																			   where !(pair.Key is DependencyProperty)
+			                                                                   //don't generate code for dependency properties
+			                                                                   where !(pair.Key is DependencyProperty)
 
-																			   //this call through reflection is icky, but marginally better than the hard-coded table
-																			   //we're just binding to the generic GenerateAssignment method for the field's type
-																			   select GenerateAssignment(pair)));
+			                                                                   //this call through reflection is icky, but marginally better than the hard-coded table
+			                                                                   //we're just binding to the generic GenerateAssignment method for the field's type
+			                                                                   select GenerateAssignment(pair)));
 
 			new UnconverterEmittingVisitor
 			{
 				ConcreteType = _Type,
 				ILGen        = _ILGen,
-				EnableLog    = ConverterLog.IsLogging
+				EnableLog    = ConverterLog.IsLogging,
 			}.Visit(node);
 		}
 
@@ -126,7 +126,7 @@ namespace Stdf.RecordConverting
 				//if we have a missing value, set that as the write source
 				noValueWriteContingencySource = new LoadMissingValueNode(pair.Key.MissingValue, fieldType);
 			}
-			else if(localWasPresent || (optionalFieldLayout != null))
+			else if(localWasPresent || optionalFieldLayout != null)
 			{
 				//if the local was present when we started, that means it was initialized by another field. We can safely write it
 				//Similarly, if this is marked as an optional field, we can still write whatever the value of the local is (cheat)
@@ -141,7 +141,7 @@ namespace Stdf.RecordConverting
 			else
 			{
 				//otherwise, we can try to write null (unless it is a fixed-length string, which should have a default instead)
-				if((stringLayout != null) && (stringLayout.Length > 0))
+				if(stringLayout != null && stringLayout.Length > 0)
 				{
 					//TODO: move this check into StdfStringLayout if we can, along with a check that the missing value length matches
 					throw new NotSupportedException(Resources.FixedLengthStringMustHaveDefault);
@@ -152,7 +152,7 @@ namespace Stdf.RecordConverting
 			//create the write node and the no-value contingency if we don't already have one
 			CodeNode writeNode;
 
-			if((stringLayout != null) && (stringLayout.Length > 0))
+			if(stringLayout != null && stringLayout.Length > 0)
 			{
 				noValueWriteContingency = noValueWriteContingency ?? new WriteFixedStringNode(stringLayout.Length, noValueWriteContingencySource);
 				writeNode               = new WriteFixedStringNode(stringLayout.Length, new LoadFieldLocalNode(pair.Key.FieldIndex));

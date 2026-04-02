@@ -139,13 +139,13 @@ namespace Stdf
 				{
 					mrr = (Mrr)r;
 				}
-				else if((r.GetType() == typeof(EndOfStreamRecord)) && (mrr == null))
+				else if(r.GetType() == typeof(EndOfStreamRecord) && mrr == null)
 				{
 					yield return new Mrr
-								 {
-									 Synthesized = true,
-									 Offset      = r.Offset
-								 };
+					{
+						Synthesized = true,
+						Offset      = r.Offset,
+					};
 				}
 				yield return r;
 			}
@@ -338,7 +338,7 @@ namespace Stdf
 							_FoundSummary = true;
 						}
 					}
-					else if((r.GetType() == typeof(Mrr)) && !_FoundSummary)
+					else if(r.GetType() == typeof(Mrr) && !_FoundSummary)
 					{
 						foreach(StdfRecord gen in GenerateSummaries(r.Offset))
 						{
@@ -355,18 +355,18 @@ namespace Stdf
 			private IEnumerable<StdfRecord> GenerateSummaries(long offset)
 			{
 				IEnumerable<T> q = from b in _Brs
-								   group b by b.BinNumber into g
-								   select new T
-										  {
-											  Synthesized = true,
-											  Offset      = offset,
-											  HeadNumber  = 255,
-											  SiteNumber  = 0,
-											  BinNumber   = g.Key,
-											  BinName     = g.First().BinName,
-											  BinPassFail = g.First().BinPassFail,
-											  BinCount    = (uint)g.Sum(b => b.BinCount)
-										  };
+				                   group b by b.BinNumber into g
+				                   select new T
+				                   {
+					                   Synthesized = true,
+					                   Offset      = offset,
+					                   HeadNumber  = 255,
+					                   SiteNumber  = 0,
+					                   BinNumber   = g.Key,
+					                   BinName     = g.First().BinName,
+					                   BinPassFail = g.First().BinPassFail,
+					                   BinCount    = (uint)g.Sum(b => b.BinCount),
+				                   };
 
 				foreach(T b in q)
 				{
@@ -382,17 +382,17 @@ namespace Stdf
 		private class MissingPcrSummaryFilterImpl
 		{
 			private Pcr _Summary = new Pcr
-								   {
-									   Synthesized = true,
-									   HeadNumber  = 255,
-									   SiteNumber  = 0
-								   };
+			{
+				Synthesized = true,
+				HeadNumber  = 255,
+				SiteNumber  = 0,
+			};
 
 			public IEnumerable<StdfRecord> Filter(IEnumerable<StdfRecord> input)
 			{
 				foreach(StdfRecord r in input)
 				{
-					if((r.GetType() == typeof(Pcr)) && (_Summary != null))
+					if(r.GetType() == typeof(Pcr) && _Summary != null)
 					{
 						Pcr p = (Pcr)r;
 
@@ -409,7 +409,7 @@ namespace Stdf
 							_Summary.PartCount       += p.PartCount;
 						}
 					}
-					else if((r.GetType() == typeof(Mrr)) && (_Summary != null))
+					else if(r.GetType() == typeof(Mrr) && _Summary != null)
 					{
 						_Summary.Offset = r.Offset;
 						yield return _Summary;
@@ -442,7 +442,7 @@ namespace Stdf
 							_FoundSummary = true;
 						}
 					}
-					else if((r.GetType() == typeof(Mrr)) && !_FoundSummary)
+					else if(r.GetType() == typeof(Mrr) && !_FoundSummary)
 					{
 						foreach(StdfRecord gen in GenerateSummaries(r.Offset))
 						{
@@ -456,27 +456,27 @@ namespace Stdf
 			private IEnumerable<StdfRecord> GenerateSummaries(long offset)
 			{
 				IEnumerable<Tsr> q = from t in _Tsrs
-									 group t by t.TestNumber into g
-									 select new Tsr
-											{
-												Synthesized      = true,
-												Offset           = offset,
-												HeadNumber       = 255,
-												SiteNumber       = 0,
-												TestNumber       = g.Key,
-												TestName         = g.First().TestName,
-												TestLabel        = g.First().TestLabel,
-												AlarmCount       = (uint?)g.Sum(t => t.AlarmCount),
-												ExecutedCount    = (uint?)g.Sum(t => t.ExecutedCount),
-												FailedCount      = (uint?)g.Sum(t => t.FailedCount),
-												SequencerName    = g.First().SequencerName,
-												TestMax          = g.Max(t => t.TestMax),
-												TestMin          = g.Min(t => t.TestMin),
-												TestSum          = g.Sum(t => t.TestSum),
-												TestSumOfSquares = g.Sum(t => t.TestSumOfSquares),
-												TestTime         = g.Sum(t => t.TestTime),
-												TestType         = g.First().TestType
-											};
+				                     group t by t.TestNumber into g
+				                     select new Tsr
+				                     {
+					                     Synthesized      = true,
+					                     Offset           = offset,
+					                     HeadNumber       = 255,
+					                     SiteNumber       = 0,
+					                     TestNumber       = g.Key,
+					                     TestName         = g.First().TestName,
+					                     TestLabel        = g.First().TestLabel,
+					                     AlarmCount       = (uint?)g.Sum(t => t.AlarmCount),
+					                     ExecutedCount    = (uint?)g.Sum(t => t.ExecutedCount),
+					                     FailedCount      = (uint?)g.Sum(t => t.FailedCount),
+					                     SequencerName    = g.First().SequencerName,
+					                     TestMax          = g.Max(t => t.TestMax),
+					                     TestMin          = g.Min(t => t.TestMin),
+					                     TestSum          = g.Sum(t => t.TestSum),
+					                     TestSumOfSquares = g.Sum(t => t.TestSumOfSquares),
+					                     TestTime         = g.Sum(t => t.TestTime),
+					                     TestType         = g.First().TestType,
+				                     };
 
 				foreach(Tsr b in q)
 				{
@@ -503,14 +503,14 @@ namespace Stdf
 		///     These records are not allowed after the initial sequence, or before the Mrr
 		/// </summary>
 		private static readonly HashSet<RuntimeTypeHandle> _InitialSequenceSet = new HashSet<RuntimeTypeHandle>
-																				 {
-																					 typeof(Far).TypeHandle,
-																					 typeof(Atr).TypeHandle,
-																					 typeof(Mir).TypeHandle,
-																					 typeof(Rdr).TypeHandle,
-																					 typeof(Sdr).TypeHandle,
-																					 typeof(EndOfStreamRecord).TypeHandle
-																				 };
+		{
+			typeof(Far).TypeHandle,
+			typeof(Atr).TypeHandle,
+			typeof(Mir).TypeHandle,
+			typeof(Rdr).TypeHandle,
+			typeof(Sdr).TypeHandle,
+			typeof(EndOfStreamRecord).TypeHandle,
+		};
 
 		/// <summary>
 		///     Uses a state machine to enforce the V4 content spec (initial sequence and mrr at the end)
@@ -522,115 +522,115 @@ namespace Stdf
 			// Build up the various states that describe the V4 content spec.
 
 			RecordState eofState = new RecordState
-								   {
-									   Message          = Resources.V4ContentState_AtEOF,
-									   ShouldTransition = r => r.GetType() == typeof(EndOfStreamRecord),
-									   Routes           = new List<RecordState>() //we'd better never get here.
-								   };
+			{
+				Message          = Resources.V4ContentState_AtEOF,
+				ShouldTransition = r => r.GetType() == typeof(EndOfStreamRecord),
+				Routes           = new List<RecordState>(), //we'd better never get here.
+			};
 
 			RecordState mrrState = new RecordState
-								   {
-									   Message          = Resources.V4ContentState_AfterMrr,
-									   ShouldTransition = r => r.GetType() == typeof(Mrr),
-									   Routes = new List<RecordState>
-												{
-													eofState
-												} //we only expect EOF from here
-								   };
+			{
+				Message          = Resources.V4ContentState_AfterMrr,
+				ShouldTransition = r => r.GetType() == typeof(Mrr),
+				Routes = new List<RecordState>
+				{
+					eofState,
+				}, //we only expect EOF from here
+			};
 
 			RecordState bodyState = new RecordState
-									{
-										Message = Resources.V4ContentState_StdfBody,
+			{
+				Message = Resources.V4ContentState_StdfBody,
 
-										//anything that's not in the initial sequence (or EOS)
-										ShouldTransition = r => !_InitialSequenceSet.Contains(r.GetType().TypeHandle)
-									};
+				//anything that's not in the initial sequence (or EOS)
+				ShouldTransition = r => !_InitialSequenceSet.Contains(r.GetType().TypeHandle),
+			};
 
 			bodyState.Routes = new List<RecordState>
-							   {
-								   mrrState,
-								   bodyState
-							   };
+			{
+				mrrState,
+				bodyState,
+			};
 
 			RecordState sdrState = new RecordState
-								   {
-									   Message          = Resources.V4ContentState_AfterSdr,
-									   ShouldTransition = r => r.GetType() == typeof(Sdr)
-								   };
+			{
+				Message          = Resources.V4ContentState_AfterSdr,
+				ShouldTransition = r => r.GetType() == typeof(Sdr),
+			};
 
 			sdrState.Routes = new List<RecordState>
-							  {
-								  sdrState,
-								  bodyState
-							  };
+			{
+				sdrState,
+				bodyState,
+			};
 
 			RecordState rdrState = new RecordState
-								   {
-									   Message          = Resources.V4ContentState_AfterRdr,
-									   ShouldTransition = r => r.GetType() == typeof(Rdr),
-									   Routes = new List<RecordState>
-												{
-													sdrState,
-													bodyState
-												}
-								   };
+			{
+				Message          = Resources.V4ContentState_AfterRdr,
+				ShouldTransition = r => r.GetType() == typeof(Rdr),
+				Routes = new List<RecordState>
+				{
+					sdrState,
+					bodyState,
+				},
+			};
 
 			RecordState mirState = new RecordState
-								   {
-									   Message          = Resources.V4ContentState_AfterMir,
-									   ShouldTransition = r => r.GetType() == typeof(Mir),
-									   Routes = new List<RecordState>
-												{
-													rdrState,
-													sdrState,
-													bodyState
-												}
-								   };
+			{
+				Message          = Resources.V4ContentState_AfterMir,
+				ShouldTransition = r => r.GetType() == typeof(Mir),
+				Routes = new List<RecordState>
+				{
+					rdrState,
+					sdrState,
+					bodyState,
+				},
+			};
 
 			RecordState atrState = new RecordState
-								   {
-									   Message          = Resources.V4ContentState_AfterAtr,
-									   ShouldTransition = r => r.GetType() == typeof(Atr)
-								   };
+			{
+				Message          = Resources.V4ContentState_AfterAtr,
+				ShouldTransition = r => r.GetType() == typeof(Atr),
+			};
 
 			atrState.Routes = new List<RecordState>
-							  {
-								  atrState,
-								  mirState
-							  };
+			{
+				atrState,
+				mirState,
+			};
 
 			RecordState farState = new RecordState
-								   {
-									   Message          = Resources.V4ContentState_AfterFar,
-									   ShouldTransition = r => r.GetType() == typeof(Far),
-									   Routes = new List<RecordState>
-												{
-													atrState,
-													mirState
-												}
-								   };
+			{
+				Message          = Resources.V4ContentState_AfterFar,
+				ShouldTransition = r => r.GetType() == typeof(Far),
+				Routes = new List<RecordState>
+				{
+					atrState,
+					mirState,
+				},
+			};
 
 			RecordState sofState = new RecordState
-								   {
-									   Message          = Resources.V4ContentState_AtSOF,
-									   ShouldTransition = r => r.GetType() == typeof(StartOfStreamRecord),
-									   Routes = new List<RecordState>
-												{
-													farState
-												}
-								   };
+			{
+				Message          = Resources.V4ContentState_AtSOF,
+				ShouldTransition = r => r.GetType() == typeof(StartOfStreamRecord),
+				Routes = new List<RecordState>
+				{
+					farState,
+				},
+			};
 
 			#endregion
 
 			//we'll start in a pre-far state
 			RecordState currentState = new RecordState
-									   {
-										   Message = Resources.V4ContentState_BeforeSOF,
-										   Routes = new List<RecordState>
-													{
-														sofState
-													}
-									   };
+			{
+				Message = Resources.V4ContentState_BeforeSOF,
+				Routes = new List<RecordState>
+				{
+					sofState,
+				},
+			};
 
 			foreach(StdfRecord r in input)
 			{
@@ -650,10 +650,10 @@ namespace Stdf
 				if(!transitioned && r.IsWritable)
 				{
 					yield return new V4ContentErrorRecord
-								 {
-									 Offset  = r.Offset,
-									 Message = string.Format(Resources.InitialSequenceError, r.GetType().Name, currentState.Message)
-								 };
+					{
+						Offset  = r.Offset,
+						Message = string.Format(Resources.InitialSequenceError, r.GetType().Name, currentState.Message),
+					};
 				}
 				yield return r;
 			}

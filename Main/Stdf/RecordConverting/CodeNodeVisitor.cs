@@ -22,7 +22,7 @@ namespace Stdf.RecordConverting
 			CodeNode tryNode     = Visit(node.TryNode);
 			CodeNode finallyNode = Visit(node.FinallyNode);
 
-			if((tryNode == node.TryNode) && (finallyNode == node.FinallyNode))
+			if(tryNode == node.TryNode && finallyNode == node.FinallyNode)
 			{
 				return node;
 			}
@@ -50,7 +50,7 @@ namespace Stdf.RecordConverting
 			CodeNode visitedReadNode          = Visit(node.ReadNode);
 			CodeNode visitedConditionalsBlock = Visit(node.AssignmentBlock);
 
-			if((visitedReadNode == node.ReadNode) && (visitedConditionalsBlock == node.AssignmentBlock))
+			if(visitedReadNode == node.ReadNode && visitedConditionalsBlock == node.AssignmentBlock)
 			{
 				return node;
 			}
@@ -79,11 +79,10 @@ namespace Stdf.RecordConverting
 
 		public virtual CodeNode VisitCreateFieldLocalForWriting(CreateFieldLocalForWritingNode node) => node;
 
-		public virtual CodeNode VisitWriteField(WriteFieldNode node) =>
-			throw
+		public virtual CodeNode VisitWriteField(WriteFieldNode node) => throw
 
-				//TODO: do this right;
-				new NotSupportedException("WriteFieldNodes are too complicated to transform during visiting. :)");
+			//TODO: do this right;
+			new NotSupportedException("WriteFieldNodes are too complicated to transform during visiting. :)");
 
 		public virtual CodeNode VisitWriteFixedString(WriteFixedStringNode node)
 		{

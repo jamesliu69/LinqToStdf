@@ -99,7 +99,7 @@ namespace Stdf.RecordConverting
 			Type        = type;
 			LengthIndex = lengthIndex;
 
-			if(isNibble && (type != typeof(byte)))
+			if(isNibble && type != typeof(byte))
 			{
 				throw new InvalidOperationException("Nibble arrays can only be read into byte arrays.");
 			}
@@ -142,7 +142,7 @@ namespace Stdf.RecordConverting
 			Type        = type;
 			LengthIndex = lengthIndex;
 
-			if(isNibble && (type != typeof(byte[])))
+			if(isNibble && type != typeof(byte[]))
 			{
 				throw new InvalidOperationException("Nibble arrays can only be read into byte arrays.");
 			}

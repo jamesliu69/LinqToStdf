@@ -86,7 +86,7 @@ namespace Stdf
 			//doesn't contain the same byte twice.
 			byte[] pirHeader =
 			{
-				0, 0, 5, 10
+				0, 0, 5, 10,
 			};
 
 			//TODO: did I get this right?

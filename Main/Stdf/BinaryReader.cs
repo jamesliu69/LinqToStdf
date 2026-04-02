@@ -193,9 +193,9 @@ namespace Stdf
 			int realLength = (length + 7) / 8;
 
 			BitArray bitArray = new BitArray(ReadByteArray(realLength))
-								{
-									Length = length
-								};
+			{
+				Length = length,
+			};
 			return bitArray;
 		}
 
@@ -603,7 +603,7 @@ namespace Stdf
 		{
 			Debug.Assert(length >= 0, "length should be >= 0");
 
-			if((_Buffer == null) || (_Buffer.Length < length))
+			if(_Buffer == null || _Buffer.Length < length)
 			{
 				_Buffer = new byte[length];
 			}

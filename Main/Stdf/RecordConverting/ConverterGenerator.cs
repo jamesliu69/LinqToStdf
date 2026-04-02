@@ -59,7 +59,7 @@ namespace Stdf.RecordConverting
 				foreach(KeyValuePair<FieldLayoutAttribute, PropertyInfo> pair in fields)
 				{
 					//if it's an assigned field that we are parsing
-					if((pair.Value != null) && _Fields.Contains(pair.Value.Name))
+					if(pair.Value != null && _Fields.Contains(pair.Value.Name))
 					{
 						//if it's an optional field
 						if(pair.Key is FlaggedFieldLayoutAttribute op)
@@ -91,12 +91,12 @@ namespace Stdf.RecordConverting
 			//generate the assignment nodes
 			IEnumerable<CodeNode> assignments = from pair in fields
 
-												//don't generate code for dependency properties
-												where !(pair.Key is DependencyProperty)
+			                                    //don't generate code for dependency properties
+			                                    where !(pair.Key is DependencyProperty)
 
-												//this call through reflection is icky, but marginally better than the hard-coded table
-												//we're just binding to the generic GenerateAssignment method for the field's type
-												select GenerateAssignment(pair);
+			                                    //this call through reflection is icky, but marginally better than the hard-coded table
+			                                    //we're just binding to the generic GenerateAssignment method for the field's type
+			                                    select GenerateAssignment(pair);
 
 			//add the end label to the end of the assignments
 			FieldAssignmentBlockNode assignmentBlock = new FieldAssignmentBlockNode(new BlockNode(assignments));
@@ -104,15 +104,15 @@ namespace Stdf.RecordConverting
 			//This is the list of nodes to emit to create the converter
 			BlockNode block = new BlockNode(new InitializeRecordNode(), new EnsureCompatNode(), new InitReaderNode(),
 
-											//TODO: Replace TryFinally with something more semantic like BinaryReaderScopeBlock
-											new TryFinallyNode(assignmentBlock, new DisposeReaderNode()), new ReturnRecordNode());
+			                                //TODO: Replace TryFinally with something more semantic like BinaryReaderScopeBlock
+			                                new TryFinallyNode(assignmentBlock, new DisposeReaderNode()), new ReturnRecordNode());
 
 			//visit the block with an emitting visitor
 			new ConverterEmittingVisitor
 			{
 				ILGen        = _ILGen,
 				ConcreteType = _Type,
-				EnableLog    = ConverterLog.IsLogging
+				EnableLog    = ConverterLog.IsLogging,
 			}.Visit(block);
 		}
 
@@ -158,13 +158,13 @@ namespace Stdf.RecordConverting
 			//get the length if this is a fixed-length string
 			int stringLength = -1;
 
-			if(pair.Key is StringFieldLayoutAttribute stringLayout && (stringLayout.Length > 0))
+			if(pair.Key is StringFieldLayoutAttribute stringLayout && stringLayout.Length > 0)
 			{
 				stringLength = stringLayout.Length;
 			}
 
 			//just skip this field if we have an assignment, but shouldn't be parsing it
-			if((pair.Value != null) && !ShouldParseField(pair.Value.Name))
+			if(pair.Value != null && !ShouldParseField(pair.Value.Name))
 			{
 				if(stringLength > 0)
 				{
@@ -198,7 +198,7 @@ namespace Stdf.RecordConverting
 				}
 
 				//if we have a missing value, set us up to skip if the value matches the missing value
-				else if((pair.Key.MissingValue != null) && !pair.Key.PersistMissingValue)
+				else if(pair.Key.MissingValue != null && !pair.Key.PersistMissingValue)
 				{
 					if(!fieldType.IsAssignableFrom(pair.Key.MissingValue.GetType()))
 					{
@@ -225,7 +225,7 @@ namespace Stdf.RecordConverting
 			SkipArrayAssignmentIfLengthIsZeroNode parseConditionNode = new SkipArrayAssignmentIfLengthIsZeroNode(lengthIndex);
 
 			//find out if we should even parse this field
-			if((pair.Value != null) && !ShouldParseField(pair.Value.Name))
+			if(pair.Value != null && !ShouldParseField(pair.Value.Name))
 			{
 				//we can simply return this skip node since it effectively encapsulates the length check as well
 				return new SkipTypeNode(fieldType.MakeArrayType(), lengthIndex);

@@ -65,7 +65,7 @@ namespace Stdf
 		/// </summary>
 		/// <param name="other">the RecordType to compare to</param>
 		/// <returns>true if the instance is equal to <paramref name="other" />, otherwise false</returns>
-		public bool Equals(RecordType other) => (Type == other.Type) && (Subtype == other.Subtype);
+		public bool Equals(RecordType other) => Type == other.Type && Subtype == other.Subtype;
 
 		#endregion
 

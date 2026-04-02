@@ -6,10 +6,7 @@ using Stdf.Attributes;
 
 namespace Stdf.Records.V4
 {
-	[FieldLayout(FieldIndex = 0, FieldType = typeof(byte), MissingValue = (byte)1,                    PersistMissingValue = true, RecordProperty = "HeadNumber"), FieldLayout(FieldIndex = 1, FieldType = typeof(byte), MissingValue = (byte)1, PersistMissingValue = true, RecordProperty = "SiteNumber"),
-	 FieldLayout(FieldIndex = 2, FieldType = typeof(uint), RecordProperty = "PartCount"), FieldLayout(FieldIndex = 3, FieldType = typeof(uint), IsOptional = true, MissingValue = uint.MaxValue, RecordProperty = "RetestCount"),
-	 FieldLayout(FieldIndex = 4, FieldType = typeof(uint), IsOptional = true,                         MissingValue = uint.MaxValue, RecordProperty = "AbortCount"), FieldLayout(FieldIndex = 5, FieldType = typeof(uint), IsOptional = true, MissingValue = uint.MaxValue, RecordProperty = "GoodCount"),
-	 FieldLayout(FieldIndex = 6, FieldType = typeof(uint), IsOptional = true,                         MissingValue = uint.MaxValue, RecordProperty = "FunctionalCount")]
+	[FieldLayout(FieldIndex = 0, FieldType = typeof(byte), MissingValue = (byte)1, PersistMissingValue = true, RecordProperty = "HeadNumber"), FieldLayout(FieldIndex = 1, FieldType = typeof(byte), MissingValue = (byte)1, PersistMissingValue = true, RecordProperty = "SiteNumber"), FieldLayout(FieldIndex = 2, FieldType = typeof(uint), RecordProperty = "PartCount"), FieldLayout(FieldIndex = 3, FieldType = typeof(uint), IsOptional = true, MissingValue = uint.MaxValue, RecordProperty = "RetestCount"), FieldLayout(FieldIndex = 4, FieldType = typeof(uint), IsOptional = true, MissingValue = uint.MaxValue, RecordProperty = "AbortCount"), FieldLayout(FieldIndex = 5, FieldType = typeof(uint), IsOptional = true, MissingValue = uint.MaxValue, RecordProperty = "GoodCount"), FieldLayout(FieldIndex = 6, FieldType = typeof(uint), IsOptional = true, MissingValue = uint.MaxValue, RecordProperty = "FunctionalCount")]
 	public class Pcr : StdfRecord, IHeadSiteIndexable
 	{
 		public override RecordType RecordType { get => new RecordType(1, 30); }

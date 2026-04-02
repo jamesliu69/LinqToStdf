@@ -77,7 +77,7 @@ namespace Stdf.RecordConverting
 			Type        = type;
 			ValueSource = valueSource;
 
-			if(isNibble && (type != typeof(byte[])))
+			if(isNibble && type != typeof(byte[]))
 			{
 				throw new InvalidOperationException("Nibble arrays can only be read into byte arrays.");
 			}

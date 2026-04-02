@@ -28,7 +28,6 @@ namespace STDF
 				Console.Error.WriteLine($"[STDF-TRACE-ERR] op=TraceLogger.WriteLine target=\"daily-log-file\" message=\"{ex.Message}\" stack=\"{ex.StackTrace}\"");
 				return;
 			}
-
 			Console.Error.WriteLine(line);
 		}
 	}

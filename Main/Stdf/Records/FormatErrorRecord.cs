@@ -21,10 +21,9 @@ namespace Stdf.Records
 	{
 		public bool Recoverable { get; set; }
 
-		public override StdfException ToException() =>
-			new StdfFormatException(Message)
-			{
-				ErrorRecord = this
-			};
+		public override StdfException ToException() => new StdfFormatException(Message)
+		{
+			ErrorRecord = this,
+		};
 	}
 }

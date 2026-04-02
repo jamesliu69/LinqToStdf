@@ -21,10 +21,10 @@ namespace Stdf.Indexing
 		internal static Type FindGenericType(Type definition, Type type)
 		{
 			//while the type isn't null and not object, keep looking up the type hierarchy
-			while((type != null) && (type != typeof(object)))
+			while(type != null && type != typeof(object))
 			{
 				//If the type's generic definition is the one we're looking for, we found it
-				if(type.IsGenericType && (type.GetGenericTypeDefinition() == definition))
+				if(type.IsGenericType && type.GetGenericTypeDefinition() == definition)
 				{
 					return type;
 				}
@@ -82,6 +82,6 @@ namespace Stdf.Indexing
 
 		internal static bool IsKindOfGeneric(Type type, Type definition) => FindGenericType(definition, type) != null;
 
-		internal static bool IsNullableType(Type type) => (type != null) && type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(Nullable<>));
+		internal static bool IsNullableType(Type type) => type != null && type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
 	}
 }

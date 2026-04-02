@@ -28,10 +28,9 @@ namespace Stdf.Records
 
 		public override bool IsWritable { get => false; }
 
-		public virtual StdfException ToException() =>
-			new StdfException(Message)
-			{
-				ErrorRecord = this
-			};
+		public virtual StdfException ToException() => new StdfException(Message)
+		{
+			ErrorRecord = this,
+		};
 	}
 }
