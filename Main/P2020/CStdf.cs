@@ -10,22 +10,53 @@ using System.Text.RegularExpressions;
 
 namespace STDF
 {
+	/// <summary>
+	/// STDF 檔案轉換處理類別
+	/// 負責讀取 P2020 測試日誌和摘要檔案，解析資料並產生標準 STDF V4 格式檔案
+	/// </summary>
 	public class CStdf
 	{
+		/// <summary>
+		/// 錯誤追蹤標籤，用於記錄日誌時標識異常來源
+		/// </summary>
 		private const    string         LogTag = "[STDF-TRACE-ERR]";
+		
+		/// <summary>
+		/// 輸入日誌檔案的路徑
+		/// </summary>
 		private readonly string         _logPath;
+		
+		/// <summary>
+		/// 輸出 STDF 檔案的路徑
+		/// </summary>
 		private readonly string         _outputPath;
+		
+		/// <summary>
+		/// STDF 檔案寫入器，負責產生標準 STDF V4 格式輸出
+		/// </summary>
 		private readonly StdfFileWriter _stdfWriter;
+		
+		/// <summary>
+		/// 摘要日誌檔案的路徑（目前與 _logPath 相同）
+		/// </summary>
 		private readonly string         _summaryLog;
+		
+		/// <summary>
+		/// 檔案參數物件，用於解析和儲存摘要檔案內容
+		/// </summary>
 		private          CFileParam     _fileParam;
+		
+		/// <summary>
+		/// P2020 日誌解析器，用於讀取和處理測試日誌檔案
+		/// </summary>
 		private          CP2020         _p2020;
 
 		/// <summary>
-		///     建構式
+		/// 建構 CStdf 類別的新實例
+		/// 初始化日誌路徑、輸出路徑和 STDF 檔案寫入器
 		/// </summary>
-		/// <param name="LogPath"> Log 存在路徑位置</param>
-		/// <param name="SummaryLog">Summary 存在路徑位置</param>
-		/// <param name="Output">輸出路徑</param>
+		/// <param name="logPath">輸入日誌檔案的路徑</param>
+		/// <param name="outputPath">輸出 STDF 檔案的路徑</param>
 		public CStdf(string logPath, string outputPath)
 		{
 			Debug.Assert(logPath != null, nameof(logPath) + " != null");
@@ -36,6 +67,10 @@ namespace STDF
 			_stdfWriter = new StdfFileWriter(_outputPath, true);
 		}
 
+		/// <summary>
+		/// 分析並處理輸入的測試日誌檔案
+		/// 解析 P2020 格式的日誌檔案以及對應的摘要檔案，為後續產生 STDF 檔案做準備
+		/// </summary>
 		private void AnalyzeFile()
 		{
 			try
@@ -45,33 +80,41 @@ namespace STDF
 
 				try
 				{
+					// 取得所有非 Summary 的 .log 檔案作為 P2020 測試日誌輸入
 					logFiles = Directory.GetFiles(_logPath, "*.log").Where(path => Path.GetFileName(path).IndexOf("Summary", StringComparison.OrdinalIgnoreCase) < 0).ToArray();
 				}
 				catch(Exception ex)
 				{
+					// 記錄載入日誌檔案時發生的異常
 					LogException("LoadLogFiles", ex, _logPath, null, null, null, null, "P2020LogFiles", "AnalyzeFile.LoadLogFiles", _logPath, _outputPath);
 					throw;
 				}
 
+				// 檢查是否有找到任何有效的日誌檔案
 				if(logFiles.Length == 0)
 				{
-					InvalidDataException ex = new InvalidDataException("找不到可供解析的測試 Log（*.log，且檔名不含 Summary）。");
+					InvalidDataException ex = new InvalidDataException("找不到可供解析的測試 Log（*log，且檔名不含 Summary）。");
 					LogException("LoadLogFiles", ex, _logPath, null, null, null, null, "P2020LogFiles", "AnalyzeFile.LoadLogFiles", _logPath, _outputPath);
 					throw ex;
 				}
+				
+				// 建立 P2020 解析器並處理所有日誌檔案
 				_p2020 = CP2020.CreateInstance(logFiles, 0);
 				_p2020.AnalyzeFile();
 				string summaryPath;
 
 				try
 				{
+					// 優先尋找 .txt 摘要檔案
 					summaryPath = Directory.GetFiles(_logPath, "*.txt").FirstOrDefault();
 
+					// 如果找不到 .txt 檔案，則尋找包含 Summary 的 .log 檔案
 					if(string.IsNullOrWhiteSpace(summaryPath))
 					{
 						summaryPath = Directory.GetFiles(_logPath, "*.log").FirstOrDefault(path => Path.GetFileName(path).IndexOf("Summary", StringComparison.OrdinalIgnoreCase) >= 0);
 					}
 
+					// 如果兩種摘要檔案都找不到，則拋出異常
 					if(string.IsNullOrWhiteSpace(summaryPath))
 					{
 						throw new InvalidDataException("找不到 Summary 檔案（支援 *.txt 或 *Summary*.log）。");
@@ -79,14 +122,18 @@ namespace STDF
 				}
 				catch(Exception ex)
 				{
+					// 記錄載入摘要檔案時發生的異常
 					LogException("LoadSummaryFile", ex, _logPath, null, null, null, null, "SummaryFile", "AnalyzeFile.LoadSummaryFile", _logPath, _outputPath);
 					throw;
 				}
+				
+				// 建立檔案參數物件並解析摘要檔案內容
 				_fileParam = new CFileParam(summaryPath);
 				_fileParam.AnalyzeFile();
 			}
 			catch(Exception e)
 			{
+				// 記錄分析過程中的異常並顯示錯誤訊息
 				LogException("AnalyzeFile", e, _logPath, null, null, null, null, "AnalyzeFlow", "AnalyzeFile", _logPath, _outputPath);
 				Console.WriteLine($@"處理中有錯誤發生: {e.Message}");
 				throw;
@@ -94,7 +141,8 @@ namespace STDF
 		}
 
 		/// <summary>
-		///     執行STDF 轉檔
+		/// 執行STDF 轉檔主要工作流程
+		/// 協調整個轉換過程，包括日誌解析、STDF 記錄生成和檔案輸出
 		/// </summary>
 		public void DoWork()
 		{
@@ -617,6 +665,18 @@ namespace STDF
 			return firstBin?.BinNumber ?? defaultBinNumber;
 		}
 
+		/// <summary>
+		/// 執行指定動作並記錄例外情況
+		/// 包裝動作執行，在發生異常時記錄詳細資訊後重新拋出例外
+		/// </summary>
+		/// <param name="operation">操作名稱，用於例外記錄</param>
+		/// <param name="filePath">相關檔案路徑</param>
+		/// <param name="testItem">當前測試項目</param>
+		/// <param name="site">站點編號</param>
+		/// <param name="pin">腳位編號</param>
+		/// <param name="rawInputValue">原始輸入值</param>
+		/// <param name="targetRecord">目標 STDF 記錄類型</param>
+		/// <param name="action">要執行的動作</param>
 		private void ExecuteWithLogging(string operation, string filePath, string testItem, string site, string pin, string rawInputValue, string targetRecord, Action action)
 		{
 			try
@@ -630,6 +690,21 @@ namespace STDF
 			}
 		}
 
+		/// <summary>
+		/// 記錄異常資訊到追蹤日誌（擴充版本）
+		/// 提供更豐富的異常記錄，包含工作流程階段、輸入輸出路徑等資訊
+		/// </summary>
+		/// <param name="operation">發生異常的操作名稱</param>
+		/// <param name="ex">要記錄的異常物件</param>
+		/// <param name="filePath">相關檔案路徑</param>
+		/// <param name="testItem">當前測試項目</param>
+		/// <param name="site">站點編號</param>
+		/// <param name="pin">腳位編號</param>
+		/// <param name="rawInputValue">原始輸入值</param>
+		/// <param name="targetRecord">目標 STDF 記錄類型</param>
+		/// <param name="stage">工作流程階段（可選）</param>
+		/// <param name="inputFolder">輸入資料夾路徑（可選）</param>
+		/// <param name="outputPath">輸出路徑（可選）</param>
 		private static void LogException(string operation, Exception ex, string filePath, string testItem, string site, string pin, string rawInputValue, string targetRecord, string stage = null, string inputFolder = null, string outputPath = null)
 		{
 			string safeMessage = ex?.Message?.Replace(Environment.NewLine, " ");
@@ -784,39 +859,111 @@ namespace STDF
 
 		private static string InferPassFailFromBinNumber(ushort binNumber) => binNumber == 1 ? "P" : "F";
 
+		/// <summary>
+		/// 測試摘要資訊，用於彙整每個測試項目的統計數據
+		/// </summary>
 		private sealed class TestSummary
 		{
+			/// <summary>
+			/// 測試編號
+			/// </summary>
 			public uint   TestNumber       { get; set; }
+			/// <summary>
+			/// 測試名稱
+			/// </summary>
 			public string TestName         { get; set; }
+			/// <summary>
+			/// 執行次數
+			/// </summary>
 			public uint   ExecutedCount    { get; set; }
+			/// <summary>
+			/// 失敗次數
+			/// </summary>
 			public uint   FailedCount      { get; set; }
+			/// <summary>
+			/// 是否有測量值
+			/// </summary>
 			public bool   HasMeasurement   { get; set; }
+			/// <summary>
+			/// 最小測量值
+			/// </summary>
 			public float? TestMin          { get; set; }
+			/// <summary>
+			/// 最大測量值
+			/// </summary>
 			public float? TestMax          { get; set; }
+			/// <summary>
+			/// 測量值總和
+			/// </summary>
 			public float  TestSum          { get; set; }
+			/// <summary>
+			/// 測量值平方和總和
+			/// </summary>
 			public float  TestSumOfSquares { get; set; }
 		}
 
+		/// <summary>
+		/// Bin 分類摘要，用於彙整硬體或軟體 Bin 的分類結果
+		/// </summary>
 		private sealed class BinSummary
 		{
+			/// <summary>
+			/// Bin 編號
+			/// </summary>
 			public ushort BinNumber   { get; set; }
+			/// <summary>
+			/// Bin 內的零件數量
+			/// </summary>
 			public uint   BinCount    { get; set; }
+			/// <summary>
+			/// Bin 的通過/失敗標記（P=Pass, F=Fail）
+			/// </summary>
 			public string BinPassFail { get; set; }
+			/// <summary>
+			/// Bin 名稱或描述
+			/// </summary>
 			public string BinName     { get; set; }
 		}
 
+		/// <summary>
+		/// 腳位資訊，用於儲存腳位的實體名稱與邏輯名稱對應關係
+		/// </summary>
 		private sealed class PinInfo
 		{
+			/// <summary>
+			/// 腳位索引編號
+			/// </summary>
 			public ushort PinIndex    { get; set; }
+			/// <summary>
+			/// 腳位的實體名稱（來自原始資料）
+			/// </summary>
 			public string RawPinName  { get; set; }
+			/// <summary>
+			/// 腳位的邏輯名稱（經過標準化處理）
+			/// </summary>
 			public string LogicalName { get; set; }
 		}
 
+		/// <summary>
+		/// 零件站點摘要，用於彙整每個零件在特定站點的測試結果
+		/// </summary>
 		private sealed class PartSiteSummary
 		{
+			/// <summary>
+			/// 零件編號（Part Index）
+			/// </summary>
 			public int             PartIndex  { get; set; }
+			/// <summary>
+			/// 站點編號（Site Number）
+			/// </summary>
 			public byte            SiteNumber { get; set; }
+			/// <summary>
+			/// 是否全部通過（該站點下所有晶片都是 PASS）
+			/// </summary>
 			public bool            IsPass     { get; set; }
+			/// <summary>
+			/// 該零件在該站點的所有晶片資料清單
+			/// </summary>
 			public List<CChipData> Chips      { get; set; } = new List<CChipData>();
 		}
 	}
