@@ -50,22 +50,18 @@ namespace STDF
 		{
 			try
 			{
-				// 先解析 P2020 原始資料，再讀取對應的測試參數檔。
 				string[] logFiles;
 
 				try
 				{
-					// 取得所有非 Summary 的 .log 檔案作為 P2020 測試日誌輸入
 					logFiles = Directory.GetFiles(_logPath, "*.log").Where(path => Path.GetFileName(path).IndexOf("Summary", StringComparison.OrdinalIgnoreCase) < 0).ToArray();
 				}
 				catch(Exception ex)
 				{
-					// 記錄載入日誌檔案時發生的異常
 					LogException("LoadLogFiles", ex, _logPath, null, null, null, null, "P2020LogFiles", "AnalyzeFile.LoadLogFiles", _logPath, _outputPath);
 					throw;
 				}
 
-				// 檢查是否有找到任何有效的日誌檔案
 				if(logFiles.Length == 0)
 				{
 					InvalidDataException ex = new InvalidDataException("找不到可供解析的測試 Log（*log，且檔名不含 Summary）。");
@@ -73,23 +69,19 @@ namespace STDF
 					throw ex;
 				}
 
-				// 建立 P2020 解析器並處理所有日誌檔案
 				_p2020 = CP2020.CreateInstance(logFiles, 0);
 				_p2020.AnalyzeFile();
 				string summaryPath;
 
 				try
 				{
-					// 優先尋找 .txt 摘要檔案
 					summaryPath = Directory.GetFiles(_logPath, "*.txt").FirstOrDefault();
 
-					// 如果找不到 .txt 檔案，則尋找包含 Summary 的 .log 檔案
 					if(string.IsNullOrWhiteSpace(summaryPath))
 					{
 						summaryPath = Directory.GetFiles(_logPath, "*.log").FirstOrDefault(path => Path.GetFileName(path).IndexOf("Summary", StringComparison.OrdinalIgnoreCase) >= 0);
 					}
 
-					// 如果兩種摘要檔案都找不到，則拋出異常
 					if(string.IsNullOrWhiteSpace(summaryPath))
 					{
 						throw new InvalidDataException("找不到 Summary 檔案（支援 *.txt 或 *Summary*.log）。");
@@ -97,18 +89,15 @@ namespace STDF
 				}
 				catch(Exception ex)
 				{
-					// 記錄載入摘要檔案時發生的異常
 					LogException("LoadSummaryFile", ex, _logPath, null, null, null, null, "SummaryFile", "AnalyzeFile.LoadSummaryFile", _logPath, _outputPath);
 					throw;
 				}
 
-				// 建立檔案參數物件並解析摘要檔案內容
 				_fileParam = new CFileParam(summaryPath);
 				_fileParam.AnalyzeFile();
 			}
 			catch(Exception e)
 			{
-				// 記錄分析過程中的異常並顯示錯誤訊息
 				LogException("AnalyzeFile", e, _logPath, null, null, null, null, "AnalyzeFlow", "AnalyzeFile", _logPath, _outputPath);
 				Console.WriteLine($@"處理中有錯誤發生: {e.Message}");
 				throw;
