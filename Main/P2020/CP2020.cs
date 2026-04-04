@@ -12,14 +12,14 @@ using System.Windows.Forms;
 
 namespace STDF
 {
-	/// <summary>P2020 測試記錄解析器，用於讀取和處理半導體測試的 P2020 格式日誌檔案 /// 實現 IAnalyze 介面以支援 STDF 檔案的標準化解析流程</summary>
+	/// <summary>P2020 測試記錄解析器，用於讀取和處理半導體測試的 P2020 格式日誌檔案   實現 IAnalyze 介面以支援 STDF 檔案的標準化解析流程</summary>
 	public class CP2020 : IAnalyze
 	{
 		/// <summary>錯誤追蹤標籤，用於記錄日誌時標識異常來源</summary>
 		private const string LogTag = "[STDF-TRACE-ERR]";
 
 		/// <summary>
-		///     用於解析 P2020 測試資料行的正則表達式 /// 匹配格式：Pass/Fail Site PinName ForceValue LowLimit HighLimit MeasureValue
+		///     用於解析 P2020 測試資料行的正則表達式   匹配格式：Pass/Fail Site PinName ForceValue LowLimit HighLimit MeasureValue
 		///     MinMeasureValue MaxMeasureValue
 		/// </summary>
 		private readonly Regex _dataLineRegex = new Regex(@"^\s*(?<passOrFail>\S+)\s+(?<site>\S+)\s+(?<pinName>.+?)\s+(?<forceValue>\S+)\s+(?<lowLimit>\S*)\s+(?<highLimit>\S*)\s+(?<measureValue>\S+)\s+(?<minMeasureValue>\S+)\s+(?<maxMeasureValue>\S+)\s*$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -209,7 +209,7 @@ namespace STDF
 		{
 		}
 
-		/// <summary>從日誌行中提取測試項目標題 /// 用於解析包含 "Test Item :" 的行，並清理標題中的前綴符號</summary>
+		/// <summary>從日誌行中提取測試項目標題   用於解析包含 "Test Item :" 的行，並清理標題中的前綴符號</summary>
 		private static string ExtractTestItemTitle(string rawLine)
 		{
 			if(string.IsNullOrWhiteSpace(rawLine))
@@ -252,7 +252,7 @@ namespace STDF
 			}
 		}
 
-		/// <summary>將單行測試資料轉換為 CChipData 物件 /// 解析符合 P2020 格式的資料行並填入晶片資料物件的各個欄位</summary>
+		/// <summary>將單行測試資料轉換為 CChipData 物件   解析符合 P2020 格式的資料行並填入晶片資料物件的各個欄位</summary>
 		private CChipData EnumerableConvert(string filePath, string testItemTitle, string dataLine, int lineNumber)
 		{
 			try
@@ -291,14 +291,14 @@ namespace STDF
 			}
 		}
 
-		/// <summary>記錄異常資訊到追蹤日誌 /// 標準化的異常記錄方法，包含操作名稱、檔案路徑、區段資訊等詳細內容</summary>
+		/// <summary>記錄異常資訊到追蹤日誌   標準化的異常記錄方法，包含操作名稱、檔案路徑、區段資訊等詳細內容</summary>
 		private static void LogException(string operation, Exception ex, string filePath, string section, string testItem, string site, string pin, string rawInputValue, string keyRawValue, int lineNumber)
 		{
 			string safeMessage = ex?.Message?.Replace(Environment.NewLine, " ");
 			TraceLogger.WriteLine($"{LogTag} op={operation} filePath=\"{filePath ?? "N/A"}\" section=\"{section ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" line=\"{lineNumber}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" keyRaw=\"{keyRawValue ?? "N/A"}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
 		}
 
-		/// <summary>釋放資源（目前未實作，保留介面相容性）</summary>
+		/// <summary>釋放資源</summary>
 		public void Dispose()
 		{
 		}

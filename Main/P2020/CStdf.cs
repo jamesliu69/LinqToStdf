@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 
 namespace STDF
 {
-	/// <summary>STDF 檔案轉換處理類別 /// 負責讀取 P2020 測試日誌和摘要檔案，解析資料並產生標準 STDF V4 格式檔案</summary>
+	/// <summary>STDF 檔案轉換處理類別   負責讀取 P2020 測試日誌和摘要檔案，解析資料並產生標準 STDF V4 格式檔案</summary>
 	public class CStdf
 	{
 		/// <summary>錯誤追蹤標籤，用於記錄日誌時標識異常來源</summary>
@@ -34,7 +34,7 @@ namespace STDF
 		/// <summary>P2020 日誌解析器，用於讀取和處理測試日誌檔案</summary>
 		private CP2020 _p2020;
 
-		/// <summary>建構 CStdf 類別的新實例 /// 初始化日誌路徑、輸出路徑和 STDF 檔案寫入器</summary>
+		/// <summary>建構 CStdf 類別的新實例   初始化日誌路徑、輸出路徑和 STDF 檔案寫入器</summary>
 		public CStdf(string logPath, string outputPath)
 		{
 			Debug.Assert(logPath != null, nameof(logPath) + " != null");
@@ -45,7 +45,7 @@ namespace STDF
 			_stdfWriter = new StdfFileWriter(_outputPath, true);
 		}
 
-		/// <summary>分析並處理輸入的測試日誌檔案 /// 解析 P2020 格式的日誌檔案以及對應的摘要檔案，為後續產生 STDF 檔案做準備</summary>
+		/// <summary>分析並處理輸入的測試日誌檔案   解析 P2020 格式的日誌檔案以及對應的摘要檔案，為後續產生 STDF 檔案做準備</summary>
 		private void AnalyzeFile()
 		{
 			try
@@ -115,7 +115,7 @@ namespace STDF
 			}
 		}
 
-		/// <summary>執行STDF 轉檔主要工作流程 /// 協調整個轉換過程，包括日誌解析、STDF 記錄生成和檔案輸出</summary>
+		/// <summary>執行STDF 轉檔主要工作流程   協調整個轉換過程，包括日誌解析、STDF 記錄生成和檔案輸出</summary>
 		public void DoWork()
 		{
 			string workflowStage = "DoWork.AnalyzeFile";
@@ -637,7 +637,7 @@ namespace STDF
 			return firstBin?.BinNumber ?? defaultBinNumber;
 		}
 
-		/// <summary>執行指定動作並記錄例外情況 /// 包裝動作執行，在發生異常時記錄詳細資訊後重新拋出例外</summary>
+		/// <summary>執行指定動作並記錄例外情況   包裝動作執行，在發生異常時記錄詳細資訊後重新拋出例外</summary>
 		private void ExecuteWithLogging(string operation, string filePath, string testItem, string site, string pin, string rawInputValue, string targetRecord, Action action)
 		{
 			try
@@ -651,7 +651,7 @@ namespace STDF
 			}
 		}
 
-		/// <summary>記錄異常資訊到追蹤日誌（擴充版本） /// 提供更豐富的異常記錄，包含工作流程階段、輸入輸出路徑等資訊</summary>
+		/// <summary>記錄異常資訊到追蹤日誌（擴充版本）   提供更豐富的異常記錄，包含工作流程階段、輸入輸出路徑等資訊</summary>
 		private static void LogException(string operation, Exception ex, string filePath, string testItem, string site, string pin, string rawInputValue, string targetRecord, string stage = null, string inputFolder = null, string outputPath = null)
 		{
 			string safeMessage = ex?.Message?.Replace(Environment.NewLine, " ");

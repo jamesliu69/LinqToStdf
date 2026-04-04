@@ -1,4 +1,4 @@
-﻿using Stdf;
+using Stdf;
 using Stdf.Records.V4;
 using System;
 using System.Diagnostics;
