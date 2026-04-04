@@ -12,27 +12,20 @@ using System.Windows.Forms;
 
 namespace STDF
 {
-	/// <summary>
-	/// P2020 測試記錄解析器，用於讀取和處理半導體測試的 P2020 格式日誌檔案
-	/// 實現 IAnalyze 介面以支援 STDF 檔案的標準化解析流程
-	/// </summary>
+	/// <summary>P2020 測試記錄解析器，用於讀取和處理半導體測試的 P2020 格式日誌檔案 /// 實現 IAnalyze 介面以支援 STDF 檔案的標準化解析流程</summary>
 	public class CP2020 : IAnalyze
 	{
+		/// <summary>錯誤追蹤標籤，用於記錄日誌時標識異常來源</summary>
+		private const string LogTag = "[STDF-TRACE-ERR]";
+
 		/// <summary>
-		/// 錯誤追蹤標籤，用於記錄日誌時標識異常來源
+		///     用於解析 P2020 測試資料行的正則表達式 /// 匹配格式：Pass/Fail Site PinName ForceValue LowLimit HighLimit MeasureValue
+		///     MinMeasureValue MaxMeasureValue
 		/// </summary>
-		private const    string       LogTag         = "[STDF-TRACE-ERR]";
-		
-		/// <summary>
-		/// 用於解析 P2020 測試資料行的正則表達式
-		/// 匹配格式：Pass/Fail Site PinName ForceValue LowLimit HighLimit MeasureValue MinMeasureValue MaxMeasureValue
-		/// </summary>
-		private readonly Regex        _dataLineRegex = new Regex(@"^\s*(?<passOrFail>\S+)\s+(?<site>\S+)\s+(?<pinName>.+?)\s+(?<forceValue>\S+)\s+(?<lowLimit>\S*)\s+(?<highLimit>\S*)\s+(?<measureValue>\S+)\s+(?<minMeasureValue>\S+)\s+(?<maxMeasureValue>\S+)\s*$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
-		
-		/// <summary>
-		/// 待處理的日誌檔案清單
-		/// </summary>
-		private readonly List<string> _fileNames     = new List<string>();
+		private readonly Regex _dataLineRegex = new Regex(@"^\s*(?<passOrFail>\S+)\s+(?<site>\S+)\s+(?<pinName>.+?)\s+(?<forceValue>\S+)\s+(?<lowLimit>\S*)\s+(?<highLimit>\S*)\s+(?<measureValue>\S+)\s+(?<minMeasureValue>\S+)\s+(?<maxMeasureValue>\S+)\s*$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+		/// <summary>待處理的日誌檔案清單</summary>
+		private readonly List<string> _fileNames = new List<string>();
 
 		public CP2020(string filename)
 		{
@@ -44,62 +37,39 @@ namespace STDF
 			_fileNames.AddRange(filename);
 		}
 
-		/// <summary>
-		/// 晶片資料清單，儲存解析後的所有測試資料
-		/// </summary>
+		/// <summary>晶片資料清單，儲存解析後的所有測試資料</summary>
 		public List<CChipData> ChipDataList { get; } = new List<CChipData>();
 
-		/// <summary>
-		/// 資料字典計數，記錄處理過的資料筆數
-		/// </summary>
+		/// <summary>資料字典計數，記錄處理過的資料筆數</summary>
 		public int DictCount { get; set; }
 
-		/// <summary>
-		/// 取得資料表（目前未實作，返回 null）
-		/// </summary>
+		/// <summary>取得資料表（目前未實作，返回 null）</summary>
 		public DataTable GetTable() => null;
 
-		/// <summary>
-		/// 自動顯示項目（目前未實作）
-		/// </summary>
+		/// <summary>自動顯示項目（目前未實作）</summary>
 		public void AutoShowItem()
 		{
 		}
 
-		/// <summary>
-		/// 選取項目變更事件
-		/// </summary>
+		/// <summary>選取項目變更事件</summary>
 		public event EventHandler? evtSelectItem;
 
-		/// <summary>
-		/// 錯誤發生事件
-		/// </summary>
+		/// <summary>錯誤發生事件</summary>
 		public event EventHandler? evtErrorArise;
 
-		/// <summary>
-		/// 儲存路徑，用於指定輸出檔案的儲存位置
-		/// </summary>
+		/// <summary>儲存路徑，用於指定輸出檔案的儲存位置</summary>
 		public string SavePath { get; set; }
 
-		/// <summary>
-		/// 總Pin數量
-		/// </summary>
+		/// <summary>總Pin數量</summary>
 		public int AllPin { get; set; }
 
-		/// <summary>
-		/// 通過的Pin數量
-		/// </summary>
+		/// <summary>通過的Pin數量</summary>
 		public int PassPin { get; set; }
 
-		/// <summary>
-		/// 失敗的Pin數量
-		/// </summary>
+		/// <summary>失敗的Pin數量</summary>
 		public int FailPin { get; set; }
 
-		/// <summary>
-		/// 分析並解析 P2020 測試日誌檔案
-		/// 讀取所有指定的日誌檔案，解析測試資料並填入 ChipDataList 集合
-		/// </summary>
+		/// <summary>分析並解析 P2020 測試日誌檔案，讀取所有指定的日誌檔案，解析測試資料並填入 ChipDataList 集合。</summary>
 		public void AnalyzeFile()
 		{
 			try
@@ -124,13 +94,15 @@ namespace STDF
 						LogException("ReadAllLines", ex, logFilePath, "SourceLog", string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, -1);
 						throw;
 					}
-					
+
 					// 當前處理的零件編號（DUT/Part 索引）
-					int    currentPartIndex = 0;
+					int currentPartIndex = 0;
+
 					// 標記是否正在處理測試區塊內容
-					bool   inTestBlock      = false;
+					bool inTestBlock = false;
+
 					// 當前測試項目的標題
-					string testItemTitle    = string.Empty;
+					string testItemTitle = string.Empty;
 
 					// 逐行處理日誌內容
 					for(int lineIndex = 0; lineIndex < logLines.Length; lineIndex++)
@@ -210,7 +182,7 @@ namespace STDF
 					LogException("AnalyzeFile.NoValidTestLog", ex, string.Join(";", _fileNames), "ChipDataList", string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, -1);
 					throw ex;
 				}
-				
+
 				// 更新資料字典計數為實際解析的晶片資料數量
 				DictCount = ChipDataList.Count;
 			}
@@ -237,12 +209,7 @@ namespace STDF
 		{
 		}
 
-		/// <summary>
-		/// 從日誌行中提取測試項目標題
-		/// 用於解析包含 "Test Item :" 的行，並清理標題中的前綴符號
-		/// </summary>
-		/// <param name="rawLine">原始日誌行內容</param>
-		/// <returns>清理後的測試項目標題</returns>
+		/// <summary>從日誌行中提取測試項目標題 /// 用於解析包含 "Test Item :" 的行，並清理標題中的前綴符號</summary>
 		private static string ExtractTestItemTitle(string rawLine)
 		{
 			if(string.IsNullOrWhiteSpace(rawLine))
@@ -271,11 +238,7 @@ namespace STDF
 			return suffix.Replace("OSitem_", string.Empty).Trim();
 		}
 
-		/// <summary>
-		/// 異步讀取指定路徑的檔案內容並分割為行陣列
-		/// </summary>
-		/// <param name="path">要讀取的檔案完整路徑</param>
-		/// <returns>檔案內容按行分割的字串陣列</returns>
+		/// <summary>異步讀取指定路徑的檔案內容並分割為行陣列</summary>
 		public async Task<string[]> ReadAllLinesAsync(string path)
 		{
 			using(StreamReader reader = new StreamReader(path))
@@ -289,15 +252,7 @@ namespace STDF
 			}
 		}
 
-		/// <summary>
-		/// 將單行測試資料轉換為 CChipData 物件
-		/// 解析符合 P2020 格式的資料行並填入晶片資料物件的各個欄位
-		/// </summary>
-		/// <param name="filePath">來源日誌檔案路徑</param>
-		/// <param name="testItemTitle">當前測試項目標題</param>
-		/// <param name="dataLine">要解析的原始資料行</param>
-		/// <param name="lineNumber">資料行在檔案中的行號（從 1 開始）</param>
-		/// <returns>包含解析結果的 CChipData 物件</returns>
+		/// <summary>將單行測試資料轉換為 CChipData 物件 /// 解析符合 P2020 格式的資料行並填入晶片資料物件的各個欄位</summary>
 		private CChipData EnumerableConvert(string filePath, string testItemTitle, string dataLine, int lineNumber)
 		{
 			try
@@ -336,29 +291,14 @@ namespace STDF
 			}
 		}
 
-		/// <summary>
-		/// 記錄異常資訊到追蹤日誌
-		/// 標準化的異常記錄方法，包含操作名稱、檔案路徑、區段資訊等詳細內容
-		/// </summary>
-		/// <param name="operation">發生異常的操作名稱</param>
-		/// <param name="exception">要記錄的異常物件</param>
-		/// <param name="filePath">相關檔案路徑</param>
-		/// <param name="section">程式區段或模組名稱</param>
-		/// <param name="testItem">當前測試項目</param>
-		/// <param name="site">站點編號</param>
-		/// <param name="pin">腳位編號</param>
-		/// <param name="rawInputValue">原始輸入值</param>
-		/// <param name="keyRawValue">關鍵原始值</param>
-		/// <param name="lineNumber">發生異常的行號</param>
+		/// <summary>記錄異常資訊到追蹤日誌 /// 標準化的異常記錄方法，包含操作名稱、檔案路徑、區段資訊等詳細內容</summary>
 		private static void LogException(string operation, Exception ex, string filePath, string section, string testItem, string site, string pin, string rawInputValue, string keyRawValue, int lineNumber)
 		{
 			string safeMessage = ex?.Message?.Replace(Environment.NewLine, " ");
 			TraceLogger.WriteLine($"{LogTag} op={operation} filePath=\"{filePath ?? "N/A"}\" section=\"{section ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" line=\"{lineNumber}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" keyRaw=\"{keyRawValue ?? "N/A"}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
 		}
 
-		/// <summary>
-		/// 釋放資源（目前未實作，保留介面相容性）
-		/// </summary>
+		/// <summary>釋放資源（目前未實作，保留介面相容性）</summary>
 		public void Dispose()
 		{
 		}

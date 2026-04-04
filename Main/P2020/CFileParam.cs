@@ -18,9 +18,7 @@ namespace STDF
 		public string FilePath;
 		public string HandlerID;
 
-		/// <summary>
-		///     [HARDWARE BIN]
-		/// </summary>
+		/// <summary>[HARDWARE BIN]</summary>
 		public Dictionary<string, IEnumerable<string>> HardWareBin = new Dictionary<string, IEnumerable<string>>();
 		public string       LoadBoardName;
 		public string       LotEND;
@@ -32,20 +30,14 @@ namespace STDF
 		public string[]     ResultTotal;
 		public string       SampleRate;
 
-		/// <summary>
-		///     [Result]
-		/// </summary>
+		/// <summary>[Result]</summary>
 		public int SiteCount = 1;
 
-		/// <summary>
-		///     [SOFTWARE BIN]
-		/// </summary>
+		/// <summary>[SOFTWARE BIN]</summary>
 		public Dictionary<string, IEnumerable<string>> SoftWareBin = new Dictionary<string, IEnumerable<string>>();
 		public string TestCycle;
 
-		/// <summary>
-		///     [TEST ITEM]
-		/// </summary>
+		/// <summary>[TEST ITEM]</summary>
 		public string TestItemName = "O/S_Test";
 		public string TestProgramName;
 

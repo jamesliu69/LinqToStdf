@@ -15,25 +15,16 @@ namespace STDF
 		void AnalyzeFile();
 		void GroupBySite();
 
-		/// <summary>
-		///     計算量測值
-		/// </summary>
+		/// <summary>計算量測值</summary>
 		void CalMeasure();
 
-		/// <summary>
-		///     輸出檔案
-		/// </summary>
+		/// <summary>輸出檔案</summary>
 		void OutputFile();
 
-		/// <summary>
-		///     取得資料表
-		/// </summary>
-		/// <returns></returns>
+		/// <summary>取得資料表</summary>
 		DataTable GetTable();
 
-		/// <summary>
-		///     自動顯示項目
-		/// </summary>
+		/// <summary>自動顯示項目</summary>
 		void AutoShowItem();
 
 		/// <summary>選擇項目時觸發</summary>
