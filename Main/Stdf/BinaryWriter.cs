@@ -168,11 +168,7 @@ namespace Stdf
 				newArray[i] = temp;
 			}
 
-			if(_WriteBackwards)
-			{
-				Array.Reverse(newArray);
-			}
-			newArray.CopyTo(_Buffer, 0);
+			WriteToBuffer(newArray, false);
 			WriteToStream(newArray.Length);
 		}
 
@@ -182,6 +178,11 @@ namespace Stdf
 		public void WriteBitArray(BitArray value)
 		{
 			value = value ?? new BitArray(0);
+
+			if(value.Length > ushort.MaxValue)
+			{
+				throw new ArgumentOutOfRangeException(nameof(value), value.Length, "Bit arrays cannot contain more than 65535 bits.");
+			}
 			ushort length = (ushort)value.Length;
 
 			if(!_WriteBackwards)
@@ -191,7 +192,7 @@ namespace Stdf
 
 			if(length > 0)
 			{
-				int bufferLength = (length + 31) / 32;
+				int bufferLength = (length + 7) / 8;
 				EnsureBufferLength(bufferLength);
 				value.CopyTo(_Buffer, 0);
 				WriteToStream(bufferLength);
