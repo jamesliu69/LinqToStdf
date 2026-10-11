@@ -16,7 +16,7 @@
   - `WindowsFormsApp1/WindowsFormsApp1.csproj` - WinForms UI
 
 **Compiler Configuration:**
-- Project targets .NET Framework 4.5.2 (Stdf library)
+- All projects target .NET Framework 4.7.2
 - WarningLevel: 4 (strict)
 - DocumentationFile: `bin\Stdf.xml` (generated for code analysis)
 - NoWarn: 1591 (suppresses missing XML comment warning)

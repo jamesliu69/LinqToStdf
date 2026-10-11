@@ -34,7 +34,7 @@ See [Example Usage]
 
 ## 回歸測試
 
-在 Windows 安裝 .NET SDK，以及 .NET Framework 4.5.2 和 4.7.2 Targeting Pack 後，可從儲存庫根目錄執行：
+在 Windows 安裝 .NET SDK 與 .NET Framework 4.7.2 Targeting Pack 後，可從儲存庫根目錄執行：
 
 ```powershell
 .\Main\RegressionTests\Run-Tests.ps1
@@ -42,7 +42,7 @@ See [Example Usage]
 
 測試程式不依賴額外的 NuGet 測試套件，會建置完整方案，執行回歸案例，並在任何案例失敗時回傳非零結束碼。案例涵蓋 bit／nibble 陣列的大小端序與反向寫入、GDR byte array 長度與 nibble 讀取、MPR／FTR 記錄讀寫，以及 P2020 轉檔成功、失敗保留原檔、檔案鎖與重試。
 
-若本機只有 .NET Framework 4.7.2 Targeting Pack，可僅對此次建置指定目標版本：
+方案以 .NET Framework 4.7.2 建置；如需以其他目標版本建置，可明確指定：
 
 ```powershell
 .\Main\RegressionTests\Run-Tests.ps1 -TargetFrameworkVersion v4.7.2
