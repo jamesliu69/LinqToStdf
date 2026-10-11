@@ -15,8 +15,7 @@
 ## Runtime
 
 **Environment:**
-- .NET Framework 4.5.2 - Stdf core library (`Stdf.csproj`)
-- .NET Framework 4.7.2 - P2020 analysis library and WindowsFormsApp1 UI (`P2020.csproj`, `WindowsFormsApp1.csproj`)
+- .NET Framework 4.7.2 - All projects (`Stdf.csproj`, `P2020.csproj`, `WindowsFormsApp1.csproj`, `RegressionTests.csproj`)
 
 **Package Manager:**
 - NuGet (MSBuild integrated)
@@ -76,13 +75,11 @@
 
 **Development:**
 - Visual Studio 2017 or later
-- .NET Framework 4.5.2 Developer Kit (for Stdf core library)
-- .NET Framework 4.7.2 Developer Kit (for P2020 and UI projects)
+- .NET Framework 4.7.2 Developer Kit (for all projects)
 - MSBuild tools for project compilation
 
 **Production:**
-- .NET Framework 4.5.2 runtime minimum (for Stdf.dll library usage)
-- .NET Framework 4.7.2 runtime required (for P2020 and WindowsFormsApp1 executables)
+- .NET Framework 4.7.2 runtime required (for Stdf.dll, CSTDF.dll, and WindowsFormsApp1.exe)
 - Windows operating system (desktop/server - Windows Forms application)
 
 ## Assembly Architecture
