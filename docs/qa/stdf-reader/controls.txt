@@ -1,0 +1,21 @@
+﻿ControlType.Pane`t460734`t
+ControlType.Pane`t1`t
+ControlType.Pane`t787170`t摘要
+ControlType.Pane`t591824`t
+ControlType.Pane`t591808`t檔案
+ControlType.Pane`t788306`tD:\Project\RiderProjects\LinqToStdf\Main\StdfConverter\bin\Release\testSTDF.stdf
+ControlType.Pane`t395178`tLot ID
+ControlType.Pane`t2033390`tTEST-502
+ControlType.Pane`t984936`t起始時間
+ControlType.Pane`t2557872`t2026-10-08 09:32:09 UTC / 2026-10-08 17:32:09 本地
+ControlType.Pane`t1837006`t結束時間
+ControlType.Pane`t853866`t2026-10-08 09:32:14 UTC / 2026-10-08 17:32:14 本地
+ControlType.Pane`t919182`tPart 統計
+ControlType.Pane`t395196`tPart 數 1（Fail 1）
+ControlType.Pane`t460686`t原始記錄統計
+ControlType.Pane`t460688`t原始記錄 59 筆；Atr 1、Far 1、Hbr 1、Mir 1、Mrr 1、Pcr 2、Pgr 1、Pir 1、Pmr 1、Prr 1、Ptr 23、Sbr 1、Sdr 1、Tsr 23
+ControlType.Pane`t526226`tDiagnostics
+ControlType.Pane`t395202`t無
+ControlType.Pane`t395174`t
+ControlType.Pane`t1311822`t開啟 STDF…
+ControlType.Pane`t395180`t載入完成：D:\Project\RiderProjects\LinqToStdf\Main\StdfConverter\bin\Release\testSTDF.stdf

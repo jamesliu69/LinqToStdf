@@ -1,0 +1,1 @@
+﻿部分載入：D:\Project\RiderProjects\LinqToStdf\docs\qa\stdf-reader\truncated.stdf

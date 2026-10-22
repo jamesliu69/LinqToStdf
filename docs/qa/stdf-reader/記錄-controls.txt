@@ -1,0 +1,20 @@
+﻿ControlType.Pane`t460734`t
+ControlType.Pane`t1`t
+ControlType.Pane`t67542`t記錄
+ControlType.Pane`t67544`t
+ControlType.Pane`t67546`t記錄類型：
+ControlType.Pane`t67548`t全部類型
+ControlType.Pane`t67552`t
+ControlType.Pane`t67554`t
+ControlType.Pane`t67556`t
+ControlType.Pane`t67558`t
+ControlType.Pane`t67560`t
+ControlType.Pane`t67562`tPropertyGrid
+ControlType.Pane`t67564`t描述窗格
+ControlType.Pane`t67566`tCpuType
+ControlType.Pane`t67568`t
+ControlType.Pane`t67570`tPropertyGridView
+ControlType.Pane`t67572`tPropertyGridToolBar
+ControlType.Pane`t395174`t
+ControlType.Pane`t1311822`t開啟 STDF…
+ControlType.Pane`t395180`t載入完成：D:\Project\RiderProjects\LinqToStdf\Main\StdfConverter\bin\Release\testSTDF.stdf

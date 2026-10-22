@@ -1,0 +1,1 @@
+﻿載入完成：D:\Project\RiderProjects\LinqToStdf\Main\StdfConverter\bin\Release\testSTDF.stdf

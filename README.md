@@ -49,3 +49,16 @@ See [Example Usage]
 ```
 
 轉檔會先在輸出檔所在目錄寫入暫存檔，完成並關閉後才替換正式輸出；解析、寫入或替換失敗時會保留既有檔案並清理暫存檔。
+
+## STDF 桌面讀取器
+
+`Main/StdfReader` 為獨立的 Windows 桌面專案，重用 `Stdf` 解析器。建置 `Main/Project_Stdf.sln` 後，執行 `Main/StdfReader/bin/Release/StdfReader.exe`，使用「開啟檔案」或拖放載入單一未壓縮的 STDF V4 檔案，也可將檔案路徑作為啟動參數。
+
+介面提供摘要、原始記錄，以及 PTR 量測表、趨勢圖和直方圖。不同測試、Head/Site 與單位分開顯示；無效量測不納入圖表。MPR/FTR 目前可查看原始欄位，尚未展開為數值圖表。格式錯誤或部分讀取會顯示診斷資訊；第一版未提供取消載入、壓縮檔與大型檔案效能保證。
+
+讀取器業務測試：
+
+```powershell
+dotnet build Main/StdfReader.Tests/StdfReader.Tests.csproj -c Release
+.\Main\StdfReader.Tests\bin\Release\StdfReader.Tests.exe
+```

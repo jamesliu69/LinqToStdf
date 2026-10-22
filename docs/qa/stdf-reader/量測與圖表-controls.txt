@@ -1,0 +1,22 @@
+﻿ControlType.Pane`t460734`t
+ControlType.Pane`t1`t
+ControlType.Pane`t67574`t量測與圖表
+ControlType.Pane`t67576`t
+ControlType.Pane`t67578`t
+ControlType.Pane`t67580`t測試群組：
+ControlType.Pane`t67582`tStep 1 Cap-IRe Point -F559,S561+F565,S563 No 1 Direction 180 (4) [H1/S1] ohm
+ControlType.Pane`t67586`tPart：
+ControlType.Pane`t67588`t全部 Part
+ControlType.Pane`t67592`t
+ControlType.Pane`t67594`t
+ControlType.Pane`t67596`t
+ControlType.Pane`t67598`t
+ControlType.Pane`t67600`t
+ControlType.Pane`t67602`t
+ControlType.Pane`t67604`t
+ControlType.Pane`t67606`t有效樣本數：1；樣本有限，直方圖參考性低。
+ControlType.Pane`t67608`t
+ControlType.Pane`t67610`t
+ControlType.Pane`t395174`t
+ControlType.Pane`t1311822`t開啟 STDF…
+ControlType.Pane`t395180`t載入完成：D:\Project\RiderProjects\LinqToStdf\Main\StdfConverter\bin\Release\testSTDF.stdf

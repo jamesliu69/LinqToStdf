@@ -1,0 +1,4 @@
+﻿Status: 部分載入：D:\Project\RiderProjects\LinqToStdf\docs\qa\stdf-reader\truncated.stdf
+IsComplete: False; RawRecords: 0; Diagnostics: 11 bytes of corrupt data found at offset 4761. | 缺少 MRR 結束記錄。
+RecordRows: 0
+TestGroups: 0; MeasurementRows: 0; TrendSeries: 1; HistogramSeries: 0
