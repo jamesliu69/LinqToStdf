@@ -23,7 +23,7 @@ namespace STDF
 		private readonly string _outputPath;
 
 		/// <summary>STDF 檔案寫入器，負責產生標準 STDF V4 格式輸出</summary>
-		private readonly StdfFileWriter _stdfWriter;
+		private StdfFileWriter _stdfWriter;
 
 		/// <summary>摘要日誌檔案的路徑（目前與 _logPath 相同）</summary>
 		private readonly string _summaryLog;
@@ -34,7 +34,7 @@ namespace STDF
 		/// <summary>P2020 日誌解析器，用於讀取和處理測試日誌檔案</summary>
 		private CP2020 _p2020;
 
-		/// <summary>建構 CStdf 類別的新實例   初始化日誌路徑、輸出路徑和 STDF 檔案寫入器</summary>
+		/// <summary>建構 CStdf 類別的新實例，設定日誌與輸出路徑；寫入器於轉檔時建立。</summary>
 		public CStdf(string logPath, string outputPath)
 		{
 			Debug.Assert(logPath != null, nameof(logPath) + " != null");
@@ -42,7 +42,6 @@ namespace STDF
 			_summaryLog = logPath;
 			Debug.Assert(outputPath != null, nameof(outputPath) + " != null");
 			_outputPath = outputPath;
-			_stdfWriter = new StdfFileWriter(_outputPath, true);
 		}
 
 		/// <summary>分析並處理輸入的測試日誌檔案   解析 P2020 格式的日誌檔案以及對應的摘要檔案，為後續產生 STDF 檔案做準備</summary>
@@ -107,11 +106,16 @@ namespace STDF
 		/// <summary>執行STDF 轉檔主要工作流程   協調整個轉換過程，包括日誌解析、STDF 記錄生成和檔案輸出</summary>
 		public void DoWork()
 		{
-			string workflowStage = "DoWork.AnalyzeFile";
+			string workflowStage       = "DoWork.AnalyzeFile";
+			string temporaryOutputPath = null;
 
 			try
 			{
 				AnalyzeFile();
+				workflowStage = "DoWork.CreateTemporaryOutput";
+				string finalOutputPath = Path.GetFullPath(_outputPath);
+				temporaryOutputPath = Path.Combine(Path.GetDirectoryName(finalOutputPath), ".stdf-" + Guid.NewGuid().ToString("N") + ".tmp");
+				_stdfWriter = new StdfFileWriter(temporaryOutputPath, true);
 				workflowStage = "DoWork.PrepareSiteAndPinMap";
 				List<CChipData> chipDataList = _p2020.ChipDataList ?? new List<CChipData>();
 				List<byte>      siteNumbers  = chipDataList.Select(chip => byte.TryParse(chip.Site, out byte site) ? (byte?)site : null).Where(site => site.HasValue).Select(site => site.Value).Distinct().OrderBy(site => site).ToList();
@@ -529,11 +533,52 @@ namespace STDF
 
 				workflowStage = "DoWork.DisposeWriter";
 				_stdfWriter.Dispose();
+				_stdfWriter = null;
+
+				// 同目錄暫存檔完成並關閉後才發布，失敗時保留原本的輸出。
+				workflowStage = "DoWork.PublishOutput";
+
+				if(File.Exists(finalOutputPath))
+				{
+					File.Replace(temporaryOutputPath, finalOutputPath, null);
+				}
+				else
+				{
+					File.Move(temporaryOutputPath, finalOutputPath);
+				}
+				temporaryOutputPath = null;
 			}
 			catch(Exception ex)
 			{
 				LogException("DoWork", ex, _fileParam?.FilePath ?? _logPath, _fileParam?.TestItemName, null, null, null, "Workflow", workflowStage, _logPath, _outputPath);
 				throw;
+			}
+			finally
+			{
+				try
+				{
+					_stdfWriter?.Dispose();
+				}
+				catch(Exception ex)
+				{
+					LogException("DisposeWriter", ex, temporaryOutputPath, null, null, null, null, "TemporaryOutput", workflowStage, _logPath, _outputPath);
+				}
+				finally
+				{
+					_stdfWriter = null;
+				}
+
+				if(temporaryOutputPath != null)
+				{
+					try
+					{
+						File.Delete(temporaryOutputPath);
+					}
+					catch(Exception ex)
+					{
+						LogException("DeleteTemporaryOutput", ex, temporaryOutputPath, null, null, null, null, "TemporaryOutput", workflowStage, _logPath, _outputPath);
+					}
+				}
 			}
 		}
 

@@ -89,6 +89,7 @@ namespace Stdf.Records.V4
 						{
 							byte nibble = reader.ReadByte();
 							nibble = (byte)(nibble & 0x0F);
+							data[i] = nibble;
 							break;
 						}
 						default:
@@ -162,8 +163,15 @@ namespace Stdf.Records.V4
 					}
 					else if(o is byte[])
 					{
+						byte[] bytes = (byte[])o;
+
+						if(bytes.Length > byte.MaxValue)
+						{
+							throw new ArgumentOutOfRangeException(nameof(Gdr.GenericData), bytes.Length, "GDR byte arrays cannot contain more than 255 bytes.");
+						}
 						writer.WriteByte(11);
-						writer.WriteByteArray((byte[])o);
+						writer.WriteByte((byte)bytes.Length);
+						writer.WriteByteArray(bytes);
 					}
 					else if(o is BitArray)
 					{

@@ -205,7 +205,7 @@ public string ModeCode { get; set; }
 
 **Not Observed:** The codebase does not use async/await patterns. All I/O operations (file reading, parsing) are synchronous.
 
-**Reason:** Library targets .NET 4.5.2 (WindowsFormsApp1) and older frameworks, with focus on LINQ query composition and IL generation. Async operations not required by current design.
+**Reason:** All projects target .NET Framework 4.7.2, with focus on LINQ query composition and IL generation. Async operations not required by current design.
 
 ## Function Design
 

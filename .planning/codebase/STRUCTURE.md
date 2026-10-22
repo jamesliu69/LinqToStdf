@@ -49,7 +49,7 @@ D:\Project\RiderProjects\LinqToStdf\
 - Purpose: Foundational LINQ provider for STDF file parsing
 - Contains: Record types, binary I/O, IL code generation, LINQ extensions, filtering, indexing
 - Key files: `StdfFile.cs`, `StdfRecord.cs`, `BinaryReader.cs`, `Extensions.cs`
-- Output: `Stdf.dll` (targeting .NET 4.5.2)
+- Output: `Stdf.dll` (targeting .NET 4.7.2)
 - Assembly Name: `Stdf`
 
 **P2020\ (Analysis Library - Class Library)**
