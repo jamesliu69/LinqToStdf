@@ -142,7 +142,7 @@ namespace STDF
 
 			Dictionary<string, int> columns = headers.Select((name, index) => new { name, index })
 				.ToDictionary(item => item.name.Trim(), item => item.index, StringComparer.OrdinalIgnoreCase);
-			string[] required = { "Date", "Time", "LotNo", "Serial", "PieceX", "PieceY", "DataStatus", "StepJudge", "Step", "Retest", "Dut", "Item", "Point", "No", "Direction", "PJudge", "Meas", "Unit", "Lower", "Upper", "Error" };
+			string[] required = { "Date", "Time", "LotNo", "Serial", "PieceX", "PieceY", "DataStatus", "StepJudge", "Step", "Retest", "Dut", "Item", "Point", "No", "Direction", "PJudge", "Result", "Meas", "Unit", "Lower", "Upper", "Error" };
 			foreach(string name in required)
 			{
 				if(!columns.ContainsKey(name))
@@ -235,6 +235,8 @@ namespace STDF
 
 				string item = Get(row, "Item");
 				string step = Get(row, "Step");
+				string measurementType = Get(row, "Result");
+				string measurementKind = measurementType.IndexOf("(Cp)", StringComparison.OrdinalIgnoreCase) >= 0 ? " (Cp)" : measurementType.IndexOf("(Rp)", StringComparison.OrdinalIgnoreCase) >= 0 ? " (Rp)" : string.Empty;
 				string retest = Get(row, "Retest");
 				if(string.IsNullOrWhiteSpace(item) || !int.TryParse(step, NumberStyles.Integer, CultureInfo.InvariantCulture, out _) || !int.TryParse(retest, NumberStyles.Integer, CultureInfo.InvariantCulture, out int retestNumber))
 				{
@@ -257,7 +259,7 @@ namespace STDF
 					FileName = Path.GetFileNameWithoutExtension(_logPath),
 					Id = partId,
 					Site = "1",
-					Comment = $"Step {step} {item} Point {Get(row, "Point")} No {Get(row, "No")} Direction {Get(row, "Direction")}",
+					Comment = $"Step {step} {item} Point {Get(row, "Point")} No {Get(row, "No")} Direction {Get(row, "Direction")}{measurementKind}",
 					SourcePartId = serial,
 					SourcePartKey = sourcePartKey,
 					SourcePieceX = pieceX,
@@ -298,6 +300,14 @@ namespace STDF
 				throw new InvalidDataException($"CSV 第 {line} 列 {field} 超出 STDF PTR 浮點範圍或格式不符。");
 			}
 			return (float)value;
+		}
+
+		private DateTime ParseStdfTime(string value)
+		{
+			DateTime parsed = DateTime.Parse(value, CultureInfo.InvariantCulture);
+			return _csvInput
+				? new DateTimeOffset(DateTime.SpecifyKind(parsed, DateTimeKind.Unspecified), TimeSpan.FromHours(8)).UtcDateTime
+				: parsed.ToUniversalTime();
 		}
 
 		private static string[] ParseCsvLine(string line)
@@ -371,7 +381,7 @@ namespace STDF
 				far.StdfVersion = 4;
 				ExecuteWithLogging("WriteRecord", _logPath, null, null, null, null, "FAR", () => _stdfWriter.WriteRecord(far));
 				Atr atr = new Atr();
-				atr.ModifiedTime = DateTime.Now;
+				atr.ModifiedTime = DateTime.UtcNow;
 				atr.CommandLine  = "";
 				ExecuteWithLogging("WriteRecord", _logPath, null, null, null, null, "ATR", () => _stdfWriter.WriteRecord(atr));
 
@@ -382,8 +392,8 @@ namespace STDF
 
 				try
 				{
-					mir.SetupTime = DateTime.Parse(_fileParam.LotSTART);
-					mir.StartTime = DateTime.Parse(_fileParam.LotSTART);
+					mir.SetupTime = ParseStdfTime(_fileParam.LotSTART);
+					mir.StartTime = ParseStdfTime(_fileParam.LotSTART);
 				}
 				catch(Exception ex)
 				{
@@ -745,7 +755,7 @@ namespace STDF
 
 				try
 				{
-					mrr.FinishTime = DateTime.Parse(_fileParam.LotEND);
+					mrr.FinishTime = ParseStdfTime(_fileParam.LotEND);
 				}
 				catch(Exception ex)
 				{

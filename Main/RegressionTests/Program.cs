@@ -56,8 +56,10 @@ namespace LinqToStdf.RegressionTests
 			Run("Relative output path works", RelativeOutputPath);
 			Run("Long output filename works", LongOutputFilename);
 			Run("CSV DETAIL round trip preserves source results", () => CsvRoundTrip("DETAIL_LOG_TEST-502_001.csv", 23, 18, 3, 2));
+			Run("CSV Taiwan local time is written as UTC epoch seconds", CsvTimestampWriting);
 			Run("CSV RESULT round trip remains a separate subset", () => CsvRoundTrip("RESULT_LOG_TEST-502_001.csv", 5, 0, 3, 2));
 			Run("CSV attempt keys preserve coordinates, DUT, retest, and serial", CsvAttemptKeysAndRetest);
+			Run("CSV Cp and Rp tests have stable distinct identities", CsvTestIdentity);
 			Run("CSV STDF missing coordinate sentinel preserves output", CsvMissingCoordinatePreservesOutput);
 			Run("CSV invalid status preserves existing output", CsvFailurePreservesOutput);
 			Run("MIR maps summary header fields", MirMapsSummaryHeaders);
@@ -423,7 +425,14 @@ namespace LinqToStdf.RegressionTests
 				StdfRecord[] records = new StdfFile(output).GetRecordsEnumerable().ToArray();
 				Ptr[] ptrs = records.OfType<Ptr>().ToArray();
 				Check(ptrs.Length == expectedCount, $"Expected {expectedCount} PTR records, got {ptrs.Length}.");
-			Check(ptrs.GroupBy(ptr => ptr.TestText).All(group => group.Select(ptr => ptr.TestNumber).Distinct().Count() == 1), "Rows sharing test text have different test numbers.");
+				Check(ptrs.GroupBy(ptr => ptr.TestText).All(group => group.Select(ptr => ptr.TestNumber).Distinct().Count() == 1), "Rows sharing test text have different test numbers.");
+				if(csvName == "DETAIL_LOG_TEST-502_001.csv")
+				{
+					Check(ptrs.Any(ptr => ptr.TestText.Contains("(Cp)")) && ptrs.Any(ptr => ptr.TestText.Contains("(Rp)")), "CSV Result measurement type was not preserved in PTR test text.");
+					Check(!ptrs.Where(ptr => ptr.TestText.Contains("(Cp)")).Select(ptr => ptr.TestNumber).Intersect(ptrs.Where(ptr => ptr.TestText.Contains("(Rp)")).Select(ptr => ptr.TestNumber)).Any(), "Cp and Rp were assigned the same test number.");
+					Tsr[] tsrs = records.OfType<Tsr>().ToArray();
+					Check(tsrs.Length == 23 && tsrs.All(tsr => tsr.ExecutedCount == 1), "DETAIL CSV tests were merged into incorrect TSR execution counts.");
+				}
 				Check(ptrs.Count(ptr => ptr.TestFlags == 0 && ptr.Result.HasValue) == passCount, "PASS PTR count changed.");
 				Check(ptrs.Count(ptr => ptr.TestFlags == 0x80 && ptr.Result.HasValue) == failCount, "L_NG PTR flags or result changed: " + string.Join(",", ptrs.Select(ptr => $"{ptr.TestFlags:X2}/{ptr.Result?.ToString() ?? "null"}")));
 				Ptr[] errors = ptrs.Where(ptr => ptr.TestFlags == 0x82).ToArray();
@@ -513,10 +522,74 @@ namespace LinqToStdf.RegressionTests
 			finally { Directory.Delete(root, true); }
 		}
 
+		private static void CsvTestIdentity()
+		{
+			string root = Path.Combine(Path.GetTempPath(), "LinqToStdfCsvIdentity-" + Guid.NewGuid().ToString("N"));
+			Directory.CreateDirectory(root);
+			try
+			{
+				string csvPath = Path.Combine(root, "synthetic.csv");
+				string[] headers = { "Date", "Time", "LotNo", "Serial", "PieceX", "PieceY", "DataStatus", "StepJudge", "Step", "Retest", "Dut", "Item", "Point", "No", "Direction", "PJudge", "Result", "Meas", "Unit", "Lower", "Upper", "Error" };
+				string[] Row(string serial, string result, string measure, string unit) => new[] { "2026/10/22", "10:00:00", "LOT1", serial, "1", "1", "Test done", "LSL", "1", "0", "1", "LCR", "P1", "1", "F", "PASS", result, measure, unit, "0", "100", "" };
+				File.WriteAllLines(csvPath, new[] { string.Join(",", headers), string.Join(",", Row("SERIAL-A", "(Cp)1.0nF", "1E-9", "F")), string.Join(",", Row("SERIAL-B", "(Cp)1.1nF", "1E-9", "F")), string.Join(",", Row("SERIAL-A", "(Rp)0.0ohm", "0.0", "ohm")) }, System.Text.Encoding.GetEncoding(950));
+				string output = Path.Combine(root, "output.stdf");
+				new CStdf(csvPath, output, true).DoWork();
+				Ptr[] ptrs = new StdfFile(output).GetRecordsEnumerable().OfType<Ptr>().ToArray();
+				Check(ptrs.Length == 3, "Synthetic Cp/Rp fixture did not produce three PTR records.");
+				Ptr[] cp = ptrs.Where(ptr => ptr.TestText.Contains("(Cp)")).ToArray();
+				Ptr[] rp = ptrs.Where(ptr => ptr.TestText.Contains("(Rp)")).ToArray();
+				Check(cp.Select(ptr => ptr.TestText).Distinct().Count() == 1 && cp.Select(ptr => ptr.TestNumber).Distinct().Count() == 1, "Same Cp test on another part received a different test number.");
+				Check(rp.Length == 1 && cp[0].TestNumber != rp[0].TestNumber, "Cp and Rp measurements received the same test number.");
+				Check(cp.All(ptr => ptr.Units == "F" && ptr.Result == 1E-9f) && rp[0].Units == "ohm" && rp[0].Result == 0f, "Synthetic Cp/Rp values or units changed.");
+			}
+			finally { Directory.Delete(root, true); }
+		}
+
+		private static void CsvTimestampWriting()
+		{
+			string root = Path.Combine(Path.GetTempPath(), "LinqToStdfCsvTime-" + Guid.NewGuid().ToString("N"));
+			Directory.CreateDirectory(root);
+			try
+			{
+				string csvPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Main\StdfConverter\SampleLog", "DETAIL_LOG_TEST-502_001.csv"));
+				string output = Path.Combine(root, "output.stdf");
+				new CStdf(csvPath, output, true).DoWork();
+				uint expectedStart = (uint)new DateTimeOffset(2026, 10, 8, 9, 32, 9, TimeSpan.Zero).ToUnixTimeSeconds();
+				uint expectedFinish = (uint)new DateTimeOffset(2026, 10, 8, 9, 32, 14, TimeSpan.Zero).ToUnixTimeSeconds();
+				uint? mirSetup = null, mirStart = null, mrrFinish = null;
+				using(System.IO.BinaryReader reader = new System.IO.BinaryReader(File.OpenRead(output)))
+				{
+					while(reader.BaseStream.Position < reader.BaseStream.Length)
+					{
+						ushort length = reader.ReadUInt16();
+						byte type = reader.ReadByte();
+						byte subtype = reader.ReadByte();
+						byte[] payload = reader.ReadBytes(length);
+						Check(payload.Length == length, "STDF record payload ended unexpectedly.");
+						if(type == 1 && subtype == 10)
+						{
+							using(System.IO.BinaryReader fields = new System.IO.BinaryReader(new MemoryStream(payload)))
+							{
+								mirSetup = fields.ReadUInt32();
+								mirStart = fields.ReadUInt32();
+							}
+						}
+						else if(type == 1 && subtype == 20)
+						{
+							using(System.IO.BinaryReader fields = new System.IO.BinaryReader(new MemoryStream(payload))) mrrFinish = fields.ReadUInt32();
+						}
+					}
+				}
+				Check(mirSetup == expectedStart && mirStart == expectedStart, $"Expected MIR raw UTC epoch seconds {expectedStart}, got setup={mirSetup}, start={mirStart}.");
+				Check(mrrFinish == expectedFinish, $"Expected MRR raw UTC epoch seconds {expectedFinish}, got {mrrFinish}.");
+			}
+			finally { Directory.Delete(root, true); }
+		}
+
 		private static void WriteSyntheticCsv(string path, short pieceX, short pieceY, bool oneRow = false)
 		{
-			string[] headers = { "Date", "Time", "LotNo", "Serial", "PieceX", "PieceY", "DataStatus", "StepJudge", "Step", "Retest", "Dut", "Item", "Point", "No", "Direction", "PJudge", "Meas", "Unit", "Lower", "Upper", "Error" };
-			string[] MakeRow(string serial, int x, int y, string dut, int retest, string item, int measure) => new[] { "2026/10/22", "10:00:00", "LOT1", serial, x.ToString(), y.ToString(), "Test done", "LSL", "1", retest.ToString(), dut, item, "P1", "1", "F", "PASS", measure.ToString(), "V", "0", "100", "" };
+			string[] headers = { "Date", "Time", "LotNo", "Serial", "PieceX", "PieceY", "DataStatus", "StepJudge", "Step", "Retest", "Dut", "Item", "Point", "No", "Direction", "PJudge", "Result", "Meas", "Unit", "Lower", "Upper", "Error" };
+			string[] MakeRow(string serial, int x, int y, string dut, int retest, string item, int measure) => new[] { "2026/10/22", "10:00:00", "LOT1", serial, x.ToString(), y.ToString(), "Test done", "LSL", "1", retest.ToString(), dut, item, "P1", "1", "F", "PASS", "PASS", measure.ToString(), "V", "0", "100", "" };
 			List<string[]> rows = new List<string[]> { MakeRow("SERIAL-A", pieceX, pieceY, "1", 0, "ITEM1", 10) };
 			if(!oneRow)
 			{
