@@ -20,18 +20,18 @@
 - Location: `D:\Project\RiderProjects\LinqToStdf\Main\Stdf\`
 - Contains: Binary I/O, record type definitions, IL-based converters, filtering, indexing, LINQ extensions
 - Depends on: System (Core BCL), System.Core (LINQ, Reflection.Emit)
-- Used by: P2020, WindowsFormsApp1
+- Used by: P2020, StdfConverter
 
 **Business Logic Layer (P2020 project):**
 - Purpose: Domain-specific analysis layer for P2020 test data format parsing and STDF file generation
 - Location: `D:\Project\RiderProjects\LinqToStdf\Main\P2020\`
 - Contains: P2020 log file parser (CP2020), file parameter parser (CFileParam), STDF writer integration (CStdf), chip data models
 - Depends on: Stdf library (records, file I/O, writer)
-- Used by: WindowsFormsApp1
+- Used by: StdfConverter
 
-**Presentation Layer (WindowsFormsApp1 project):**
+**Presentation Layer (StdfConverter project):**
 - Purpose: WinForms UI for invoking P2020-to-STDF conversion workflow
-- Location: `D:\Project\RiderProjects\LinqToStdf\Main\WindowsFormsApp1\`
+- Location: `D:\Project\RiderProjects\LinqToStdf\Main\StdfConverter\`
 - Contains: Main form with button handlers for file conversion workflow
 - Depends on: P2020 library
 - Used by: End users

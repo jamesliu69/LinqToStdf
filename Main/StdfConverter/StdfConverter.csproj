@@ -6,8 +6,8 @@
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
         <ProjectGuid>{C74A23DF-C9D3-4AAC-91CE-1A91ED39EDBE}</ProjectGuid>
         <OutputType>WinExe</OutputType>
-        <RootNamespace>WindowsFormsApp1</RootNamespace>
-        <AssemblyName>WindowsFormsApp1</AssemblyName>
+        <RootNamespace>StdfConverter</RootNamespace>
+        <AssemblyName>StdfConverter</AssemblyName>
         <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
         <FileAlignment>512</FileAlignment>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>

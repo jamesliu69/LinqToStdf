@@ -60,6 +60,14 @@ namespace LinqToStdf.RegressionTests
 			Run("CSV attempt keys preserve coordinates, DUT, retest, and serial", CsvAttemptKeysAndRetest);
 			Run("CSV STDF missing coordinate sentinel preserves output", CsvMissingCoordinatePreservesOutput);
 			Run("CSV invalid status preserves existing output", CsvFailurePreservesOutput);
+			Run("MIR maps summary header fields", MirMapsSummaryHeaders);
+			Run("FAIL part reports failing PTR and PRR", FailPartReportsFailingRecords);
+			Run("Single-letter F result is accepted", SingleLetterFResultIsAccepted);
+			Run("Single-letter P result is accepted", SingleLetterPResultIsAccepted);
+			Run("Unsupported PASS/FAIL text fails the conversion", () => UnsupportedPassFailTextFailsConversion("OK"));
+			Run("P2020 measurement error text remains unsupported", () => UnsupportedPassFailTextFailsConversion("MS_ER"));
+			Run("Ambiguous hardware bin fails the conversion", AmbiguousHardwareBinFailsConversion);
+			Run("Hardware bin section maps PRR bins", HardwareBinSectionMapsPrrBins);
 
 			Console.WriteLine($"RESULT: {_passed} passed, {_failed} failed");
 			return _failed == 0 ? 0 : 1;
@@ -208,12 +216,12 @@ namespace LinqToStdf.RegressionTests
 			for(int i = 0; i < 65; i++) Check(actual.FailingPinBitfield[i], "FTR bitfield changed at index " + i);
 		}
 
-		private static void WithFixture(Action<string, string> test, bool summary = true, bool validEnd = true)
+		private static void WithFixture(Action<string, string> test, bool summary = true, bool validEnd = true, string passOrFail = "PASS", string summaryExtras = null)
 		{
 			string root = Path.Combine(Path.GetTempPath(), "LinqToStdf-tests-" + Guid.NewGuid().ToString("N"));
 			Directory.CreateDirectory(root);
-			File.WriteAllText(Path.Combine(root, "test.log"), "==> Test Start\r\n<<<<<<---------------     Test Item : OSitem_T1 --------------->>>>>>\r\nPASS 1 P1 0mA 0V 2V 1V 0.9V 1.1V\r\n==> Test End\r\n");
-			if(summary) WriteSummary(root, validEnd);
+			File.WriteAllText(Path.Combine(root, "test.log"), "==> Test Start\r\n<<<<<<---------------     Test Item : OSitem_T1 --------------->>>>>>\r\n" + passOrFail + " 1 P1 0mA 0V 2V 1V 0.9V 1.1V\r\n==> Test End\r\n");
+			if(summary) WriteSummary(root, validEnd, summaryExtras);
 			try { test(root, Path.Combine(root, "output.stdf")); }
 			finally
 			{
@@ -224,9 +232,9 @@ namespace LinqToStdf.RegressionTests
 			}
 		}
 
-		private static void WriteSummary(string root, bool validEnd)
+		private static void WriteSummary(string root, bool validEnd, string extras = null)
 		{
-			File.WriteAllText(Path.Combine(root, "test_Summary.log"), "Lot START: 2026-10-01 12:00:00\r\nLot END: " + (validEnd ? "2026-10-01 12:01:00" : "invalid-date") + "\r\nLot Number: LOT1\r\n");
+			File.WriteAllText(Path.Combine(root, "test_Summary.log"), "Lot START: 2026-10-01 12:00:00\r\nLot END: " + (validEnd ? "2026-10-01 12:01:00" : "invalid-date") + "\r\nLot Number: LOT1\r\n" + (extras ?? string.Empty));
 		}
 
 		private static void ConstructorPreservesOutput()
@@ -369,7 +377,27 @@ namespace LinqToStdf.RegressionTests
 			Check(!records.Any(r => r is Stdf.Records.ErrorRecord), "Output contains parse errors.");
 			Ptr ptr = records.OfType<Ptr>().Single();
 			Check(ptr.Result == 1 && ptr.LowLimit == 0 && ptr.HighLimit == 2 && ptr.Units == "V", "Measurement data changed.");
-			Check(records.OfType<Prr>().Single().Failed == false, "Part disposition changed.");
+			Check(ptr.TestFlags == 0, "PASS data line should leave the PTR test flags clean.");
+			Prr prr = records.OfType<Prr>().Single();
+			Check(prr.Failed == false, "Part disposition changed.");
+			Check(prr.HardBin == 1 && prr.SoftBin == 1, "Fallback bins should resolve to bin 1.");
+			Mir mir = records.OfType<Mir>().Single();
+			Check(mir.LotId == "LOT1", "MIR LOT_ID should carry the summary lot number.");
+			Check(string.IsNullOrEmpty(mir.JobName) && string.IsNullOrEmpty(mir.OperatorName) && string.IsNullOrEmpty(mir.SpecificationName), "MIR fields without a matching summary header should stay empty.");
+			Tsr tsr = records.OfType<Tsr>().Single();
+			Check(tsr.HeadNumber == 255 && tsr.SiteNumber == 0, "TSR summary should use head 255 / site 0.");
+			Check(tsr.ExecutedCount == 1 && tsr.FailedCount == 0, "TSR counts changed.");
+			Hbr hbr = records.OfType<Hbr>().Single();
+			Check(hbr.HeadNumber == 255 && hbr.SiteNumber == 0 && hbr.BinNumber == 1 && hbr.BinCount == 1 && hbr.BinPassFail == "P", "HBR fallback summary changed.");
+			Sbr sbr = records.OfType<Sbr>().Single();
+			Check(sbr.HeadNumber == 255 && sbr.SiteNumber == 0 && sbr.BinNumber == 1 && sbr.BinCount == 1 && sbr.BinPassFail == "P", "SBR fallback summary changed.");
+			Pcr[] pcrs = records.OfType<Pcr>().ToArray();
+			Check(pcrs.Length == 2, "Output should contain one site PCR and one lot PCR.");
+			Pcr sitePcr = pcrs.Single(pcr => pcr.HeadNumber == 1);
+			Check(sitePcr.SiteNumber == 1 && sitePcr.PartCount == 1 && sitePcr.GoodCount == 1, "Site PCR counts changed.");
+			Pcr lotPcr = pcrs.Single(pcr => pcr.HeadNumber == 255);
+			Check(lotPcr.SiteNumber == 0 && lotPcr.PartCount == 1 && lotPcr.GoodCount == 1, "Lot PCR counts changed.");
+			Check(pcrs.All(pcr => pcr.FunctionalCount == null), "PCR FUNCTIONAL_COUNT should stay empty.");
 		}
 
 		private static void LongOutputFilename()
@@ -389,7 +417,7 @@ namespace LinqToStdf.RegressionTests
 			Directory.CreateDirectory(root);
 			try
 			{
-				string csvPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Main\WindowsFormsApp1\SampleLog", csvName));
+				string csvPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Main\StdfConverter\SampleLog", csvName));
 				string output = Path.Combine(root, "output.stdf");
 				new CStdf(csvPath, output, true).DoWork();
 				StdfRecord[] records = new StdfFile(output).GetRecordsEnumerable().ToArray();
@@ -420,7 +448,7 @@ namespace LinqToStdf.RegressionTests
 			Directory.CreateDirectory(root);
 			try
 			{
-				string csvPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Main\WindowsFormsApp1\SampleLog\DETAIL_LOG_TEST-502_001.csv"));
+				string csvPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Main\StdfConverter\SampleLog\DETAIL_LOG_TEST-502_001.csv"));
 				string invalidCsv = Path.Combine(root, "invalid.csv");
 				string content = File.ReadAllText(csvPath, System.Text.Encoding.GetEncoding(950));
 				content = content.Replace("LSL", "UNKNOWN");
@@ -501,6 +529,106 @@ namespace LinqToStdf.RegressionTests
 				rows.Add(MakeRow("SERIAL-B", pieceX, pieceY, "1", 0, "ITEM1", 17));
 			}
 			File.WriteAllLines(path, new[] { string.Join(",", headers) }.Concat(rows.Select(row => string.Join(",", row))), System.Text.Encoding.GetEncoding(950));
+		}
+
+		private static void MirMapsSummaryHeaders()
+		{
+			WithFixture((root, output) =>
+			{
+				new CStdf(root, output).DoWork();
+				Mir mir = new StdfFile(output).GetRecordsEnumerable().OfType<Mir>().Single();
+				Check(mir.JobName == "TP-2020A", "MIR JOB_NAME should carry the summary Test Program Name.");
+				Check(mir.OperatorName == "OP-42", "MIR OPERATOR_NAME should carry the summary Operator.");
+				Check(string.IsNullOrEmpty(mir.SpecificationName), "MIR SPECIFICATION_NAME should stay empty.");
+				NoTemporaryFiles(root);
+			}, true, true, "PASS", "Operator: OP-42\r\nTest Program Name: TP-2020A\r\n");
+		}
+
+		private static void FailPartReportsFailingRecords()
+		{
+			WithFixture((root, output) =>
+			{
+				new CStdf(root, output).DoWork();
+				StdfRecord[] records = new StdfFile(output).GetRecordsEnumerable().ToArray();
+				Check(records.OfType<Ptr>().Single().TestFlags == 0x80, "FAIL data line should set the PTR fail flag.");
+				Prr prr = records.OfType<Prr>().Single();
+				Check(prr.Failed == true, "FAIL part should be marked failed.");
+				Check(prr.HardBin == 2 && prr.SoftBin == 2, "FAIL part should resolve to the fallback FAIL bin.");
+				Hbr hbr = records.OfType<Hbr>().Single();
+				Check(hbr.HeadNumber == 255 && hbr.BinNumber == 2 && hbr.BinPassFail == "F", "HBR should report the fallback FAIL bin summary.");
+				Tsr tsr = records.OfType<Tsr>().Single();
+				Check(tsr.ExecutedCount == 1 && tsr.FailedCount == 1, "TSR should count the failed execution.");
+				Pcr lotPcr = records.OfType<Pcr>().Single(pcr => pcr.HeadNumber == 255);
+				Check(lotPcr.PartCount == 1 && lotPcr.GoodCount == 0, "Lot PCR should report zero good parts.");
+				NoTemporaryFiles(root);
+			}, true, true, "FAIL");
+		}
+
+		private static void SingleLetterFResultIsAccepted()
+		{
+			WithFixture((root, output) =>
+			{
+				new CStdf(root, output).DoWork();
+				StdfRecord[] records = new StdfFile(output).GetRecordsEnumerable().ToArray();
+				Check(records.OfType<Ptr>().Single().TestFlags == 0x80, "Single-letter F should behave like FAIL.");
+				Check(records.OfType<Prr>().Single().Failed == true, "Single-letter F should mark the part failed.");
+				NoTemporaryFiles(root);
+			}, true, true, "F");
+		}
+
+		private static void SingleLetterPResultIsAccepted()
+		{
+			WithFixture((root, output) =>
+			{
+				new CStdf(root, output).DoWork();
+				StdfRecord[] records = new StdfFile(output).GetRecordsEnumerable().ToArray();
+				Check(records.OfType<Ptr>().Single().TestFlags == 0, "Single-letter P should behave like PASS.");
+				Check(records.OfType<Prr>().Single().Failed == false, "Single-letter P should not mark the part failed.");
+				Pcr lotPcr = records.OfType<Pcr>().Single(pcr => pcr.HeadNumber == 255);
+				Check(lotPcr.GoodCount == 1, "Single-letter P should count as a good part.");
+				NoTemporaryFiles(root);
+			}, true, true, "P");
+		}
+
+		private static void UnsupportedPassFailTextFailsConversion(string result)
+		{
+			WithFixture((root, output) =>
+			{
+				File.WriteAllText(output, "PREVIOUS_GOOD_OUTPUT");
+				CStdf converter = new CStdf(root, output);
+				ExpectThrows<InvalidDataException>(() => converter.DoWork());
+				Check(ReadOutputText(output) == "PREVIOUS_GOOD_OUTPUT", "Failed conversion destroyed existing output.");
+				NoTemporaryFiles(root);
+				GC.KeepAlive(converter);
+			}, true, true, result);
+		}
+
+		private static void AmbiguousHardwareBinFailsConversion()
+		{
+			WithFixture((root, output) =>
+			{
+				File.WriteAllText(output, "PREVIOUS_GOOD_OUTPUT");
+				CStdf converter = new CStdf(root, output);
+				ExpectThrows<InvalidDataException>(() => converter.DoWork());
+				Check(ReadOutputText(output) == "PREVIOUS_GOOD_OUTPUT", "Failed conversion destroyed existing output.");
+				NoTemporaryFiles(root);
+				GC.KeepAlive(converter);
+			}, true, true, "PASS", "[HARDWARE BIN]\r\n" + new string('*', 64) + "\r\n1 (Pass) 1 PASS GoodBin\r\n3 (Pass) 1 PASS AlsoGood\r\n");
+		}
+
+		private static void HardwareBinSectionMapsPrrBins()
+		{
+			WithFixture((root, output) =>
+			{
+				new CStdf(root, output).DoWork();
+				StdfRecord[] records = new StdfFile(output).GetRecordsEnumerable().ToArray();
+				Prr prr = records.OfType<Prr>().Single();
+				Check(prr.HardBin == 3, "PRR HARD_BIN should come from the summary hardware bin section.");
+				Check(prr.SoftBin == 1, "PRR SOFT_BIN should fall back to bin 1 when no software bins are listed.");
+				Hbr hbr = records.OfType<Hbr>().Single();
+				Check(hbr.HeadNumber == 255 && hbr.BinNumber == 3 && hbr.BinCount == 1 && hbr.BinPassFail == "P", "HBR should mirror the summary hardware bin section.");
+				NoTemporaryFiles(root);
+			}, true, true, "PASS", "[HARDWARE BIN]\r\n" + new string('*', 64) + "\r\n3 (Pass) 1 PASS GoodBin\r\n");
 		}
 
 		private static void NoTemporaryFiles(string root) => Check(Directory.GetFiles(root, "*.tmp").Length == 0, "Temporary output was not cleaned up.");

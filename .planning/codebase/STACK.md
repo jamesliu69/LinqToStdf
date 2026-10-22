@@ -6,7 +6,7 @@
 
 **Primary:**
 - C# - Core implementation for STDF parsing, record handling, and binary serialization across all three projects
-- Used in: `Stdf/`, `P2020/`, `WindowsFormsApp1/`
+- Used in: `Stdf/`, `P2020/`, `StdfConverter/`
 
 **Secondary:**
 - XML - MSBuild project configuration and resource files (.csproj, .sln)
@@ -15,7 +15,7 @@
 ## Runtime
 
 **Environment:**
-- .NET Framework 4.7.2 - All projects (`Stdf.csproj`, `P2020.csproj`, `WindowsFormsApp1.csproj`, `RegressionTests.csproj`)
+- .NET Framework 4.7.2 - All projects (`Stdf.csproj`, `P2020.csproj`, `StdfConverter.csproj`, `RegressionTests.csproj`)
 
 **Package Manager:**
 - NuGet (MSBuild integrated)
@@ -28,7 +28,7 @@
 - No external framework dependencies beyond standard .NET library
 
 **UI:**
-- Windows Forms (`System.Windows.Forms`) - Used for desktop GUI in P2020 and WindowsFormsApp1 projects
+- Windows Forms (`System.Windows.Forms`) - Used for desktop GUI in P2020 and StdfConverter projects
 - Visual inheritance-based UI components (Form-based applications)
 
 **Build/Dev:**
@@ -56,7 +56,7 @@
 
 **Environment:**
 - No environment-based configuration detected
-- Hardcoded paths and settings in application code (P2020 and WindowsFormsApp1)
+- Hardcoded paths and settings in application code (P2020 and StdfConverter)
 
 **Build:**
 - `Project_Stdf.sln` - Main Visual Studio solution file (Format Version 12.00, VS 2017+)
@@ -79,7 +79,7 @@
 - MSBuild tools for project compilation
 
 **Production:**
-- .NET Framework 4.7.2 runtime required (for Stdf.dll, CSTDF.dll, and WindowsFormsApp1.exe)
+- .NET Framework 4.7.2 runtime required (for Stdf.dll, CSTDF.dll, and StdfConverter.exe)
 - Windows operating system (desktop/server - Windows Forms application)
 
 ## Assembly Architecture
@@ -87,7 +87,7 @@
 **Output Types:**
 - `Stdf.dll` - Class library (OutputType: Library)
 - `CSTDF.dll` - P2020 analysis library (OutputType: Library)
-- `WindowsFormsApp1.exe` - Executable UI application (OutputType: WinExe)
+- `StdfConverter.exe` - Executable UI application (OutputType: WinExe)
 
 **Bootstrapper:**
 - .NET Framework 3.5 SP1 bootstrap support (legacy, present but not required for current targets)

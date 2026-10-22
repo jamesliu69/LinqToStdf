@@ -1,5 +1,7 @@
 # 0001. 將 Stdf 目標框架由 .NET Framework 4.5.2 提升為 4.7.2
 
+> 更名註記（2026-10-22）：本 ADR 中的歷史驗證資料仍使用當時的 WinForms 專案名稱 `WindowsFormsApp1`；該應用程式目前已更名為 `StdfConverter`。
+
 - 狀態：Accepted
 - 日期：2026-10-12
 - 決策者：維護者（jamesliu69）

@@ -28,7 +28,7 @@ D:\Project\RiderProjects\LinqToStdf\
 │   │   ├── Program.cs                     # Possible alternate entry point
 │   │   ├── Properties\                    # AssemblyInfo
 │   │   └── bin\, obj\, [forms]            # Build artifacts, WinForms code
-│   ├── WindowsFormsApp1\                  # WinForms UI application
+│   ├── StdfConverter\                  # WinForms UI application
 │   │   ├── frmMain.cs                     # Main form with event handlers
 │   │   ├── frmMain.Designer.cs            # Auto-generated form layout
 │   │   ├── Program.cs                     # Application entry point (STAThread)
@@ -60,11 +60,11 @@ D:\Project\RiderProjects\LinqToStdf\
 - Assembly Name: `CSTDF`
 - Dependencies: Stdf.dll
 
-**WindowsFormsApp1\ (UI Application - WinExe)**
+**StdfConverter\ (UI Application - WinExe)**
 - Purpose: User interface for P2020-to-STDF conversion workflow
 - Contains: WinForms main form, event handlers, sample data
 - Key files: `frmMain.cs`, `Program.cs`
-- Output: `WindowsFormsApp1.exe` (targeting .NET 4.7.2)
+- Output: `StdfConverter.exe` (targeting .NET 4.7.2)
 - Dependencies: CSTDF.dll → Stdf.dll
 
 **Stdf\Attributes\**
@@ -134,9 +134,9 @@ D:\Project\RiderProjects\LinqToStdf\
   - `CStdf.cs` - Orchestrator that writes parsed data as STDF records
   - `IAnalyze.cs` - Common analysis interface
   - `TraceLogger.cs` - Error logging to console/file
-  - `frmMain.cs` - WinForms form (nested in WindowsFormsApp1, but listed in P2020.csproj)
+  - `frmMain.cs` - WinForms form (nested in StdfConverter, but listed in P2020.csproj)
 
-**WindowsFormsApp1\**
+**StdfConverter\**
 - Purpose: WinForms UI entry point
 - Contains:
   - `frmMain.cs` - Main form with button click handlers
@@ -146,7 +146,7 @@ D:\Project\RiderProjects\LinqToStdf\
 ## Key File Locations
 
 **Entry Points:**
-- `D:\Project\RiderProjects\LinqToStdf\Main\WindowsFormsApp1\Program.cs` - UI application startup
+- `D:\Project\RiderProjects\LinqToStdf\Main\StdfConverter\Program.cs` - UI application startup
 - `D:\Project\RiderProjects\LinqToStdf\Main\Stdf\StdfFile.cs` - LINQ query entry point
 - `D:\Project\RiderProjects\LinqToStdf\Main\P2020\CStdf.cs` - File conversion orchestrator
 
@@ -154,7 +154,7 @@ D:\Project\RiderProjects\LinqToStdf\
 - `D:\Project\RiderProjects\LinqToStdf\Main\Project_Stdf.sln` - Solution configuration
 - `D:\Project\RiderProjects\LinqToStdf\Main\Stdf\Stdf.csproj` - Stdf library project config
 - `D:\Project\RiderProjects\LinqToStdf\Main\P2020\P2020.csproj` - P2020 library project config
-- `D:\Project\RiderProjects\LinqToStdf\Main\WindowsFormsApp1\WindowsFormsApp1.csproj` - UI project config
+- `D:\Project\RiderProjects\LinqToStdf\Main\StdfConverter\StdfConverter.csproj` - UI project config
 
 **Core Logic:**
 - `D:\Project\RiderProjects\LinqToStdf\Main\Stdf\StdfFile.cs` - Main query class
@@ -168,7 +168,7 @@ D:\Project\RiderProjects\LinqToStdf\
 - `D:\Project\RiderProjects\LinqToStdf\Main\P2020\CStdf.cs` - Conversion coordinator
 
 **Testing:**
-- `D:\Project\RiderProjects\LinqToStdf\Main\WindowsFormsApp1\Data\*` - Sample STDF/log files
+- `D:\Project\RiderProjects\LinqToStdf\Main\StdfConverter\Data\*` - Sample STDF/log files
 
 ## Naming Conventions
 
@@ -237,8 +237,8 @@ D:\Project\RiderProjects\LinqToStdf\
 4. Expose via `StdfFile.IndexingStrategy` property (assign before iteration)
 
 **New UI Feature (WinForms):**
-1. Edit form in Visual Studio designer or manually in `D:\Project\RiderProjects\LinqToStdf\Main\WindowsFormsApp1\frmMain.Designer.cs`
-2. Add event handler in `D:\Project\RiderProjects\LinqToStdf\Main\WindowsFormsApp1\frmMain.cs`
+1. Edit form in Visual Studio designer or manually in `D:\Project\RiderProjects\LinqToStdf\Main\StdfConverter\frmMain.Designer.cs`
+2. Add event handler in `D:\Project\RiderProjects\LinqToStdf\Main\StdfConverter\frmMain.cs`
 3. Call P2020 library classes to execute business logic
 
 ## Special Directories
@@ -267,13 +267,13 @@ D:\Project\RiderProjects\LinqToStdf\
 - Committed: No
 - Contains: `CSTDF.dll` (assembly name differs from project name)
 
-**WindowsFormsApp1\Data\:**
+**StdfConverter\Data\:**
 - Purpose: Sample P2020 test log files for manual testing
 - Generated: No (static test data)
 - Committed: Yes (checked in with repository)
 - Contains: `2026-04-01-16-39-45.log`, `2026-04-01-16-39-45_Summary.log` (sample data)
 
-**WindowsFormsApp1\2026-04-01-16-39-45\:**
+**StdfConverter\2026-04-01-16-39-45\:**
 - Purpose: Output directory for generated STDF files (from sample data)
 - Generated: Yes (by application run)
 - Committed: Partially (may be checked in with sample output)

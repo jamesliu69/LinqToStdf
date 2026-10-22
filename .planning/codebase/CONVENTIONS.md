@@ -40,7 +40,7 @@
 **Namespaces:**
 - PascalCase matching folder structure: `namespace Stdf`, `namespace Stdf.Records.V4`, `namespace Stdf.Attributes`
 - Folder names match namespace hierarchy: `Stdf/Records/V4/Atr.cs` → `namespace Stdf.Records.V4`
-- WinForms projects use project name as namespace: `namespace WindowsFormsApp1`, `namespace STDF`
+- WinForms projects use project name as namespace: `namespace StdfConverter`, `namespace STDF`
 
 ## Code Style
 

@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using System.Windows.Forms;
 
-namespace WindowsFormsApp1
+namespace StdfConverter
 {
 	public partial class frmMain : Form
 	{

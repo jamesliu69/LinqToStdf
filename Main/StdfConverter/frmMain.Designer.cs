@@ -1,5 +1,5 @@
 
-namespace WindowsFormsApp1
+namespace StdfConverter
 {
     partial class frmMain
     {

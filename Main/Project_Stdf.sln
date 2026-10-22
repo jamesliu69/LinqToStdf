@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stdf", "Stdf\Stdf.csproj", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "P2020", "P2020\P2020.csproj", "{16E6E269-0A1D-4DB0-8980-D65E57313B78}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsFormsApp1", "WindowsFormsApp1\WindowsFormsApp1.csproj", "{C74A23DF-C9D3-4AAC-91CE-1A91ED39EDBE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StdfConverter", "StdfConverter\StdfConverter.csproj", "{C74A23DF-C9D3-4AAC-91CE-1A91ED39EDBE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RegressionTests", "RegressionTests\RegressionTests.csproj", "{B374AC50-CBF7-40FC-8390-F891E424ED06}"
 EndProject

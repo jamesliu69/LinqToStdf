@@ -97,7 +97,7 @@ The codebase implements comprehensive STDF V4 specification support with record 
 
 **Application Configuration:**
 - Runtime settings in `App.config` files (present but minimal):
-  - `WindowsFormsApp1/App.config`
+  - `StdfConverter/App.config`
   - `P2020/App.config`
 - Windows Forms application settings stored in `Properties/Settings.settings`
 

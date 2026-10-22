@@ -13,7 +13,7 @@
 - Solution contains only 3 projects:
   - `Stdf/Stdf.csproj` - Core STDF library
   - `P2020/P2020.csproj` - Test data processor
-  - `WindowsFormsApp1/WindowsFormsApp1.csproj` - WinForms UI
+  - `StdfConverter/StdfConverter.csproj` - WinForms UI
 
 **Compiler Configuration:**
 - All projects target .NET Framework 4.7.2
@@ -35,7 +35,7 @@ The P2020 project (`D:\Project\RiderProjects\LinqToStdf\Main\P2020\`) appears to
 
 **Manual Testing Pattern:**
 ```csharp
-// From frmMain.cs - WindowsFormsApp1
+// From frmMain.cs - StdfConverter
 private void GenerateStdfButton_Click(object sender, EventArgs e)
 {
     string inputFolder = @"D:\Pti_Doc\AutoScan Log\2026-04-01-16-39-45";
@@ -215,8 +215,8 @@ public static void WriteLine(string message)
 ## Test Data
 
 **Existing Sample Data:**
-- `D:\Project\RiderProjects\LinqToStdf\Main\WindowsFormsApp1\Data\2026-04-01-16-39-45.log`
-- `D:\Project\RiderProjects\LinqToStdf\Main\WindowsFormsApp1\Data\2026-04-01-16-39-45_Summary.log`
+- `D:\Project\RiderProjects\LinqToStdf\Main\StdfConverter\Data\2026-04-01-16-39-45.log`
+- `D:\Project\RiderProjects\LinqToStdf\Main\StdfConverter\Data\2026-04-01-16-39-45_Summary.log`
 
 These files are hardcoded in `frmMain.cs` and represent actual P2020 test equipment output. Could be used as integration test fixtures.
 
@@ -241,7 +241,7 @@ LinqToStdf/
 │   ├── Stdf.Tests/         # NEW: Unit tests
 │   ├── P2020/              # Test data processor
 │   ├── P2020.Tests/        # NEW: Integration tests
-│   └── WindowsFormsApp1/   # UI
+│   └── StdfConverter/   # UI
 └── .planning/codebase/
 ```
 
