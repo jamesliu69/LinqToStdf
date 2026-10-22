@@ -3,6 +3,12 @@ namespace STDF
 	public class CChipData
 	{
 		public string FileName   { get; set; }
+		public string SourcePartId { get; set; }
+		public string SourcePartKey { get; set; }
+		public short? SourcePieceX { get; set; }
+		public short? SourcePieceY { get; set; }
+		public string SourceDut { get; set; }
+		public int? SourceRetest { get; set; }
 		public int    Id         { get; set; }
 		public double ForceValue { get; set; }
 
@@ -15,6 +21,7 @@ namespace STDF
 		public string strMaxMeasureValue { get; set; } //For P2020 量測值含單位
 		public string MeasureUnit        { get; set; }
 		public string PassOrFail         { get; set; }
+		public string ErrorText           { get; set; }
 
 		public string LowLimit   { get; set; }
 		public string HighLimit  { get; set; }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using STDF;
@@ -54,6 +55,11 @@ namespace LinqToStdf.RegressionTests
 			Run("Locked destination remains intact and can be retried", LockedDestination);
 			Run("Relative output path works", RelativeOutputPath);
 			Run("Long output filename works", LongOutputFilename);
+			Run("CSV DETAIL round trip preserves source results", () => CsvRoundTrip("DETAIL_LOG_TEST-502_001.csv", 23, 18, 3, 2));
+			Run("CSV RESULT round trip remains a separate subset", () => CsvRoundTrip("RESULT_LOG_TEST-502_001.csv", 5, 0, 3, 2));
+			Run("CSV attempt keys preserve coordinates, DUT, retest, and serial", CsvAttemptKeysAndRetest);
+			Run("CSV STDF missing coordinate sentinel preserves output", CsvMissingCoordinatePreservesOutput);
+			Run("CSV invalid status preserves existing output", CsvFailurePreservesOutput);
 
 			Console.WriteLine($"RESULT: {_passed} passed, {_failed} failed");
 			return _failed == 0 ? 0 : 1;
@@ -375,6 +381,126 @@ namespace LinqToStdf.RegressionTests
 				VerifyOutput(longOutput);
 				NoTemporaryFiles(root);
 			});
+		}
+
+		private static void CsvRoundTrip(string csvName, int expectedCount, int passCount, int failCount, int errorCount)
+		{
+			string root = Path.Combine(Path.GetTempPath(), "LinqToStdfCsvTest-" + Guid.NewGuid().ToString("N"));
+			Directory.CreateDirectory(root);
+			try
+			{
+				string csvPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Main\WindowsFormsApp1\SampleLog", csvName));
+				string output = Path.Combine(root, "output.stdf");
+				new CStdf(csvPath, output, true).DoWork();
+				StdfRecord[] records = new StdfFile(output).GetRecordsEnumerable().ToArray();
+				Ptr[] ptrs = records.OfType<Ptr>().ToArray();
+				Check(ptrs.Length == expectedCount, $"Expected {expectedCount} PTR records, got {ptrs.Length}.");
+			Check(ptrs.GroupBy(ptr => ptr.TestText).All(group => group.Select(ptr => ptr.TestNumber).Distinct().Count() == 1), "Rows sharing test text have different test numbers.");
+				Check(ptrs.Count(ptr => ptr.TestFlags == 0 && ptr.Result.HasValue) == passCount, "PASS PTR count changed.");
+				Check(ptrs.Count(ptr => ptr.TestFlags == 0x80 && ptr.Result.HasValue) == failCount, "L_NG PTR flags or result changed: " + string.Join(",", ptrs.Select(ptr => $"{ptr.TestFlags:X2}/{ptr.Result?.ToString() ?? "null"}")));
+				Ptr[] errors = ptrs.Where(ptr => ptr.TestFlags == 0x82).ToArray();
+				Check(errors.Length == errorCount && errors.All(ptr => !ptr.Result.HasValue && ptr.TestText.Contains("range no decision")), "MS_ER PTR result/flags/error text changed.");
+				if(failCount > 0)
+				{
+					Check(ptrs.Where(ptr => ptr.TestFlags == 0x80).All(ptr => Math.Abs(ptr.Result.Value - 0.05f) < 0.000001f && ptr.Units == "ohm"), "Source L_NG measurement or unit changed.");
+				}
+				Check(!records.Any(record => record is Stdf.Records.ErrorRecord), "CSV round trip contains STDF parse errors.");
+				Check(records.OfType<Prr>().Single().Failed == true, "CSV part disposition did not preserve failure.");
+				Check(!string.IsNullOrWhiteSpace(records.OfType<Prr>().Single().PartId), "CSV source Serial was not preserved as PRR PartId.");
+			}
+			finally
+			{
+				Directory.Delete(root, true);
+			}
+		}
+
+		private static void CsvFailurePreservesOutput()
+		{
+			string root = Path.Combine(Path.GetTempPath(), "LinqToStdfCsvFailure-" + Guid.NewGuid().ToString("N"));
+			Directory.CreateDirectory(root);
+			try
+			{
+				string csvPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Main\WindowsFormsApp1\SampleLog\DETAIL_LOG_TEST-502_001.csv"));
+				string invalidCsv = Path.Combine(root, "invalid.csv");
+				string content = File.ReadAllText(csvPath, System.Text.Encoding.GetEncoding(950));
+				content = content.Replace("LSL", "UNKNOWN");
+				File.WriteAllText(invalidCsv, content, System.Text.Encoding.GetEncoding(950));
+				string output = Path.Combine(root, "output.stdf");
+				File.WriteAllText(output, "PREVIOUS_GOOD_OUTPUT");
+				ExpectThrows<InvalidDataException>(() => new CStdf(invalidCsv, output, true).DoWork());
+				Check(ReadOutputText(output) == "PREVIOUS_GOOD_OUTPUT", "Invalid CSV destroyed existing output.");
+				NoTemporaryFiles(root);
+			}
+			finally
+			{
+				Directory.Delete(root, true);
+			}
+		}
+
+		private static void CsvAttemptKeysAndRetest()
+		{
+			string root = Path.Combine(Path.GetTempPath(), "LinqToStdfCsvKeys-" + Guid.NewGuid().ToString("N"));
+			Directory.CreateDirectory(root);
+			try
+			{
+				string csvPath = Path.Combine(root, "synthetic.csv");
+				WriteSyntheticCsv(csvPath, -20, 30);
+				string output = Path.Combine(root, "output.stdf");
+				new CStdf(csvPath, output, true).DoWork();
+				StdfRecord[] records = new StdfFile(output).GetRecordsEnumerable().ToArray();
+				Prr[] parts = records.OfType<Prr>().ToArray();
+				Check(parts.Length == 6, $"Expected six attempts from five independently varied identity keys, got {parts.Length}.");
+				Check(records.OfType<Pir>().Count() == 6, "PIR records were duplicated for rows belonging to the same attempt.");
+				Check(parts.Count(part => part.PartId == "SERIAL-A") == 5 && parts.Count(part => part.PartId == "SERIAL-B") == 1, "Serial identity or retest attempts were merged incorrectly.");
+				Prr baseline = parts.Single(part => part.PartId == "SERIAL-A" && part.XCoordinate == -20 && part.YCoordinate == 30 && part.PartText == "Dut 1 Retest 0");
+				Check(baseline.TestCount == 3, "Multiple tests for the same attempt were not combined into one PRR or numeric DUT keys were not normalized.");
+				Check(parts.Any(part => part.PartId == "SERIAL-A" && part.PartText == "Dut 1 Retest 1"), "Retest attempt was not kept separate.");
+				Check(parts.Any(part => part.XCoordinate == -19) && parts.Any(part => part.YCoordinate == 31), "PieceX/PieceY coordinates were not written to PRR.");
+				Check(parts.Any(part => part.PartText == "Dut 2 Retest 0"), "DUT change was not kept separate.");
+				Pcr[] pcrs = records.OfType<Pcr>().ToArray();
+				Check(pcrs.Length == 2 && pcrs.All(pcr => pcr.PartCount == 6 && pcr.RetestCount == 1), "PCR part or retest counts are incorrect.");
+				Check(string.IsNullOrEmpty(records.OfType<Mir>().Single().RetestCode), "MIR incorrectly marks a lot with retests as not retested.");
+				Check(!records.Any(record => record is Stdf.Records.ErrorRecord), "Synthetic multi-attempt output contains STDF parse errors.");
+			}
+			finally { Directory.Delete(root, true); }
+		}
+
+		private static void CsvMissingCoordinatePreservesOutput()
+		{
+			string root = Path.Combine(Path.GetTempPath(), "LinqToStdfCsvSentinel-" + Guid.NewGuid().ToString("N"));
+			Directory.CreateDirectory(root);
+			try
+			{
+				foreach(bool invalidX in new[] { true, false })
+				{
+					string csvPath = Path.Combine(root, invalidX ? "sentinel-x.csv" : "sentinel-y.csv");
+					WriteSyntheticCsv(csvPath, invalidX ? short.MinValue : (short)20, invalidX ? (short)30 : short.MinValue, oneRow: true);
+					string output = Path.Combine(root, invalidX ? "output-x.stdf" : "output-y.stdf");
+					File.WriteAllText(output, "PREVIOUS_GOOD_OUTPUT");
+					ExpectThrows<InvalidDataException>(() => new CStdf(csvPath, output, true).DoWork());
+					Check(ReadOutputText(output) == "PREVIOUS_GOOD_OUTPUT", "Missing coordinate sentinel destroyed existing output.");
+				}
+				NoTemporaryFiles(root);
+			}
+			finally { Directory.Delete(root, true); }
+		}
+
+		private static void WriteSyntheticCsv(string path, short pieceX, short pieceY, bool oneRow = false)
+		{
+			string[] headers = { "Date", "Time", "LotNo", "Serial", "PieceX", "PieceY", "DataStatus", "StepJudge", "Step", "Retest", "Dut", "Item", "Point", "No", "Direction", "PJudge", "Meas", "Unit", "Lower", "Upper", "Error" };
+			string[] MakeRow(string serial, int x, int y, string dut, int retest, string item, int measure) => new[] { "2026/10/22", "10:00:00", "LOT1", serial, x.ToString(), y.ToString(), "Test done", "LSL", "1", retest.ToString(), dut, item, "P1", "1", "F", "PASS", measure.ToString(), "V", "0", "100", "" };
+			List<string[]> rows = new List<string[]> { MakeRow("SERIAL-A", pieceX, pieceY, "1", 0, "ITEM1", 10) };
+			if(!oneRow)
+			{
+				rows.Add(MakeRow("SERIAL-A", pieceX, pieceY, "1", 0, "ITEM2", 11));
+				rows.Add(MakeRow("SERIAL-A", pieceX, pieceY, "01", 0, "ITEM3", 12));
+				rows.Add(MakeRow("SERIAL-A", pieceX, pieceY, "1", 1, "ITEM1", 13));
+				rows.Add(MakeRow("SERIAL-A", pieceX + 1, pieceY, "1", 0, "ITEM1", 14));
+				rows.Add(MakeRow("SERIAL-A", pieceX, pieceY + 1, "1", 0, "ITEM1", 15));
+				rows.Add(MakeRow("SERIAL-A", pieceX, pieceY, "2", 0, "ITEM1", 16));
+				rows.Add(MakeRow("SERIAL-B", pieceX, pieceY, "1", 0, "ITEM1", 17));
+			}
+			File.WriteAllLines(path, new[] { string.Join(",", headers) }.Concat(rows.Select(row => string.Join(",", row))), System.Text.Encoding.GetEncoding(950));
 		}
 
 		private static void NoTemporaryFiles(string root) => Check(Directory.GetFiles(root, "*.tmp").Length == 0, "Temporary output was not cleaned up.");

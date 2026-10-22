@@ -1,4 +1,4 @@
-﻿
+
 namespace WindowsFormsApp1
 {
     partial class frmMain
@@ -36,78 +36,112 @@ namespace WindowsFormsApp1
 			this.lblOutputPath = new System.Windows.Forms.Label();
 			this.btnBrowseOutputPath = new System.Windows.Forms.Button();
 			this.btnBrowseInputFolder = new System.Windows.Forms.Button();
+			this.cboInputFormat = new System.Windows.Forms.ComboBox();
+			this.lblInputFormat = new System.Windows.Forms.Label();
+			this.lblInputHint = new System.Windows.Forms.Label();
 			this.SuspendLayout();
-			// 
+			//
 			// btnGenerateStdf
-			// 
-			this.btnGenerateStdf.Location = new System.Drawing.Point(340, 177);
+			//
+			this.btnGenerateStdf.Location = new System.Drawing.Point(524, 239);
 			this.btnGenerateStdf.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
 			this.btnGenerateStdf.Name = "btnGenerateStdf";
 			this.btnGenerateStdf.Size = new System.Drawing.Size(98, 36);
-			this.btnGenerateStdf.TabIndex = 0;
+			this.btnGenerateStdf.TabIndex = 5;
 			this.btnGenerateStdf.Text = "產生 STDF";
 			this.btnGenerateStdf.UseVisualStyleBackColor = true;
 			this.btnGenerateStdf.Click += new System.EventHandler(this.btnGenerateStdf_Click);
-			// 
+			//
 			// txtInputFolder
-			// 
-			this.txtInputFolder.Location = new System.Drawing.Point(12, 41);
+			//
+			this.txtInputFolder.Location = new System.Drawing.Point(12, 83);
 			this.txtInputFolder.Name = "txtInputFolder";
-			this.txtInputFolder.Size = new System.Drawing.Size(426, 22);
+			this.txtInputFolder.Size = new System.Drawing.Size(480, 22);
 			this.txtInputFolder.TabIndex = 1;
-			// 
+			//
 			// txtOutputPath
-			// 
-			this.txtOutputPath.Location = new System.Drawing.Point(12, 98);
+			//
+			this.txtOutputPath.Location = new System.Drawing.Point(12, 181);
 			this.txtOutputPath.Name = "txtOutputPath";
-			this.txtOutputPath.Size = new System.Drawing.Size(426, 22);
-			this.txtOutputPath.TabIndex = 2;
-			// 
+			this.txtOutputPath.Size = new System.Drawing.Size(480, 22);
+			this.txtOutputPath.TabIndex = 3;
+			//
 			// lblInputFolder
-			// 
+			//
 			this.lblInputFolder.AutoSize = true;
-			this.lblInputFolder.Location = new System.Drawing.Point(12, 23);
+			this.lblInputFolder.Location = new System.Drawing.Point(12, 65);
 			this.lblInputFolder.Name = "lblInputFolder";
 			this.lblInputFolder.Size = new System.Drawing.Size(65, 12);
 			this.lblInputFolder.TabIndex = 3;
 			this.lblInputFolder.Text = "選取資料夾";
-			// 
+			//
 			// lblOutputPath
-			// 
+			//
 			this.lblOutputPath.AutoSize = true;
-			this.lblOutputPath.Location = new System.Drawing.Point(12, 83);
+			this.lblOutputPath.Location = new System.Drawing.Point(12, 165);
 			this.lblOutputPath.Name = "lblOutputPath";
 			this.lblOutputPath.Size = new System.Drawing.Size(53, 12);
 			this.lblOutputPath.TabIndex = 4;
-			this.lblOutputPath.Text = "輸出檔案";
-			// 
+			this.lblOutputPath.Text = "STDF 輸出檔案";
+			//
 			// btnBrowseOutputPath
-			// 
-			this.btnBrowseOutputPath.Location = new System.Drawing.Point(443, 98);
+			//
+			this.btnBrowseOutputPath.Location = new System.Drawing.Point(502, 180);
 			this.btnBrowseOutputPath.Margin = new System.Windows.Forms.Padding(2);
 			this.btnBrowseOutputPath.Name = "btnBrowseOutputPath";
-			this.btnBrowseOutputPath.Size = new System.Drawing.Size(41, 24);
-			this.btnBrowseOutputPath.TabIndex = 5;
-			this.btnBrowseOutputPath.Text = "...";
+			this.btnBrowseOutputPath.Size = new System.Drawing.Size(120, 24);
+			this.btnBrowseOutputPath.TabIndex = 4;
+			this.btnBrowseOutputPath.Text = "儲存位置…";
 			this.btnBrowseOutputPath.UseVisualStyleBackColor = true;
 			this.btnBrowseOutputPath.Click += new System.EventHandler(this.btnBrowseOutputPath_Click);
-			// 
+			//
 			// btnBrowseInputFolder
-			// 
-			this.btnBrowseInputFolder.Location = new System.Drawing.Point(443, 41);
+			//
+			this.btnBrowseInputFolder.Location = new System.Drawing.Point(502, 82);
 			this.btnBrowseInputFolder.Margin = new System.Windows.Forms.Padding(2);
 			this.btnBrowseInputFolder.Name = "btnBrowseInputFolder";
-			this.btnBrowseInputFolder.Size = new System.Drawing.Size(41, 24);
-			this.btnBrowseInputFolder.TabIndex = 6;
-			this.btnBrowseInputFolder.Text = "...";
+			this.btnBrowseInputFolder.Size = new System.Drawing.Size(120, 24);
+			this.btnBrowseInputFolder.TabIndex = 2;
+			this.btnBrowseInputFolder.Text = "選擇資料夾…";
 			this.btnBrowseInputFolder.UseVisualStyleBackColor = true;
 			this.btnBrowseInputFolder.Click += new System.EventHandler(this.btnBrowseInputFolder_Click);
-			// 
+			//
+			// cboInputFormat
+			//
+			this.cboInputFormat.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+			this.cboInputFormat.FormattingEnabled = true;
+			this.cboInputFormat.Items.AddRange(new object[] { "P2020 測試記錄（資料夾）", "CSV 測試資料（DETAIL／RESULT 檔案）" });
+			this.cboInputFormat.Location = new System.Drawing.Point(12, 27);
+			this.cboInputFormat.Name = "cboInputFormat";
+			this.cboInputFormat.Size = new System.Drawing.Size(610, 20);
+			this.cboInputFormat.TabIndex = 0;
+			this.cboInputFormat.SelectedIndexChanged += new System.EventHandler(this.cboInputFormat_SelectedIndexChanged);
+			//
+			// lblInputFormat
+			//
+			this.lblInputFormat.AutoSize = true;
+			this.lblInputFormat.Location = new System.Drawing.Point(12, 10);
+			this.lblInputFormat.Name = "lblInputFormat";
+			this.lblInputFormat.Size = new System.Drawing.Size(53, 12);
+			this.lblInputFormat.TabIndex = 9;
+			this.lblInputFormat.Text = "資料格式";
+			//
+			// lblInputHint
+			//
+			this.lblInputHint.AutoSize = false;
+			this.lblInputHint.Location = new System.Drawing.Point(12, 112);
+			this.lblInputHint.Name = "lblInputHint";
+			this.lblInputHint.Size = new System.Drawing.Size(610, 42);
+			this.lblInputHint.TabIndex = 8;
+			//
 			// frmMain
-			// 
+			//
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(493, 248);
+			this.ClientSize = new System.Drawing.Size(650, 290);
+			this.Controls.Add(this.lblInputHint);
+			this.Controls.Add(this.lblInputFormat);
+			this.Controls.Add(this.cboInputFormat);
 			this.Controls.Add(this.btnBrowseInputFolder);
 			this.Controls.Add(this.btnBrowseOutputPath);
 			this.Controls.Add(this.lblOutputPath);
@@ -132,6 +166,9 @@ namespace WindowsFormsApp1
 		private System.Windows.Forms.Label lblOutputPath;
 		private System.Windows.Forms.Button btnBrowseOutputPath;
 		private System.Windows.Forms.Button btnBrowseInputFolder;
+		private System.Windows.Forms.ComboBox cboInputFormat;
+		private System.Windows.Forms.Label lblInputFormat;
+		private System.Windows.Forms.Label lblInputHint;
 	}
 }
 

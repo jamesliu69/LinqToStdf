@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace STDF
@@ -21,6 +22,8 @@ namespace STDF
 
 		/// <summary>輸出 STDF 檔案的路徑</summary>
 		private readonly string _outputPath;
+		private readonly bool _csvInput;
+		private bool _hasCsvRetest;
 
 		/// <summary>STDF 檔案寫入器，負責產生標準 STDF V4 格式輸出</summary>
 		private StdfFileWriter _stdfWriter;
@@ -36,17 +39,28 @@ namespace STDF
 
 		/// <summary>建構 CStdf 類別的新實例，設定日誌與輸出路徑；寫入器於轉檔時建立。</summary>
 		public CStdf(string logPath, string outputPath)
+			: this(logPath, outputPath, false)
 		{
-			Debug.Assert(logPath != null, nameof(logPath) + " != null");
-			_logPath    = logPath;
-			_summaryLog = logPath;
+		}
+
+		public CStdf(string inputPath, string outputPath, bool csvInput)
+		{
+			Debug.Assert(inputPath != null, nameof(inputPath) + " != null");
+			_logPath    = inputPath;
+			_summaryLog = inputPath;
 			Debug.Assert(outputPath != null, nameof(outputPath) + " != null");
 			_outputPath = outputPath;
+			_csvInput   = csvInput;
 		}
 
 		/// <summary>分析並處理輸入的測試日誌檔案   解析 P2020 格式的日誌檔案以及對應的摘要檔案，為後續產生 STDF 檔案做準備</summary>
 		private void AnalyzeFile()
 		{
+			if(_csvInput)
+			{
+				AnalyzeCsvFile();
+				return;
+			}
 			try
 			{
 				string[] logFiles;
@@ -103,6 +117,208 @@ namespace STDF
 			}
 		}
 
+		private void AnalyzeCsvFile()
+		{
+			string[] headers;
+			List<string[]> rows = new List<string[]>();
+			using(StreamReader reader = new StreamReader(_logPath, Encoding.GetEncoding(950), true))
+			{
+				string line;
+				if((line = reader.ReadLine()) == null)
+				{
+					throw new InvalidDataException("CSV 檔案是空的。");
+				}
+				headers = ParseCsvLine(line);
+				while((line = reader.ReadLine()) != null)
+				{
+					if(line.Length > 0)
+					{
+						rows.Add(ParseCsvLine(line));
+					}
+				}
+			}
+
+			Dictionary<string, int> columns = headers.Select((name, index) => new { name, index })
+				.ToDictionary(item => item.name.Trim(), item => item.index, StringComparer.OrdinalIgnoreCase);
+			string[] required = { "Date", "Time", "LotNo", "Serial", "PieceX", "PieceY", "DataStatus", "StepJudge", "Step", "Retest", "Dut", "Item", "Point", "No", "Direction", "PJudge", "Meas", "Unit", "Lower", "Upper", "Error" };
+			foreach(string name in required)
+			{
+				if(!columns.ContainsKey(name))
+				{
+					throw new InvalidDataException($"CSV 缺少必要欄位：{name}");
+				}
+			}
+
+			string Get(string[] row, string name)
+			{
+				if(row.Length != headers.Length)
+				{
+					throw new InvalidDataException($"CSV 欄位數不符：預期 {headers.Length} 欄，實際 {row.Length} 欄。");
+				}
+				return row[columns[name]].Trim();
+			}
+
+			_p2020 = new CP2020(Array.Empty<string>());
+			_fileParam = new CFileParam(_logPath)
+			{
+				FilePath = _logPath,
+				TestItemName = "CSV_Test",
+			};
+			Dictionary<string, int> sourcePartIds = new Dictionary<string, int>(StringComparer.Ordinal);
+			int nextPartId = 1;
+			_hasCsvRetest = false;
+			int sourceLine = 1;
+			foreach(string[] row in rows)
+			{
+				sourceLine++;
+				string judge = Get(row, "PJudge");
+				if(judge == "點位結果" || judge == "詳細結果" || Get(row, "DataStatus") == "STEP狀態")
+				{
+					continue;
+				}
+				if(Get(row, "DataStatus") != "Test done")
+				{
+					throw new InvalidDataException($"CSV 第 {sourceLine} 列 DataStatus 無法識別。");
+				}
+				if(judge != "PASS" && judge != "L_NG" && judge != "MS_ER")
+				{
+					throw new InvalidDataException($"CSV 第 {sourceLine} 列 PJudge 無法識別。");
+				}
+				string stepJudge = Get(row, "StepJudge");
+				if(stepJudge != "LSL" && stepJudge != "svOther")
+				{
+					throw new InvalidDataException($"CSV 第 {sourceLine} 列 StepJudge 無法識別。");
+				}
+				string dut = Get(row, "Dut");
+				string serial = Get(row, "Serial");
+				if(!int.TryParse(dut, NumberStyles.Integer, CultureInfo.InvariantCulture, out int dutNumber) || string.IsNullOrWhiteSpace(serial))
+				{
+					throw new InvalidDataException($"CSV 第 {sourceLine} 列 DUT/Serial 不完整或格式不符。");
+				}
+				if(!short.TryParse(Get(row, "PieceX"), NumberStyles.Integer, CultureInfo.InvariantCulture, out short pieceX) || pieceX == short.MinValue || !short.TryParse(Get(row, "PieceY"), NumberStyles.Integer, CultureInfo.InvariantCulture, out short pieceY) || pieceY == short.MinValue)
+				{
+					throw new InvalidDataException($"CSV 第 {sourceLine} 列 PieceX/PieceY 超出 STDF 座標範圍或格式不符。");
+				}
+				string lot = Get(row, "LotNo");
+				if(string.IsNullOrWhiteSpace(lot))
+				{
+					throw new InvalidDataException($"CSV 第 {sourceLine} 列缺少 LotNo。");
+				}
+				DateTime testTime;
+				if(!DateTime.TryParseExact(Get(row, "Date") + " " + Get(row, "Time"), "yyyy/MM/dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out testTime))
+				{
+					throw new InvalidDataException($"CSV 第 {sourceLine} 列 Date/Time 格式不符。");
+				}
+				if(_fileParam.LotNumber == null)
+				{
+					_fileParam.LotNumber = lot;
+					_fileParam.LotSTART = testTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+					_fileParam.LotEND = _fileParam.LotSTART;
+				}
+				else if(!string.Equals(_fileParam.LotNumber, lot, StringComparison.Ordinal))
+				{
+					throw new InvalidDataException("單一 CSV 包含多個 LotNo。");
+				}
+				else
+				{
+					if(testTime < DateTime.Parse(_fileParam.LotSTART, CultureInfo.InvariantCulture))
+					{
+						_fileParam.LotSTART = testTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+					}
+					if(testTime > DateTime.Parse(_fileParam.LotEND, CultureInfo.InvariantCulture))
+					{
+						_fileParam.LotEND = testTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+					}
+				}
+
+				string item = Get(row, "Item");
+				string step = Get(row, "Step");
+				string retest = Get(row, "Retest");
+				if(string.IsNullOrWhiteSpace(item) || !int.TryParse(step, NumberStyles.Integer, CultureInfo.InvariantCulture, out _) || !int.TryParse(retest, NumberStyles.Integer, CultureInfo.InvariantCulture, out int retestNumber))
+				{
+					throw new InvalidDataException($"CSV 第 {sourceLine} 列 Step/Retest/Item 無法識別。");
+				}
+				if(retestNumber < 0)
+				{
+					throw new InvalidDataException($"CSV 第 {sourceLine} 列 Retest 不可為負數。");
+				}
+				_hasCsvRetest |= retestNumber > 0;
+				string sourcePartKey = $"{serial.Length}:{serial}|{pieceX}|{pieceY}|{dutNumber}|{retestNumber}";
+				if(!sourcePartIds.TryGetValue(sourcePartKey, out int partId))
+				{
+					partId = nextPartId++;
+					sourcePartIds.Add(sourcePartKey, partId);
+				}
+				string errorText = Get(row, "Error");
+				CChipData chip = new CChipData
+				{
+					FileName = Path.GetFileNameWithoutExtension(_logPath),
+					Id = partId,
+					Site = "1",
+					Comment = $"Step {step} {item} Point {Get(row, "Point")} No {Get(row, "No")} Direction {Get(row, "Direction")}",
+					SourcePartId = serial,
+					SourcePartKey = sourcePartKey,
+					SourcePieceX = pieceX,
+					SourcePieceY = pieceY,
+					SourceDut = dut,
+					SourceRetest = retestNumber,
+					PassOrFail = judge == "PASS" ? "PASS" : judge == "L_NG" ? "FAIL" : "MS_ER",
+					ErrorText = errorText,
+					strMeasureValue = judge == "MS_ER" ? null : Get(row, "Meas"),
+					LowLimit = Get(row, "Lower"),
+					HighLimit = Get(row, "Upper"),
+					MeasureUnit = Get(row, "Unit"),
+					PinName = Get(row, "Point"),
+				};
+				if(judge == "MS_ER" && string.IsNullOrWhiteSpace(errorText))
+				{
+					throw new InvalidDataException($"CSV 第 {sourceLine} 列 MS_ER 缺少 Error 說明。");
+				}
+				ParseNullableFloat(chip.LowLimit, sourceLine, "Lower");
+				ParseNullableFloat(chip.HighLimit, sourceLine, "Upper");
+				if(judge != "MS_ER" && ParseNullableFloat(chip.strMeasureValue, sourceLine, "Meas") == null)
+				{
+					throw new InvalidDataException($"CSV 第 {sourceLine} 列 PASS/L_NG 缺少有效 Meas。");
+				}
+				_p2020.ChipDataList.Add(chip);
+			}
+			if(_p2020.ChipDataList.Count == 0)
+			{
+				throw new InvalidDataException("CSV 沒有可轉換的量測資料。");
+			}
+		}
+
+		private static float? ParseNullableFloat(string raw, int line, string field)
+		{
+			if(string.IsNullOrWhiteSpace(raw)) return null;
+			if(!double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out double value) || double.IsNaN(value) || double.IsInfinity(value) || Math.Abs(value) > float.MaxValue)
+			{
+				throw new InvalidDataException($"CSV 第 {line} 列 {field} 超出 STDF PTR 浮點範圍或格式不符。");
+			}
+			return (float)value;
+		}
+
+		private static string[] ParseCsvLine(string line)
+		{
+			List<string> fields = new List<string>();
+			StringBuilder field = new StringBuilder();
+			bool quoted = false;
+			for(int i = 0; i < line.Length; i++)
+			{
+				char c = line[i];
+				if(c == '"')
+				{
+					if(quoted && i + 1 < line.Length && line[i + 1] == '"') { field.Append('"'); i++; }
+					else { quoted = !quoted; }
+				}
+				else if(c == ',' && !quoted) { fields.Add(field.ToString()); field.Clear(); }
+				else { field.Append(c); }
+			}
+			if(quoted) throw new InvalidDataException("CSV 引號未配對。");
+			fields.Add(field.ToString());
+			return fields.ToArray();
+		}
+
 		/// <summary>執行STDF 轉檔主要工作流程   協調整個轉換過程，包括日誌解析、STDF 記錄生成和檔案輸出</summary>
 		public void DoWork()
 		{
@@ -111,6 +327,10 @@ namespace STDF
 
 			try
 			{
+				if(_csvInput && string.Equals(Path.GetFullPath(_logPath), Path.GetFullPath(_outputPath), StringComparison.OrdinalIgnoreCase))
+				{
+					throw new InvalidOperationException("CSV 輸入檔與 STDF 輸出檔不可相同。");
+				}
 				AnalyzeFile();
 				workflowStage = "DoWork.CreateTemporaryOutput";
 				string finalOutputPath = Path.GetFullPath(_outputPath);
@@ -170,7 +390,7 @@ namespace STDF
 				}
 				mir.StationNumber        = 0;
 				mir.ModeCode             = "P";
-				mir.RetestCode           = "N";
+				mir.RetestCode           = _csvInput && _hasCsvRetest ? null : "N";
 				mir.ProtectionCode       = "0";
 				mir.BurnInTime           = 0;
 				mir.CommandModeCode      = "0";
@@ -350,7 +570,7 @@ namespace STDF
 								throw;
 							}
 							ptr.Result   = measurementValue;
-							ptr.TestText = chip.Comment;
+							ptr.TestText = string.IsNullOrWhiteSpace(chip.ErrorText) ? chip.Comment : $"{chip.Comment}: {chip.ErrorText}";
 							ptr.AlarmId  = " ";
 
 							if(TryExtractFloat(chip.LowLimit) is float lowLimitValue)
@@ -362,7 +582,7 @@ namespace STDF
 							{
 								ptr.HighLimit = highLimitValue;
 							}
-							ptr.Units = ExtractUnits(chip.LowLimit, chip.HighLimit);
+							ptr.Units = string.IsNullOrWhiteSpace(chip.MeasureUnit) ? ExtractUnits(chip.LowLimit, chip.HighLimit) : chip.MeasureUnit;
 							ExecuteWithLogging("WriteRecord", chip.FileName, chip.Comment, chip.Site, chip.PinName, chip.strMeasureValue, "PTR", () => _stdfWriter.WriteRecord(ptr));
 
 							if(!testSummaries.TryGetValue(testNumber, out TestSummary summary))
@@ -400,7 +620,13 @@ namespace STDF
 						prr.HardBin   = ResolveBinNumberForOutcome(hardwareBins, part.IsPass);
 						prr.SoftBin   = ResolveBinNumberForOutcome(softwareBins, part.IsPass);
 						prr.Failed    = !part.IsPass;
-						prr.PartId    = $"{firstChip.FileName}-{part.PartIndex.ToString(CultureInfo.InvariantCulture)}-S{part.SiteNumber.ToString(CultureInfo.InvariantCulture)}";
+						prr.PartId    = string.IsNullOrWhiteSpace(firstChip.SourcePartId) ? $"{firstChip.FileName}-{part.PartIndex.ToString(CultureInfo.InvariantCulture)}-S{part.SiteNumber.ToString(CultureInfo.InvariantCulture)}" : firstChip.SourcePartId;
+						prr.XCoordinate = firstChip.SourcePieceX;
+						prr.YCoordinate = firstChip.SourcePieceY;
+						if(firstChip.SourceDut != null && firstChip.SourceRetest.HasValue)
+						{
+							prr.PartText = $"Dut {firstChip.SourceDut} Retest {firstChip.SourceRetest.Value.ToString(CultureInfo.InvariantCulture)}";
+						}
 						ExecuteWithLogging("WriteRecord", firstChip.FileName, firstChip.Comment, firstChip.Site, firstChip.PinName, part.IsPass ? "PASS" : "FAIL", "PRR", () => _stdfWriter.WriteRecord(prr));
 					}
 					catch(Exception ex)
@@ -492,7 +718,7 @@ namespace STDF
 					pcr.PartCount       = sitePartCount;
 					pcr.GoodCount       = siteGoodCount;
 					pcr.FunctionalCount = siteGoodCount;
-					pcr.RetestCount     = 0;
+					pcr.RetestCount     = _csvInput ? (uint)siteGroup.Count(part => part.Chips[0].SourceRetest.GetValueOrDefault() > 0) : 0;
 					pcr.AbortCount      = 0;
 					ExecuteWithLogging("WriteRecord", _fileParam.FilePath, _fileParam.TestItemName, siteGroup.Key.ToString(CultureInfo.InvariantCulture), null, null, "PCR", () => _stdfWriter.WriteRecord(pcr));
 				}
@@ -504,7 +730,7 @@ namespace STDF
 				lotPcr.PartCount       = totalPartCount;
 				lotPcr.GoodCount       = totalGoodCount;
 				lotPcr.FunctionalCount = totalGoodCount;
-				lotPcr.RetestCount     = 0;
+				lotPcr.RetestCount     = _csvInput ? (uint)partSiteSummaries.Count(part => part.Chips[0].SourceRetest.GetValueOrDefault() > 0) : 0;
 				lotPcr.AbortCount      = 0;
 				ExecuteWithLogging("WriteRecord", _fileParam.FilePath, _fileParam.TestItemName, "0", null, null, "PCR", () => _stdfWriter.WriteRecord(lotPcr));
 
@@ -603,6 +829,12 @@ namespace STDF
 		{
 			const byte passFailInvalidMask = 0x10;
 			const byte failMask            = 0x80;
+			const byte resultInvalidMask   = 0x82;
+
+			if(string.Equals(passOrFailText?.Trim(), "MS_ER", StringComparison.OrdinalIgnoreCase))
+			{
+				return resultInvalidMask;
+			}
 
 			if(!string.Equals(passOrFailText?.Trim(), "PASS", StringComparison.OrdinalIgnoreCase) && !string.Equals(passOrFailText?.Trim(), "FAIL", StringComparison.OrdinalIgnoreCase))
 			{
