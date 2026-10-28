@@ -3,6 +3,7 @@ using System.Data;
 
 namespace STDF
 {
+	/// <summary>P2020 測試記錄分析器的介面：定義分析（AnalyzeFile/GroupBySite/CalMeasure）、輸出（OutputFile/GetTable）與項目選取事件；實作為 CP2020 與 CFileParam。</summary>
 	public interface IAnalyze
 	{
 		string SavePath { get; set; }

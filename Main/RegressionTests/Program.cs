@@ -9,12 +9,17 @@ using Stdf.Records.V4;
 
 namespace LinqToStdf.RegressionTests
 {
+	/// <summary>Stdf 程式庫與 CStdf 轉檔器的回歸測試集：以端序/位元數組合跑 bit/nibble/GDR/MPR/FTR 往返測試，再驗證轉檔輸出保留、重試、鎖定目的地、CSV 與 Summary 映射等行為；結束輸出 "RESULT: X passed, Y failed"，全數通過回傳 0。</summary>
 	internal static class Program
 	{
+		/// <summary>已通過的測試數。</summary>
 		private static int _passed;
+		/// <summary>已失敗的測試數。</summary>
 		private static int _failed;
+		/// <summary>以 MemoryStream 寫入器取得的轉換器工廠，供 bit/nibble/GDR 等 Convert/Unconvert 測試使用。</summary>
 		private static readonly RecordConverterFactory Factory = new StdfFileWriter(new MemoryStream()).ConverterFactory;
 
+		/// <summary>測試進入點：登記並執行所有測試，最後印出彙總並以失敗數決定 exit code（0=全過）。</summary>
 		private static int Main()
 		{
 			foreach(Endian endian in new[] { Endian.Little, Endian.Big })
@@ -75,6 +80,7 @@ namespace LinqToStdf.RegressionTests
 			return _failed == 0 ? 0 : 1;
 		}
 
+		/// <summary>執行單一測試：成功 _passed++ 印 "PASS 名稱"；例外時 _failed++ 印 "FAIL 名稱: 例外型別: 訊息"，不中斷其他測試。</summary>
 		private static void Run(string name, Action test)
 		{
 			try
@@ -90,6 +96,7 @@ namespace LinqToStdf.RegressionTests
 			}
 		}
 
+		/// <summary>以固定模式（i%3==0 或最後一位元）填 BitArray，用 Stdf.BinaryWriter 寫出後比對預期的 2 位元組長度前綴＋打包位元，再以 BinaryReader 讀回驗證每個位元；長度 0 期望讀回 null。</summary>
 		private static void BitArrayRoundTrip(int length, Endian endian, bool backwards)
 		{
 			BitArray value = new BitArray(length);
@@ -123,6 +130,7 @@ namespace LinqToStdf.RegressionTests
 			}
 		}
 
+		/// <summary>寫入 null BitArray 只應輸出 2 個零位元組的長度前綴。</summary>
 		private static void NullBitArray(Endian endian, bool backwards)
 		{
 			using(MemoryStream stream = new MemoryStream())
@@ -132,6 +140,7 @@ namespace LinqToStdf.RegressionTests
 			}
 		}
 
+		/// <summary>65536 位元的 BitArray 超過長度前綴上限，應拋 ArgumentOutOfRangeException 且串流保持空。</summary>
 		private static void BitArrayOverflow(Endian endian, bool backwards)
 		{
 			using(MemoryStream stream = new MemoryStream())
@@ -142,6 +151,7 @@ namespace LinqToStdf.RegressionTests
 			}
 		}
 
+		/// <summary>nibble 陣列寫出/讀回往返：grow=true 時先寫 UInt16 再重置串流模擬緩衝成長；驗證打包長度、每個 nibble、輸入陣列未被變動且讀回一致無尾位元組。</summary>
 		private static void NibbleArrayRoundTrip(Endian endian, bool backwards, bool grow)
 		{
 			byte[] values = grow ? Enumerable.Range(0, 19).Select(i => (byte)(i % 16)).ToArray() : new byte[] { 1, 2, 3, 4, 5 };
@@ -169,6 +179,7 @@ namespace LinqToStdf.RegressionTests
 			}
 		}
 
+		/// <summary>GDR GenericData 含 (uint, byte[], string) 三元組的 Unconvert/Convert 往返：驗證 byte array 前有型別碼 11 與長度前綴，且前後值未變。</summary>
 		private static void GdrByteArrayRoundTrip(int length, Endian endian)
 		{
 			byte[] values = Enumerable.Range(0, length).Select(i => (byte)(170 + i)).ToArray();
@@ -181,6 +192,7 @@ namespace LinqToStdf.RegressionTests
 			Check((string)actual.GenericData[2] == "after-array", "Following GDR value changed.");
 		}
 
+		/// <summary>backwards 模式寫 {1,2,3,4} nibble 期望位元組 {0x43,0x21}（低 nibble 在高位元組）。</summary>
 		private static void NibbleArrayBackwardOrder(Endian endian)
 		{
 			using(MemoryStream stream = new MemoryStream())
@@ -194,6 +206,7 @@ namespace LinqToStdf.RegressionTests
 			}
 		}
 
+		/// <summary>以原始 GDR 位元組（端序差異僅前兩位元組）Convert：驗證 nibble 值 13 被 mask 為 10 且後續 U*1 值未變。</summary>
 		private static void GdrNibbleDecode(Endian endian)
 		{
 			byte[] bytes = endian == Endian.Little ? new byte[] { 2, 0, 13, 0xFA, 1, 0x12 } : new byte[] { 0, 2, 13, 0xFA, 1, 0x12 };
@@ -202,6 +215,7 @@ namespace LinqToStdf.RegressionTests
 			Check((byte)actual.GenericData[1] == 0x12, "Following GDR value changed.");
 		}
 
+		/// <summary>MPR 記錄 Convert/Unconvert 往返，比對 PinStates 與 Results。</summary>
 		private static void MprRoundTrip(Endian endian)
 		{
 			Mpr record = new Mpr { TestNumber = 1, PinStates = new byte[] { 1, 2, 3, 4, 5 }, PinIndexes = new ushort[] { 1, 2, 3, 4, 5 }, Results = new float[] { 1, 2, 3, 4, 5 } };
@@ -210,6 +224,7 @@ namespace LinqToStdf.RegressionTests
 			Check(record.Results.SequenceEqual(actual.Results), "MPR results changed.");
 		}
 
+		/// <summary>FTR 65 位元全 1 的 FailingPinBitfield 往返後長度與每位元不變。</summary>
 		private static void FtrRoundTrip(Endian endian)
 		{
 			Ftr record = new Ftr { TestNumber = 1, FailingPinBitfield = new BitArray(65, true) };
@@ -218,6 +233,7 @@ namespace LinqToStdf.RegressionTests
 			for(int i = 0; i < 65; i++) Check(actual.FailingPinBitfield[i], "FTR bitfield changed at index " + i);
 		}
 
+		/// <summary>在 %TEMP%\LinqToStdf-tests-{GUID} 建立含單筆測項 test.log（可自訂 PASS/FAIL 字）與 test_Summary.log（可自訂是否含有效 Lot END 與額外行）的測試環境，執行測試後刪除；刪除失敗（舊實作洩漏 handle）時保留 fixture 並印出路徑。</summary>
 		private static void WithFixture(Action<string, string> test, bool summary = true, bool validEnd = true, string passOrFail = "PASS", string summaryExtras = null)
 		{
 			string root = Path.Combine(Path.GetTempPath(), "LinqToStdf-tests-" + Guid.NewGuid().ToString("N"));
@@ -234,11 +250,13 @@ namespace LinqToStdf.RegressionTests
 			}
 		}
 
+		/// <summary>寫入 test_Summary.log：固定 Lot START 時間、Lot END（validEnd=false 時為無效日期）、批號 LOT1 與額外行。</summary>
 		private static void WriteSummary(string root, bool validEnd, string extras = null)
 		{
 			File.WriteAllText(Path.Combine(root, "test_Summary.log"), "Lot START: 2026-10-01 12:00:00\r\nLot END: " + (validEnd ? "2026-10-01 12:01:00" : "invalid-date") + "\r\nLot Number: LOT1\r\n" + (extras ?? string.Empty));
 		}
 
+		/// <summary>既有輸出檔在 new CStdf 後內容不變且可獨佔開啟（建構子不碰輸出）。</summary>
 		private static void ConstructorPreservesOutput()
 		{
 			WithFixture((root, output) =>
@@ -251,6 +269,7 @@ namespace LinqToStdf.RegressionTests
 			});
 		}
 
+		/// <summary>建構子不應在轉檔前建立輸出檔。</summary>
 		private static void ConstructorDoesNotCreateOutput()
 		{
 			WithFixture((root, output) =>
@@ -261,6 +280,7 @@ namespace LinqToStdf.RegressionTests
 			});
 		}
 
+		/// <summary>Summary 的 Lot END 無效時 DoWork 拋 InvalidDataException，既有輸出原狀保留且無暫存檔。</summary>
 		private static void AnalysisFailurePreservesOutput()
 		{
 			WithFixture((root, output) =>
@@ -274,6 +294,7 @@ namespace LinqToStdf.RegressionTests
 			}, false);
 		}
 
+		/// <summary>分析失敗後輸出檔可被獨佔開啟（handle 已釋放）。</summary>
 		private static void AnalysisFailureReleasesOutput()
 		{
 			WithFixture((root, output) =>
@@ -286,6 +307,7 @@ namespace LinqToStdf.RegressionTests
 			}, false);
 		}
 
+		/// <summary>寫入記錄後才失敗（FormatException）仍保留原輸出、無暫存檔且可獨佔開啟。</summary>
 		private static void LateFailurePreservesOutput()
 		{
 			WithFixture((root, output) =>
@@ -300,6 +322,7 @@ namespace LinqToStdf.RegressionTests
 			}, true, false);
 		}
 
+		/// <summary>新建轉檔（無既有輸出）失敗時不留任何輸出檔或暫存檔。</summary>
 		private static void FailedNewConversion()
 		{
 			WithFixture((root, output) =>
@@ -312,6 +335,7 @@ namespace LinqToStdf.RegressionTests
 			}, true, false);
 		}
 
+		/// <summary>轉檔成功後（可含覆寫既有檔）輸出通過 VerifyOutput、可獨佔開啟且無暫存檔。</summary>
 		private static void SuccessfulConversion(bool existing)
 		{
 			WithFixture((root, output) =>
@@ -324,6 +348,7 @@ namespace LinqToStdf.RegressionTests
 			});
 		}
 
+		/// <summary>同一 CStdf 實例第一次 DoWork 失敗後，修好 Summary 再呼叫可成功且無暫存檔。</summary>
 		private static void RetryAfterFailure()
 		{
 			WithFixture((root, output) =>
@@ -338,6 +363,7 @@ namespace LinqToStdf.RegressionTests
 			}, true, false);
 		}
 
+		/// <summary>輸出被他人以 Read/Read 共享鎖住時 DoWork 拋 IOException 且原檔不變；解鎖後重試成功。</summary>
 		private static void LockedDestination()
 		{
 			WithFixture((root, output) =>
@@ -356,6 +382,7 @@ namespace LinqToStdf.RegressionTests
 			});
 		}
 
+		/// <summary>把工作目錄切到 fixture 目錄，以相對路徑 output.stdf 轉檔仍成功。</summary>
 		private static void RelativeOutputPath()
 		{
 			WithFixture((root, output) =>
@@ -372,6 +399,7 @@ namespace LinqToStdf.RegressionTests
 			});
 		}
 
+		/// <summary>讀回輸出 STDF 驗證：恰一筆 FAR/MRR、無 ErrorRecord、PTR 值/上下限/單位/旗標、PRR bin=1 未失敗、MIR 只映射 LOT_ID、TSR/HBR/SBR 使用 head 255/site 0、兩筆 PCR（site 與 lot）且 FUNCTIONAL_COUNT 為 null。</summary>
 		private static void VerifyOutput(string output)
 		{
 			StdfRecord[] records = new StdfFile(output).GetRecordsEnumerable().ToArray();
@@ -402,6 +430,7 @@ namespace LinqToStdf.RegressionTests
 			Check(pcrs.All(pcr => pcr.FunctionalCount == null), "PCR FUNCTIONAL_COUNT should stay empty.");
 		}
 
+		/// <summary>輸出檔名補足到 240 字元總長上限仍可成功轉檔。</summary>
 		private static void LongOutputFilename()
 		{
 			WithFixture((root, output) =>
@@ -413,6 +442,7 @@ namespace LinqToStdf.RegressionTests
 			});
 		}
 
+		/// <summary>把 SampleLog 的 CSV（DETAIL/RESULT）轉成 STDF 後驗證：PTR 總數、同 TestText 同 TestNumber、（DETAIL）Cp/Rp 相異 TestNumber 與 23 筆 TSR、PASS(旗標0)/L_NG(0x80)/MS_ER(0x82) 計數與單位、無 ErrorRecord、PRR Failed 且 PartId=Serial。</summary>
 		private static void CsvRoundTrip(string csvName, int expectedCount, int passCount, int failCount, int errorCount)
 		{
 			string root = Path.Combine(Path.GetTempPath(), "LinqToStdfCsvTest-" + Guid.NewGuid().ToString("N"));
@@ -451,6 +481,7 @@ namespace LinqToStdf.RegressionTests
 			}
 		}
 
+		/// <summary>把 SampleLog CSV（含無效狀態欄）轉換時拋 InvalidDataException，既有輸出保留且無暫存檔。</summary>
 		private static void CsvFailurePreservesOutput()
 		{
 			string root = Path.Combine(Path.GetTempPath(), "LinqToStdfCsvFailure-" + Guid.NewGuid().ToString("N"));
@@ -474,6 +505,7 @@ namespace LinqToStdf.RegressionTests
 			}
 		}
 
+		/// <summary>以 7 列合成 CSV 驗證身分鍵（Serial/PieceX/PieceY/DUT/Retest）變化產生 6 個 attempt（6 組 PIR/PRR）、同 attempt 多測項合併為一筆 PRR、PCR PartCount=6 RetestCount=1。</summary>
 		private static void CsvAttemptKeysAndRetest()
 		{
 			string root = Path.Combine(Path.GetTempPath(), "LinqToStdfCsvKeys-" + Guid.NewGuid().ToString("N"));
@@ -502,6 +534,7 @@ namespace LinqToStdf.RegressionTests
 			finally { Directory.Delete(root, true); }
 		}
 
+		/// <summary>PieceX 或 PieceY 為 short.MinValue（缺座標哨兵值）時轉換拋 InvalidDataException，既有輸出保留且無暫存檔。</summary>
 		private static void CsvMissingCoordinatePreservesOutput()
 		{
 			string root = Path.Combine(Path.GetTempPath(), "LinqToStdfCsvSentinel-" + Guid.NewGuid().ToString("N"));
@@ -522,6 +555,7 @@ namespace LinqToStdf.RegressionTests
 			finally { Directory.Delete(root, true); }
 		}
 
+		/// <summary>以合成 Cp/Rp CSV（同 Cp 測項跨兩顆料件）驗證：同測項跨料件維持相同 TestNumber、Cp 與 Rp 相異，且值/單位（F/ohm）保留。</summary>
 		private static void CsvTestIdentity()
 		{
 			string root = Path.Combine(Path.GetTempPath(), "LinqToStdfCsvIdentity-" + Guid.NewGuid().ToString("N"));
@@ -545,6 +579,7 @@ namespace LinqToStdf.RegressionTests
 			finally { Directory.Delete(root, true); }
 		}
 
+		/// <summary>轉換 DETAIL CSV 後以原始 BinaryReader 逐記錄掃描，驗證 MIR(type1/sub10) 與 MRR(type1/sub20) 的時間欄位為預期的 UTC epoch 秒數。</summary>
 		private static void CsvTimestampWriting()
 		{
 			string root = Path.Combine(Path.GetTempPath(), "LinqToStdfCsvTime-" + Guid.NewGuid().ToString("N"));
@@ -586,6 +621,7 @@ namespace LinqToStdf.RegressionTests
 			finally { Directory.Delete(root, true); }
 		}
 
+		/// <summary>產生合成 CSV（CP950 編碼）：oneRow=false 時含 7 列身分鍵變化（座標/DUT/Retest/Serial 各自不同），供 attempt 與哨兵值測試使用。</summary>
 		private static void WriteSyntheticCsv(string path, short pieceX, short pieceY, bool oneRow = false)
 		{
 			string[] headers = { "Date", "Time", "LotNo", "Serial", "PieceX", "PieceY", "DataStatus", "StepJudge", "Step", "Retest", "Dut", "Item", "Point", "No", "Direction", "PJudge", "Result", "Meas", "Unit", "Lower", "Upper", "Error" };
@@ -604,6 +640,7 @@ namespace LinqToStdf.RegressionTests
 			File.WriteAllLines(path, new[] { string.Join(",", headers) }.Concat(rows.Select(row => string.Join(",", row))), System.Text.Encoding.GetEncoding(950));
 		}
 
+		/// <summary>Summary 的 Test Program Name/Operator 標頭應分別映射到 MIR 的 JOB_NAME/OPERATOR_NAME，未匹配的欄位（SPECIFICATION_NAME）留空。</summary>
 		private static void MirMapsSummaryHeaders()
 		{
 			WithFixture((root, output) =>
@@ -617,6 +654,7 @@ namespace LinqToStdf.RegressionTests
 			}, true, true, "PASS", "Operator: OP-42\r\nTest Program Name: TP-2020A\r\n");
 		}
 
+		/// <summary>FAIL 資料列應產生 0x80 旗標的 PTR、失敗的 PRR（fallback bin 2）、F 的 HBR/TSR 計數與 GoodCount=0 的 lot PCR。</summary>
 		private static void FailPartReportsFailingRecords()
 		{
 			WithFixture((root, output) =>
@@ -637,6 +675,7 @@ namespace LinqToStdf.RegressionTests
 			}, true, true, "FAIL");
 		}
 
+		/// <summary>單字母 "F" 判定等同 FAIL（PTR 0x80、PRR 失敗）。</summary>
 		private static void SingleLetterFResultIsAccepted()
 		{
 			WithFixture((root, output) =>
@@ -649,6 +688,7 @@ namespace LinqToStdf.RegressionTests
 			}, true, true, "F");
 		}
 
+		/// <summary>單字母 "P" 判定等同 PASS（PTR 旗標 0、PRR 未失敗、計為 good part）。</summary>
 		private static void SingleLetterPResultIsAccepted()
 		{
 			WithFixture((root, output) =>
@@ -663,6 +703,7 @@ namespace LinqToStdf.RegressionTests
 			}, true, true, "P");
 		}
 
+		/// <summary>不支援的判定文字（如 "OK"、P2020 模式的 "MS_ER"）應令轉換拋 InvalidDataException 且保留既有輸出。</summary>
 		private static void UnsupportedPassFailTextFailsConversion(string result)
 		{
 			WithFixture((root, output) =>
@@ -676,6 +717,7 @@ namespace LinqToStdf.RegressionTests
 			}, true, true, result);
 		}
 
+		/// <summary>[HARDWARE BIN] 出現多個同 P 的 bin（無法唯一解析）時轉換拋 InvalidDataException 且保留既有輸出。</summary>
 		private static void AmbiguousHardwareBinFailsConversion()
 		{
 			WithFixture((root, output) =>
@@ -689,6 +731,7 @@ namespace LinqToStdf.RegressionTests
 			}, true, true, "PASS", "[HARDWARE BIN]\r\n" + new string('*', 64) + "\r\n1 (Pass) 1 PASS GoodBin\r\n3 (Pass) 1 PASS AlsoGood\r\n");
 		}
 
+		/// <summary>[HARDWARE BIN] 的 bin 編號應映射到 PRR HARD_BIN 與 HBR；無 software bin 時 SOFT_BIN fallback 為 1。</summary>
 		private static void HardwareBinSectionMapsPrrBins()
 		{
 			WithFixture((root, output) =>
@@ -704,15 +747,21 @@ namespace LinqToStdf.RegressionTests
 			}, true, true, "PASS", "[HARDWARE BIN]\r\n" + new string('*', 64) + "\r\n3 (Pass) 1 PASS GoodBin\r\n");
 		}
 
+		/// <summary>檢查目錄內無 .tmp 暫存檔殘留。</summary>
 		private static void NoTemporaryFiles(string root) => Check(Directory.GetFiles(root, "*.tmp").Length == 0, "Temporary output was not cleaned up.");
+		/// <summary>以共用讀取方式讀出輸出檔全文。</summary>
 		private static string ReadOutputText(string output)
 		{
 			using(StreamReader reader = new StreamReader(new FileStream(output, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))) return reader.ReadToEnd();
 		}
+		/// <summary>以獨佔（FileShare.None）方式開檔，驗證沒有殘留 handle。</summary>
 		private static void ExclusiveOpen(string output) { using(FileStream stream = new FileStream(output, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { } }
+		/// <summary>比對兩位元組陣列完全相等。</summary>
 		private static void EqualBytes(byte[] expected, byte[] actual) => Check(expected.SequenceEqual(actual), $"Expected {BitConverter.ToString(expected)}, got {BitConverter.ToString(actual)}.");
+		/// <summary>簡易斷言：條件不成立時拋 InvalidOperationException。</summary>
 		private static void Check(bool condition, string message) { if(!condition) throw new InvalidOperationException(message); }
 
+		/// <summary>驗證 action 拋出型別 T 的例外；未拋出即視為失敗。</summary>
 		private static void ExpectThrows<T>(Action action) where T : Exception
 		{
 			try { action(); }

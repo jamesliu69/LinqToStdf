@@ -5,14 +5,17 @@ using System;
 using System.IO;
 using System.Linq;
 
+/// <summary>StdfReader.Core 的簡易回歸測試：以內建 sample 與合成 STDF 驗證 StdfDocumentLoader 的量測判定、繼承縮放、PIR/PRR 配對與各種不完整檔案的診斷；全部通過輸出 "PASS: N assertions" 並回傳 0。</summary>
 internal static class Program
 {
+    /// <summary>測試進入點；任何未捕捉的例外視為失敗，輸出例外類型與訊息並回傳 1。</summary>
     private static int Main()
     {
         try { return Run(); }
         catch (Exception ex) { Console.Error.WriteLine(ex.GetType().FullName + ": " + ex.Message); return 1; }
     }
 
+    /// <summary>執行所有測試：先驗證內建 sample（Fixtures\demo.stdf）的載入結果與各狀態數量，再以暫存合成檔驗證縮放、旗標判定與不完整結構的診斷。</summary>
     private static int Run()
     {
         int assertions = 0;
@@ -37,6 +40,7 @@ internal static class Program
         return 0;
     }
 
+    /// <summary>以多種旗標組合（TEST_FLG/PARM_FLG、no-limit、NaN/Infinity、重複 PIR、非 V4、缺 MRR、orphan PRR/PIR、big-endian、截斷檔）合成 STDF 驗證載入器的判定與診斷。</summary>
     private static void TestSynthetic(StdfDocumentLoader loader, Action<bool, string> check)
     {
         string path = Path.ChangeExtension(Path.GetTempFileName(), ".stdf");
@@ -105,6 +109,7 @@ internal static class Program
         finally { File.Delete(path); }
     }
 
+    /// <summary>把記錄寫入暫存 STDF 檔（little-endian）後載入，回傳 StdfDocument 供驗證；結束時刪除暫存檔。</summary>
     private static StdfDocument LoadRecords(StdfDocumentLoader loader, StdfRecord[] records)
     {
         string path = Path.ChangeExtension(Path.GetTempFileName(), ".stdf");

@@ -1,5 +1,6 @@
 namespace STDF
 {
+	/// <summary>P2020 測試記錄中單一晶片（chip）的一筆測項資料；由 CP2020（.log 記錄檔）或 CStdf（CSV 模式）剖析後產生，供 CStdf 轉換成 STDF PTR/PIR/PRR。</summary>
 	public class CChipData
 	{
 		public string FileName   { get; set; }

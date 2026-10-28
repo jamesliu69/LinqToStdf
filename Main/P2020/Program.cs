@@ -5,7 +5,7 @@ namespace STDF
 {
 	internal static class Program
 	{
-		/// <summary>The main entry point for the application.</summary>
+		/// <summary>The main entry point for the application. 應用程式進入點；P2020 專案目前主要作為程式庫使用，此表單供手動轉檔測試。</summary>
 		[STAThread]
 		private static void Main()
 		{

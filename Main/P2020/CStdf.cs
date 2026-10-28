@@ -11,29 +11,33 @@ using System.Text.RegularExpressions;
 
 namespace STDF
 {
-	/// <summary>STDF 檔案轉換處理類別   負責讀取 P2020 測試日誌和摘要檔案，解析資料並產生標準 STDF V4 格式檔案</summary>
+	/// <summary>STDF 檔案轉換處理類別   負責讀取 P2020 測試日誌和摘要檔案，解析資料並產生標準 STDF V4 格式檔案；亦支援以 CSV 測試資料（DETAIL/RESULT）作為輸入（_csvInput=true 時改走 CSV 剖析）。</summary>
 	public class CStdf
 	{
 		/// <summary>錯誤追蹤標籤，用於記錄日誌時標識異常來源</summary>
 		private const string LogTag = "[STDF-TRACE-ERR]";
+		/// <summary>整批彙總記錄（TSR/HBR/SBR 與 lot 級 PCR）使用的 HeadNumber（255）。</summary>
 		private const byte   SummaryHeadNumber = byte.MaxValue;
+		/// <summary>整批彙總記錄（TSR 與 lot 級 PCR）使用的 SiteNumber（0）。</summary>
 		private const byte   SummarySiteNumber = 0;
 
-		/// <summary>輸入日誌檔案的路徑</summary>
+		/// <summary>輸入日誌檔案的路徑；CSV 模式下為 CSV 檔案路徑（P2020 模式為記錄檔資料夾）。</summary>
 		private readonly string _logPath;
 
 		/// <summary>輸出 STDF 檔案的路徑</summary>
 		private readonly string _outputPath;
+		/// <summary>是否以 CSV 測試資料作為輸入；決定 AnalyzeFile 走 AnalyzeCsvFile 或 P2020 資料夾剖析。</summary>
 		private readonly bool _csvInput;
+		/// <summary>CSV 輸入是否出現 Retest 資料列；作為 MIR RetestCode 與 PCR RetestCount 的依據之一。</summary>
 		private bool _hasCsvRetest;
 
 		/// <summary>STDF 檔案寫入器，負責產生標準 STDF V4 格式輸出</summary>
 		private StdfFileWriter _stdfWriter;
 
-		/// <summary>摘要日誌檔案的路徑（目前與 _logPath 相同）</summary>
+		/// <summary>摘要日誌檔案的路徑（目前與 _logPath 相同；此欄位目前未被讀取）</summary>
 		private readonly string _summaryLog;
 
-		/// <summary>檔案參數物件，用於解析和儲存摘要檔案內容</summary>
+		/// <summary>檔案參數物件，用於解析和儲存摘要檔案內容；CSV 模式則由 CSV 檔本身的欄位填入批號與起訖時間</summary>
 		private CFileParam _fileParam;
 
 		/// <summary>P2020 日誌解析器，用於讀取和處理測試日誌檔案</summary>
@@ -119,6 +123,7 @@ namespace STDF
 			}
 		}
 
+		/// <summary>CSV 輸入模式的剖析：以 CP950 讀取 _logPath 的 CSV，驗證必要欄位與各列的判定/身分欄位，依身分鍵遞增分配 partId，將每列轉成 CChipData 加入 _p2020.ChipDataList，並把批號與起訖時間寫入 _fileParam。</summary>
 		private void AnalyzeCsvFile()
 		{
 			string[] headers;
@@ -292,6 +297,7 @@ namespace STDF
 			}
 		}
 
+		/// <summary>以 invariant culture 把字串解析為 float?：空白回 null；解析失敗、NaN/Infinity 或超出 float 範圍即拋 InvalidDataException。</summary>
 		private static float? ParseNullableFloat(string raw, int line, string field)
 		{
 			if(string.IsNullOrWhiteSpace(raw)) return null;
@@ -302,6 +308,7 @@ namespace STDF
 			return (float)value;
 		}
 
+		/// <summary>以 invariant culture 解析時間字串；CSV 模式視為 UTC+8 本地時間轉為 UTC，P2020 模式直接 ToUniversalTime()。</summary>
 		private DateTime ParseStdfTime(string value)
 		{
 			DateTime parsed = DateTime.Parse(value, CultureInfo.InvariantCulture);
@@ -310,6 +317,7 @@ namespace STDF
 				: parsed.ToUniversalTime();
 		}
 
+		/// <summary>切分單行 CSV：支援雙引號欄位與 "" 跳脫；引號未配對時拋 InvalidDataException。</summary>
 		private static string[] ParseCsvLine(string line)
 		{
 			List<string> fields = new List<string>();
@@ -820,6 +828,7 @@ namespace STDF
 			}
 		}
 
+		/// <summary>以正規表示式從字串抽出第一個數字並轉為 float；抽不到或轉換失敗回傳 null。</summary>
 		private static float? TryExtractFloat(string rawText)
 		{
 			if(string.IsNullOrWhiteSpace(rawText))
@@ -835,6 +844,7 @@ namespace STDF
 			return float.TryParse(match.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out float value) ? value : null;
 		}
 
+		/// <summary>把 "P"/"PASS" 正規化為 "P"、"F"/"FAIL" 正規化為 "F"（大小寫不敏感）；其餘回 null。</summary>
 		private static string NormalizePassFailResult(string passOrFailText)
 		{
 			string normalized = passOrFailText?.Trim();
@@ -850,8 +860,10 @@ namespace STDF
 			return null;
 		}
 
+		/// <summary>判定正規化後的判定文字是否為 "P"。</summary>
 		private static bool IsPassResult(string passOrFailText) => NormalizePassFailResult(passOrFailText) == "P";
 
+		/// <summary>把判定文字映射為 PTR TEST_FLG："MS_ER"→0x82、無法辨識→0x10（invalid）、"P"→0x00、"F"→0x80。</summary>
 		private static byte BuildPtrTestFlags(string passOrFailText)
 		{
 			const byte passFailInvalidMask = 0x10;
@@ -869,6 +881,7 @@ namespace STDF
 			return result == "P" ? (byte)0 : failMask;
 		}
 
+		/// <summary>從下限文字（空白時改用上限）剝除非字母字元取出單位字串；兩者皆無則回空字串。</summary>
 		private static string ExtractUnits(string lowLimitText, string highLimitText)
 		{
 			string unitsText = string.Empty;
@@ -885,6 +898,7 @@ namespace STDF
 			return unitsText;
 		}
 
+		/// <summary>把 Id&gt;0 的晶片依「FileName|Id|站點」分組成 PartSiteSummary（IsPass 為該組全部 PASS），驗證判定值（CSV 模式另允許 MS_ER），最後依 PartIndex、SiteNumber 排序。</summary>
 		private List<PartSiteSummary> BuildPartSiteSummaries(IEnumerable<CChipData> chipDataList)
 		{
 			List<PartSiteSummary> summaries     = new List<PartSiteSummary>();
@@ -920,11 +934,13 @@ namespace STDF
 			return summaries.OrderBy(summary => summary.PartIndex).ThenBy(summary => summary.SiteNumber).ToList();
 		}
 
+		/// <summary>把站點字串轉為 byte；解析失敗預設為 1。</summary>
 		private static byte NormalizeSite(string siteRaw)
 		{
 			return byte.TryParse(siteRaw, NumberStyles.Integer, CultureInfo.InvariantCulture, out byte siteNumber) ? siteNumber : (byte)1;
 		}
 
+		/// <summary>在 bin 清單中找出 BinPassFail 符合預期 P/F 的唯一 bin 編號；符合者不是恰一個即拋 InvalidDataException。</summary>
 		private static ushort ResolveBinNumberForOutcome(IEnumerable<BinSummary> bins, bool isPass)
 		{
 			string     expectedPassFail = isPass ? "P" : "F";
@@ -962,12 +978,14 @@ namespace STDF
 			TraceLogger.WriteLine($"{LogTag} stage=\"{stage ?? "N/A"}\" op={operation} inputFolder=\"{inputFolder ?? "N/A"}\" outputPath=\"{outputPath ?? "N/A"}\" filePath=\"{filePath ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" target=\"{targetRecord ?? "N/A"}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
 		}
 
+		/// <summary>以 TraceLogger 輸出單行 bin 對照錯誤追蹤（op/filePath/binKey/tokens/reason）。</summary>
 		private static void LogTraceError(string operation, string filePath, string binKey, IEnumerable<string> tokens, string reason)
 		{
 			string tokenText = tokens == null ? string.Empty : string.Join("|", tokens);
 			TraceLogger.WriteLine($"{LogTag} op={operation} filePath=\"{filePath ?? "N/A"}\" binKey=\"{binKey ?? "N/A"}\" tokens=\"{tokenText}\" reason=\"{reason ?? "N/A"}\"");
 		}
 
+		/// <summary>把 bin 對照字典（鍵=bin 編號、值=數量/P-F/名稱 token）解析成 BinSummary：鍵無法轉編號或無有效數量 token 時記追蹤後跳過/補 0，P/F 取第一個符合 token 否則依 bin 編號推斷；完全沒有有效 bin 時改由晶片資料統計出 PASS(bin 1)/FAIL(bin 2)。</summary>
 		private static IEnumerable<BinSummary> BuildBinSummaries(Dictionary<string, IEnumerable<string>> binMap, IEnumerable<CChipData> chipDataList)
 		{
 			List<BinSummary> bins = new List<BinSummary>();
@@ -1039,6 +1057,7 @@ namespace STDF
 			return bins;
 		}
 
+		/// <summary>用 \d+ 從字串抽出第一組數字並轉為 ushort；抽不到或轉換失敗回 false。</summary>
 		private static bool TryExtractUShort(string rawText, out ushort value)
 		{
 			value = 0;
@@ -1051,6 +1070,7 @@ namespace STDF
 			return match.Success && ushort.TryParse(match.Value, out value);
 		}
 
+		/// <summary>從腳位名稱的括號「( 數字 )」抽出腳位索引；無括號數字回 false。</summary>
 		private static bool TryExtractPinIndex(string pinName, out ushort pinIndex)
 		{
 			pinIndex = 0;
@@ -1068,6 +1088,7 @@ namespace STDF
 			return false;
 		}
 
+		/// <summary>取腳位名稱中 '(' 或空白前的第一個 token 當邏輯名稱。</summary>
 		private static string ExtractPinLogicalName(string pinName)
 		{
 			if(string.IsNullOrWhiteSpace(pinName))
@@ -1078,6 +1099,7 @@ namespace STDF
 			return match.Success ? match.Groups["name"].Value.Trim() : pinName.Trim();
 		}
 
+		/// <summary>把 bin token 的 "P"/"PASS" 正規化為 "P"、"F"/"FAIL" 正規化為 "F"（大小寫不敏感）；其餘回 null。</summary>
 		private static string NormalizePassFailToken(string token)
 		{
 			if(string.IsNullOrWhiteSpace(token))
@@ -1098,6 +1120,7 @@ namespace STDF
 			return null;
 		}
 
+		/// <summary>用 \d+ 從 token 抽出數字並轉為 uint；抽不到或轉換失敗回 null。</summary>
 		private static uint? TryParseCountToken(string token)
 		{
 			if(string.IsNullOrWhiteSpace(token))
@@ -1108,6 +1131,7 @@ namespace STDF
 			return match.Success && uint.TryParse(match.Value, out uint value) ? value : null;
 		}
 
+		/// <summary>bin 編號 1 推斷為 "P"，其餘為 "F"。</summary>
 		private static string InferPassFailFromBinNumber(ushort binNumber) => binNumber == 1 ? "P" : "F";
 
 		/// <summary>測試摘要資訊，用於彙整每個測試項目的統計數據</summary>

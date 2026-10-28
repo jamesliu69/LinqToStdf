@@ -13,6 +13,7 @@ using StdfReader.Core;
 
 namespace StdfReader
 {
+    /// <summary>STDF 桌面讀取器主表單：以三頁籤（摘要/記錄/量測與圖表）呈現 StdfDocumentLoader 載入的 STDF 檔；支援按鈕開檔、拖放單一檔案與命令列參數自動載入。</summary>
     internal sealed class MainForm : Form
     {
         private readonly Button openButton = new Button { Name = "OpenButton", Text = "開啟 STDF…", AutoSize = true };
@@ -31,12 +32,17 @@ namespace StdfReader
         private readonly Chart histogramChart = new Chart { Name = "HistogramChart", Dock = DockStyle.Fill };
         private readonly ToolTip measurementToolTip = new ToolTip();
         private readonly Label histogramNote = new Label { Name = "HistogramSampleNote", Dock = DockStyle.Bottom, AutoSize = true, Padding = new Padding(5) };
+        /// <summary>目前載入的 STDF 檔彙整結果；null 表示未載入。</summary>
         private StdfDocument document;
+        /// <summary>記錄頁目前顯示（經類型篩選）的記錄清單。</summary>
         private List<RecordEntry> currentRecords = new List<RecordEntry>();
+        /// <summary>量測頁目前顯示（經群組與 Part 篩選）的量測清單。</summary>
         private List<MeasurementEntry> currentMeasurements = new List<MeasurementEntry>();
+        /// <summary>是否正在背景載入檔案；載入中停用開檔與拖放。</summary>
         private bool isLoading;
 
 
+        /// <summary>建立主表單、組版面並綁定事件；若有命令列參數，顯示後自動載入第一個。</summary>
         public MainForm(string[] args)
         {
             Text = "STDF Reader";
@@ -56,6 +62,7 @@ namespace StdfReader
             Shown += (s, e) => { if (args != null && args.Length > 0) BeginLoad(args[0]); };
         }
 
+        /// <summary>組出主版面：頂部開檔列與狀態列、警告列，以及摘要/記錄（記錄表+屬性器分割）/量測與圖表三個頁籤。</summary>
         private void BuildLayout()
         {
             var header = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2, Padding = new Padding(8) };
@@ -84,6 +91,7 @@ namespace StdfReader
             tabs.TabPages[tabs.TabPages.Count - 1].Controls.Add(BuildMeasurementsContainer());
         }
 
+        /// <summary>建立摘要頁的 7 列標籤/值表（檔案、Lot ID、起訖時間、Part 統計、原始記錄統計、Diagnostics）。</summary>
         private void BuildSummaryPage()
         {
             var table = new TableLayoutPanel { Name = "SummaryTable", Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2, Padding = new Padding(18), AutoSizeMode = AutoSizeMode.GrowAndShrink };
@@ -100,6 +108,7 @@ namespace StdfReader
             }
         }
 
+        /// <summary>建立記錄頁工具列（類型篩選下拉）與記錄表的三個資料行（Offset/類型/記錄摘要）。</summary>
         private void BuildRecordsPage()
         {
             recordsToolbar.Controls.Clear();
@@ -116,6 +125,7 @@ namespace StdfReader
             };
         }
 
+        /// <summary>設定量測表的資料行與趨勢/直方圖兩張圖表的標題與軸；趨勢圖 Y 軸使用科學記號格式。</summary>
         private void BuildMeasurementsPage()
         {
             string[] headers = { "序號", "Part", "Head", "Site", "數值", "下限", "上限", "狀態", "說明" };
@@ -127,6 +137,7 @@ namespace StdfReader
             trendChart.ChartAreas["Main"].AxisY.LabelStyle.Format = "0.###E+0";
         }
 
+        /// <summary>組量測頁容器：上方測試群組/Part 選擇列，下方左右圖表（趨勢/直方圖）與量測表的上下分割。</summary>
         private Control BuildMeasurementsContainer()
         {
             var outer = new TableLayoutPanel { Name = "MeasurementsLayout", Dock = DockStyle.Fill, RowCount = 2, ColumnCount = 1, Padding = new Padding(6) };
@@ -149,6 +160,7 @@ namespace StdfReader
             return outer;
         }
 
+        /// <summary>為圖表加入 ChartArea、標題與圖例。</summary>
         private static void ConfigureChart(Chart chart, string title, string xTitle, string yTitle)
         {
             chart.ChartAreas.Add(new ChartArea("Main") { AxisX = { Title = xTitle, MajorGrid = { LineColor = Color.Gainsboro } }, AxisY = { Title = yTitle, MajorGrid = { LineColor = Color.Gainsboro } } });
@@ -156,6 +168,7 @@ namespace StdfReader
             chart.Legends.Add(new Legend("Legend"));
         }
 
+        /// <summary>以 OpenFileDialog（STDF 副檔名過濾）選單一檔案後載入；載入中忽略。</summary>
         private void OpenFile()
         {
             if (isLoading) return;
@@ -163,6 +176,7 @@ namespace StdfReader
                 if (dialog.ShowDialog(this) == DialogResult.OK) BeginLoad(dialog.FileName);
         }
 
+        /// <summary>載入 path 的進入點：呼叫 LoadFileAsync，失敗時清空畫面並顯示錯誤（表單已關閉則忽略）。</summary>
         private async void BeginLoad(string path)
         {
             try { await LoadFileAsync(path); }
@@ -175,6 +189,7 @@ namespace StdfReader
             }
         }
 
+        /// <summary>背景（Task.Run）以 StdfDocumentLoader 載入並顯示 STDF 檔；路徑空白或檔案不存在拋 FileNotFoundException，載入期間停用開檔按鈕。</summary>
         internal async Task LoadFileAsync(string path)
         {
             if (isLoading || IsDisposed) return;
@@ -194,11 +209,13 @@ namespace StdfReader
                 if (!IsDisposed && !Disposing) openButton.Enabled = true;
             }
         }
+        /// <summary>在頂部警告列以紅色顯示載入錯誤訊息。</summary>
         private void ShowLoadError(string message)
         {
             alertLabel.Text = message; alertLabel.BackColor = Color.MistyRose; alertLabel.ForeColor = Color.DarkRed; alertLabel.Visible = true;
         }
 
+        /// <summary>把載入結果填入 UI：警告列（不完整=紅、有診斷=黃）、摘要七欄、記錄類型篩選、測試群組與 Part 選擇器，並切到摘要頁、刷新量測圖表。</summary>
         private void DisplayDocument(StdfDocument doc)
         {
             alertLabel.Visible = !doc.IsComplete || doc.Diagnostics.Count > 0;
@@ -225,6 +242,7 @@ namespace StdfReader
             RefreshMeasurements();
         }
 
+        /// <summary>清空所有顯示：摘要值、記錄表/屬性器、選擇器、量測表與兩張圖表。</summary>
         private void ClearDocument()
         {
             foreach (var label in summaryValues) label.Text = "未提供";
@@ -234,6 +252,7 @@ namespace StdfReader
             ResetChartAxes(trendChart); histogramChart.Series.Clear(); histogramNote.Text = "";
         }
 
+        /// <summary>依記錄類型篩選記錄表（"全部類型"=不篩），並選取第一列顯示於屬性器。</summary>
         private void ApplyRecordFilter()
         {
             if (document == null) return;
@@ -244,6 +263,7 @@ namespace StdfReader
             ShowSelectedRecord();
         }
 
+        /// <summary>把目前選取的記錄以唯讀方式顯示於 PropertyGrid；UnknownRecord 改用 UnknownRecordView（含原始 hex）。</summary>
         private void ShowSelectedRecord()
         {
             var row = recordGrid.CurrentRow == null ? null : recordGrid.CurrentRow.DataBoundItem as RecordRow;
@@ -251,11 +271,13 @@ namespace StdfReader
             propertyGrid.SelectedObject = row.Entry.Record is UnknownRecord ? (object)new UnknownRecordView(row.Entry.Record as UnknownRecord) : new ReadOnlyRecordView(row.Entry.Record);
         }
 
+        /// <summary>把目前測試群組的完整標籤設為下拉的 ToolTip。</summary>
         private void UpdateTestSelectorToolTip()
         {
             var choice = groupSelector.SelectedItem as GroupChoice;
             measurementToolTip.SetToolTip(groupSelector, choice == null ? string.Empty : choice.Label);
         }
+        /// <summary>依選取的測試群組與 Part 過濾量測，更新量測表並重繪趨勢與直方圖。</summary>
         private void RefreshMeasurements()
         {
             var choice = groupSelector.SelectedItem as GroupChoice;
@@ -268,6 +290,7 @@ namespace StdfReader
             DrawHistogram(currentMeasurements);
         }
 
+        /// <summary>以點圖繪出有效量測（序號 vs 數值），並以虛線加上下限（取第一筆有界限的量測）。</summary>
         private void DrawTrend(List<MeasurementEntry> values)
         {
             trendChart.Series.Clear();
@@ -284,6 +307,7 @@ namespace StdfReader
             ResetChartAxes(trendChart);
         }
 
+        /// <summary>在圖表加一條水平的上下限虛線，橫跨量測序號範圍（單點時外擴 ±0.5）。</summary>
         private static void AddLimitLine(Chart chart, string name, double value, List<MeasurementEntry> values, Color color)
         {
             var line = new Series(name) { ChartType = SeriesChartType.Line, BorderDashStyle = ChartDashStyle.Dash, BorderWidth = 2, Color = color, ChartArea = "Main" };
@@ -293,6 +317,7 @@ namespace StdfReader
             line.Points.AddXY(min, value); line.Points.AddXY(max, value); chart.Series.Add(line);
         }
 
+        /// <summary>繪有效量測的直方圖：bin 數 min(20, max(3, ceil(√n)))，單一數值時畫成單欄；並在下方標註有效樣本數。</summary>
         private void DrawHistogram(List<MeasurementEntry> values)
         {
             histogramChart.Series.Clear();
@@ -314,6 +339,7 @@ namespace StdfReader
             ResetChartAxes(histogramChart);
         }
 
+        /// <summary>重設圖表所有軸的最小/最大/間隔並重算刻度。</summary>
         private static void ResetChartAxes(Chart chart)
         {
             foreach (ChartArea area in chart.ChartAreas)
@@ -324,18 +350,25 @@ namespace StdfReader
             }
         }
 
+        /// <summary>把單一軸的最小/最大/間隔還原為 NaN（自動）。</summary>
         private static void ResetAxis(Axis axis)
         {
             axis.Minimum = double.NaN;
             axis.Maximum = double.NaN;
             axis.Interval = double.NaN;
         }
+        /// <summary>量測數值存在且非 NaN/Infinity 才視為有效（可繪圖）。</summary>
         private static bool IsValid(MeasurementEntry m) { return m.Value.HasValue && !double.IsNaN(m.Value.Value) && !double.IsInfinity(m.Value.Value); }
+        /// <summary>時間同時以 UTC 與本地時區顯示；無值顯示「未提供」。</summary>
         private static string FormatDate(DateTime? utc) { return utc.HasValue ? utc.Value.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss 'UTC'", CultureInfo.InvariantCulture) + " / " + utc.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss '本地'", CultureInfo.InvariantCulture) : "未提供"; }
+        /// <summary>字串空白時顯示「未提供」。</summary>
         private static string TextOrMissing(string value) { return string.IsNullOrWhiteSpace(value) ? "未提供" : value; }
+        /// <summary>數值以科學記號顯示；無值顯示 N/A。</summary>
         private static string Number(double? value) { return value.HasValue ? value.Value.ToString("0.###E+0", CultureInfo.InvariantCulture) : "N/A"; }
 
+        /// <summary>拖放進入：非載入中且帶檔案資料時顯示複製游標。</summary>
         private void OnDragEnterFile(object sender, DragEventArgs e) { if (!isLoading && e.Data.GetDataPresent(DataFormats.FileDrop)) e.Effect = DragDropEffects.Copy; }
+        /// <summary>拖放放下：僅接受單一檔案，多檔或無檔顯示錯誤，單檔即開始載入。</summary>
         private void OnDragDropFile(object sender, DragEventArgs e)
         {
             if (isLoading) return;
@@ -344,8 +377,11 @@ namespace StdfReader
             BeginLoad(paths[0]);
         }
 
+        /// <summary>測試群組下拉的選項（GroupKey + 顯示標籤）。</summary>
         private sealed class GroupChoice { public string Key; public string Label; public override string ToString() { return Label; } }
+        /// <summary>Part 下拉的選項（Part 索引 + 顯示標籤）。</summary>
         private sealed class PartChoice { public int Index; public string Label; public override string ToString() { return Label; } }
+        /// <summary>記錄表的資料列：包裝 RecordEntry 提供 Offset/名稱/記錄摘要（合成記錄加註）。</summary>
         private sealed class RecordRow
         {
             public RecordEntry Entry { get; private set; }
@@ -354,6 +390,7 @@ namespace StdfReader
             public string Summary { get { return Entry.Record.RecordType + (Entry.Record.Synthesized ? "（合成）" : ""); } }
             public RecordRow(RecordEntry entry) { Entry = entry; }
         }
+        /// <summary>量測表的資料列：包裝 MeasurementEntry，數值/界限以科學記號顯示，繼承欄位加註「（繼承）」並彙整明細。</summary>
         private sealed class MeasurementRow
         {
             private readonly MeasurementEntry m;
@@ -368,6 +405,7 @@ namespace StdfReader
             public string Detail { get { var details = new List<string>(); if (!string.IsNullOrWhiteSpace(m.InvalidReason)) details.Add(m.InvalidReason); if (m.UnitsInherited) details.Add("單位繼承"); if (m.ResultScalingInherited) details.Add("結果縮放繼承"); if (m.LowLimitInherited) details.Add("下限繼承"); if (m.HighLimitInherited) details.Add("上限繼承"); return string.Join("；", details); } }
             public MeasurementRow(MeasurementEntry measurement) { m = measurement; }
         }
+        /// <summary>把記錄物件以 ICustomTypeDescriptor 包成唯讀檢視（所有屬性套 ReadOnlyPropertyDescriptor）供 PropertyGrid 顯示。</summary>
         [TypeConverter(typeof(ExpandableObjectConverter))]
         private sealed class ReadOnlyRecordView : ICustomTypeDescriptor
         {
@@ -390,6 +428,7 @@ namespace StdfReader
             public object GetPropertyOwner(PropertyDescriptor pd) { return instance; }
         }
 
+        /// <summary>唯讀屬性描述器：GetValue 委派原描述器，SetValue 拋 NotSupportedException（「STDF 原始記錄為唯讀。」）。</summary>
         private sealed class ReadOnlyPropertyDescriptor : PropertyDescriptor
         {
             private readonly PropertyDescriptor source;
@@ -407,6 +446,7 @@ namespace StdfReader
                 return new PropertyDescriptorCollection(source.GetChildProperties(instance, filter).Cast<PropertyDescriptor>().Select(p => new ReadOnlyPropertyDescriptor(p)).ToArray(), true);
             }
         }
+        /// <summary>UnknownRecord 的檢視模型：以 RecordType/Endian/RawHex（原始位元組 hex）呈現，並保留可展開的原始記錄。</summary>
         private sealed class UnknownRecordView
         {
             private readonly UnknownRecord record;

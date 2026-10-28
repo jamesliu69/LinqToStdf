@@ -27,11 +27,13 @@ namespace STDF
 		/// <summary>待處理的日誌檔案清單</summary>
 		private readonly List<string> _fileNames = new List<string>();
 
+		/// <summary>以單一日誌檔路徑建立解析器。</summary>
 		public CP2020(string filename)
 		{
 			_fileNames.Add(filename);
 		}
 
+		/// <summary>以多個日誌檔路徑建立解析器，AnalyzeFile 會依序全部剖析。</summary>
 		public CP2020(string[] filename)
 		{
 			_fileNames.AddRange(filename);
@@ -196,15 +198,18 @@ namespace STDF
 			}
 		}
 
+		/// <summary>IAnalyze 介面成員；目前無分組實作（空方法）。</summary>
 		public void GroupBySite()
 		{
 		}
 
+		/// <summary>IAnalyze 介面成員；P2020 資料來源不需額外計算量測值，保留原始字串值。</summary>
 		public void CalMeasure()
 		{
 			// 目前 P2020 資料來源不需要額外計算量測值。
 		}
 
+		/// <summary>IAnalyze 介面成員；目前無輸出實作（空方法），STDF 輸出改由 CStdf.DoWork 負責。</summary>
 		public void OutputFile()
 		{
 		}
@@ -303,7 +308,9 @@ namespace STDF
 		{
 		}
 
+		/// <summary>以單一日誌檔建立 CP2020；calOffset 參數目前未使用。</summary>
 		public static CP2020 CreateInstance(string   filename, int calOffset) => new CP2020(filename);
+		/// <summary>以多個日誌檔建立 CP2020；calOffset 參數目前未使用。</summary>
 		public static CP2020 CreateInstance(string[] filename, int calOffset) => new CP2020(filename);
 	}
 }

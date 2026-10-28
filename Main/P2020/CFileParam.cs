@@ -6,8 +6,10 @@ using System.Text.RegularExpressions;
 
 namespace STDF
 {
+	/// <summary>P2020 Summary log（測試摘要檔）解析器：讀取檔案後剖析標頭欄位（批號、起訖時間、測試程式名等）、各站數量統計、[HARDWARE BIN]/[SOFTWARE BIN] 區段與首個測試項目名稱，供 CStdf 轉換 STDF 時使用。</summary>
 	public class CFileParam
 	{
+		/// <summary>LogException 寫入 TraceLogger 時的行首標記。</summary>
 		private const string LogTag = "[STDF-TRACE-ERR]";
 		public const  string split  = "********************************************************************";
 		public        string ATEID;
@@ -41,8 +43,10 @@ namespace STDF
 		public string TestItemName = "O/S_Test";
 		public string TestProgramName;
 
+		/// <summary>以 Summary 檔案路徑建立解析器；實際剖析由 AnalyzeFile 執行。</summary>
 		public CFileParam(string filename) => FileName = filename;
 
+		/// <summary>逐行讀取 Summary 檔：剖析「名稱: 值」標頭、Total/Pass/Fail (By Sites) 數量列（N(%) 只取 N，並由欄數推得站點數）、bin 區段與首個測試項目名稱；讀檔失敗時記錄後重新拋出。</summary>
 		public void AnalyzeFile()
 		{
 			string[] logLines;
@@ -126,6 +130,7 @@ namespace STDF
 			}
 		}
 
+		/// <summary>嘗試把整行拆成「標頭名稱: 標頭值」；冒號前無文字（&lt;=0）視為非標頭行。</summary>
 		private static bool TryParseHeaderField(string line, out string headerName, out string headerValue)
 		{
 			headerName  = null;
@@ -141,6 +146,7 @@ namespace STDF
 			return true;
 		}
 
+		/// <summary>依標頭名稱把值（去除 '----------' 填充線後）寫入對應欄位；未列出的標頭名稱忽略。</summary>
 		private void ApplyHeaderValue(string headerName, string headerValue)
 		{
 			string normalized = headerValue?.Replace("----------", string.Empty).Trim() ?? string.Empty;
@@ -189,6 +195,7 @@ namespace STDF
 			}
 		}
 
+		/// <summary>從數量列抽出所有「N(%)」中的 N。</summary>
 		private static List<string> ExtractCountTokens(string line)
 		{
 			MatchCollection matches = Regex.Matches(line ?? string.Empty, @"(?<count>\d+)\(\d+(?:\.\d+)?%\)");
@@ -204,6 +211,7 @@ namespace STDF
 			return counts;
 		}
 
+		/// <summary>剖析 [HARDWARE BIN]/[SOFTWARE BIN] 區段：跳過表頭列後，以首 token（含括號註記時併次 token）為鍵、其餘 token 為值，遇到分隔線或下一個 [區段] 即停止；解析例外時記錄後重新拋出。</summary>
 		private Dictionary<string, IEnumerable<string>> ParseBinSection(string[] lines, string sectionName)
 		{
 			Dictionary<string, IEnumerable<string>> bins         = new Dictionary<string, IEnumerable<string>>();
@@ -260,6 +268,7 @@ namespace STDF
 			return bins;
 		}
 
+		/// <summary>從 [TEST ITEM] 區段取第一個「名稱 N(%)」列的名稱，作為整份 Summary 的代表測試項目名稱；無則回傳 null。</summary>
 		private static string ParseFirstTestItemName(string[] lines)
 		{
 			int testItemSectionIndex = Array.FindIndex(lines, line => string.Equals(line?.Trim(), "[TEST ITEM]", StringComparison.OrdinalIgnoreCase));
@@ -294,6 +303,7 @@ namespace STDF
 			return null;
 		}
 
+		/// <summary>把例外詳情（操作、檔案、區段、行號、原始輸入等）以單行結構化格式交由 TraceLogger 寫入檔案日誌與 Console.Error。</summary>
 		private static void LogException(string operation, Exception ex, string filePath, string section, string testItem, string site, string pin, string rawInputValue, string keyRawValue, int lineNumber)
 		{
 			string safeMessage = ex?.Message?.Replace(Environment.NewLine, " ");

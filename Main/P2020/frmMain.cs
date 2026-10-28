@@ -10,12 +10,17 @@ namespace STDF
 {
 	public partial class frmMain : Form
 	{
+		/// <summary>LogEntryPointException 寫入 Console.Error 時的行首標記，用於辨識 P2020 分析/轉檔流程的錯誤追蹤輸出。</summary>
 		private const string     LogTag = "[STDF-TRACE-ERR]";
+		/// <summary>目前載入的測試參數檔（Summary log）剖析結果；由 btnAnalyzeSource_Click 建立與剖析。</summary>
 		private       CFileParam _fileParam;
+		/// <summary>目前載入的 P2020 測試記錄（.txt 記錄檔）剖析結果；由 btnAnalyzeSource_Click 建立與剖析。</summary>
 		private       CP2020     _p2020;
 
+		/// <summary>初始化表單元件。</summary>
 		public frmMain() => InitializeComponent();
 
+		/// <summary>以 btnAnalyzeSource_Click 剖析好的 _p2020 與 _fileParam，將每筆 CChipData 寫成 PIR/PTR/PRR，外加固定 FAR/ATR/MIR/SDR/PMR/PGR/TSR/HBR/SBR/PCR/MRR，輸出到寫死路徑 C:\STDFATDF\jamesliu_test.stdf；失敗時記錄追蹤後重新拋出。</summary>
 		private void btnGenerateStdf_Click(object sender, EventArgs e)
 		{
 			// 將分析結果輸出成 STDF 檔案。
@@ -280,6 +285,7 @@ namespace STDF
 			}
 		}
 
+		/// <summary>剖析寫死路徑的 P2020 測試記錄資料夾（*.txt）與 Summary log，將結果存入 _p2020 與 _fileParam 供產生 STDF 使用；並以碼錶量測剖析耗時輸出到 Console。</summary>
 		private void btnAnalyzeSource_Click(object sender, EventArgs e)
 		{
 			// 可在這裡切換不同 P2020 資料來源做轉檔測試。
@@ -308,6 +314,7 @@ namespace STDF
 			//C:\Users\USER1\Documents\Pti_Doc\Project\Jerry\P2020\P2020_Data Log\Data Log
 		}
 
+		/// <summary>把 UI 進入點的例外訊息與堆疊以單行結構化格式寫入 Console.Error；不寫入檔案日誌。</summary>
 		private static void LogEntryPointException(string stage, Exception ex, string inputFolder, string outputPath, string target)
 		{
 			string safeMessage = ex?.Message?.Replace(Environment.NewLine, " ");

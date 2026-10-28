@@ -8,8 +8,10 @@ using System.Linq;
 
 namespace StdfReader.Core
 {
+    /// <summary>將 STDF V4 檔載入為 StdfDocument：逐記錄剖析，配對 PIR/PRR 成料件、PTR 成量測（套用同測試編號預設值與 10^exponent 縮放），並在結構不完整時記錄診斷。</summary>
     public sealed class StdfDocumentLoader
     {
+        /// <summary>載入 path 指定的 STDF 檔：跳過串流頭尾記錄、驗證 FAR 版本為 V4、收集 MIR/MRR 批次資訊、配對料件與量測；任何結構問題（缺 MRR、PIR/PRR 不符、截斷等）都會加進 Diagnostics 並令 IsComplete=false，不拋出例外。</summary>
         public StdfDocument Load(string path)
         {
             var doc = new StdfDocument { FilePath = Path.GetFullPath(path), IsComplete = true };
@@ -69,6 +71,7 @@ namespace StdfReader.Core
             return doc;
         }
 
+        /// <summary>把一筆 PTR 轉成 MeasurementEntry：以 defaults 內同測試編號的首筆 PTR 補繼承欄位（單位、縮放指數、上下限），套用縮放與 no-limit 旗標，判定 Pass/Fail/Unknown/Invalid 狀態。</summary>
         private static void AddMeasurement(StdfDocument doc, Ptr p, Dictionary<string, int> active, Dictionary<uint, Ptr> defaults)
         {
             int part; int? partIndex = active.TryGetValue(Key(p.HeadNumber, p.SiteNumber), out part) ? (int?)part : null;
@@ -92,6 +95,7 @@ namespace StdfReader.Core
             doc.Measurements.Add(m);
         }
 
+        /// <summary>把 float 乘上 10^exponent；結果非有限值（NaN/Infinity）時回傳 null。</summary>
         private static double? Scale(float? value, sbyte exponent)
         {
             if (!value.HasValue) return null;
@@ -99,6 +103,7 @@ namespace StdfReader.Core
             return IsFinite(scaled) ? (double?)scaled : null;
         }
         private static bool IsFinite(double value) { return !double.IsNaN(value) && !double.IsInfinity(value); }
+        /// <summary>PIR/PRR 配對用的 head:site 鍵；缺值時以 1:1 視之。</summary>
         private static string Key(byte? head, byte? site) { return (head ?? 1) + ":" + (site ?? 1); }
     }
 }

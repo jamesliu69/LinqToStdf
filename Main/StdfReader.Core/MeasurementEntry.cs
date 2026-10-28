@@ -1,5 +1,6 @@
 namespace StdfReader.Core
 {
+    /// <summary>單筆 PTR 量測結果；由 StdfDocumentLoader 套用同測試編號的預設值與 10^exponent 縮放後產生。</summary>
     public sealed class MeasurementEntry
     {
         public long Sequence { get; set; }
@@ -24,7 +25,9 @@ namespace StdfReader.Core
         public bool ResultScalingInherited { get; set; }
         public bool LowLimitInherited { get; set; }
         public bool HighLimitInherited { get; set; }
+        /// <summary>分組鍵："TestNumber|HeadNumber|SiteNumber|Units"，供相同測項/站點的量測歸為同一組。</summary>
         public string GroupKey { get { return TestNumber + "|" + HeadNumber + "|" + SiteNumber + "|" + (Units ?? ""); } }
+        /// <summary>顯示名稱："測試文字 (編號) [Hhead/Ssite] 單位"。</summary>
         public string DisplayName { get { return (TestText ?? "Test") + " (" + TestNumber + ") [H" + HeadNumber + "/S" + SiteNumber + "] " + Units; } }
     }
 }

@@ -3,6 +3,7 @@ using System.IO;
 
 namespace STDF
 {
+	/// <summary>將含時間戳的追蹤訊息同時附加寫入 {應用程式目錄}\logs\stdf-trace-{日期}.log 與 Console.Error；寫檔失敗時僅輸出 Console.Error 並附失敗原因。</summary>
 	public static class TraceLogger
 	{
 		private static readonly object SyncRoot = new object();
