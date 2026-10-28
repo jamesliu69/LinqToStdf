@@ -7,15 +7,18 @@ namespace STDF
 	public static class TraceLogger
 	{
 		private static readonly object SyncRoot = new object();
+		internal static Func<DateTime> NowProvider = () => DateTime.Now;
+		internal static Func<string> LogDirectoryProvider = () => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
 
 		public static void WriteLine(string message)
 		{
-			string line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {message}";
+		DateTime now = NowProvider();
+		string line = $"{now:yyyy-MM-dd HH:mm:ss.fff} {message}";
 
 			try
 			{
-				string logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
-				string logFilePath  = Path.Combine(logDirectory,                          $"stdf-trace-{DateTime.Now:yyyy-MM-dd}.log");
+				string logDirectory = LogDirectoryProvider();
+				string logFilePath  = Path.Combine(logDirectory,                          $"stdf-trace-{now:yyyy-MM-dd}.log");
 
 				lock(SyncRoot)
 				{
@@ -25,11 +28,16 @@ namespace STDF
 			}
 			catch(Exception ex)
 			{
-				Console.Error.WriteLine(line);
-				Console.Error.WriteLine($"[STDF-TRACE-ERR] op=TraceLogger.WriteLine target=\"daily-log-file\" message=\"{ex.Message}\" stack=\"{ex.StackTrace}\"");
+				try { Console.Error.WriteLine(line); Console.Error.WriteLine($"[STDF-TRACE-ERR] op=TraceLogger.WriteLine target=\"daily-log-file\" exception=\"{ex}\""); }
+				catch { try { System.Diagnostics.Debug.WriteLine("[STDF-TRACE-ERR] daily log write failed; stderr unavailable."); } catch { } }
 				return;
 			}
-			Console.Error.WriteLine(line);
+			try { Console.Error.WriteLine(line); } catch { try { System.Diagnostics.Debug.WriteLine(line); } catch { } }
+		}
+
+		public static void Log(string level, string operation, string details, Exception exception = null)
+		{
+			WriteLine($"level={level} op=\"{operation}\" {details ?? string.Empty}{(exception == null ? string.Empty : " exception=\"" + exception + "\"")}");
 		}
 	}
 }

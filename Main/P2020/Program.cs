@@ -1,5 +1,6 @@
 using System;
 using System.Windows.Forms;
+using STDF;
 
 namespace STDF
 {
@@ -9,10 +10,24 @@ namespace STDF
 		[STAThread]
 		private static void Main()
 		{
-			// 目前 P2020 專案作為元件使用，若要直接啟動介面可取消下列註解。
-			Application.EnableVisualStyles();
-			Application.SetCompatibleTextRenderingDefault(false);
-			Application.Run(new frmMain());
+			Application.ThreadException += (s, e) => HandleFatal("UI.Unhandled", e.Exception);
+			AppDomain.CurrentDomain.UnhandledException += (s, e) => { Environment.ExitCode = 1; SafeLog("FATAL", "AppDomain.Unhandled", "application=P2020 terminating=" + e.IsTerminating, e.ExceptionObject as Exception); };
+			try { TraceLogger.Log("INFO", "Application.Start", "application=P2020"); Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false); Application.Run(new frmMain()); }
+			catch (Exception ex) { HandleFatal("Application.StartFailed", ex); }
+			finally { SafeLog("INFO", "Application.Stop", "application=P2020", null); }
+		}
+
+		private static void HandleFatal(string operation, Exception ex)
+		{
+			Environment.ExitCode = 1;
+			SafeLog("FATAL", operation, "application=P2020", ex);
+			try { MessageBox.Show("P2020 發生錯誤，應用程式即將關閉。\n\n" + ex?.Message, "P2020", MessageBoxButtons.OK, MessageBoxIcon.Error); } catch { }
+			try { Application.Exit(); } catch { }
+		}
+
+		private static void SafeLog(string level, string operation, string details, Exception ex)
+		{
+			try { TraceLogger.Log(level, operation, details, ex); } catch { try { System.Diagnostics.Debug.WriteLine("P2020: failed to write application log."); } catch { } }
 		}
 	}
 }

@@ -62,3 +62,7 @@ See [Example Usage]
 dotnet build Main/StdfReader.Tests/StdfReader.Tests.csproj -c Release
 .\Main\StdfReader.Tests\bin\Release\StdfReader.Tests.exe
 ```
+
+## 應用程式日誌
+
+StdfConverter、StdfReader 與 P2020 共用追蹤日誌，寫在各執行檔旁的 `logs\stdf-trace-yyyy-MM-dd.log`，依本機日期每日分檔並以附加方式寫入。每筆包含時間、等級、操作/狀態、相關輸入與輸出路徑；發生例外時記錄完整例外鏈與堆疊。若日誌無法寫入，會嘗試輸出到 `stderr`，不可用時退回 `Debug` 輸出；不改寫到其他磁碟位置。

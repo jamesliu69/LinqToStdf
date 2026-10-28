@@ -10,7 +10,7 @@ namespace STDF
 {
 	public partial class frmMain : Form
 	{
-		/// <summary>LogEntryPointException 寫入 Console.Error 時的行首標記，用於辨識 P2020 分析/轉檔流程的錯誤追蹤輸出。</summary>
+		/// <summary>LogEntryPointException 傳給共用每日追蹤日誌的操作標記。</summary>
 		private const string     LogTag = "[STDF-TRACE-ERR]";
 		/// <summary>目前載入的測試參數檔（Summary log）剖析結果；由 btnAnalyzeSource_Click 建立與剖析。</summary>
 		private       CFileParam _fileParam;
@@ -314,11 +314,10 @@ namespace STDF
 			//C:\Users\USER1\Documents\Pti_Doc\Project\Jerry\P2020\P2020_Data Log\Data Log
 		}
 
-		/// <summary>把 UI 進入點的例外訊息與堆疊以單行結構化格式寫入 Console.Error；不寫入檔案日誌。</summary>
+		/// <summary>把 UI 進入點的操作、路徑與完整例外鏈寫入共用每日追蹤日誌。</summary>
 		private static void LogEntryPointException(string stage, Exception ex, string inputFolder, string outputPath, string target)
 		{
-			string safeMessage = ex?.Message?.Replace(Environment.NewLine, " ");
-			Console.Error.WriteLine($"{LogTag} stage=\"{stage}\" op=UIEntryPoint inputFolder=\"{inputFolder ?? "N/A"}\" outputPath=\"{outputPath ?? "N/A"}\" target=\"{target ?? "N/A"}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
+			TraceLogger.Log("ERROR", stage, $"input=\"{inputFolder ?? "N/A"}\" output=\"{outputPath ?? "N/A"}\" target=\"{target ?? "N/A"}\"", ex);
 		}
 	}
 }

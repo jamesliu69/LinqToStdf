@@ -4,11 +4,18 @@ using Stdf.Records.V4;
 using System;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Threading.Tasks;
+using System.Threading;
+using System.Windows.Forms;
+using System.Windows.Forms.DataVisualization.Charting;
 
 /// <summary>StdfReader.Core 的簡易回歸測試：以內建 sample 與合成 STDF 驗證 StdfDocumentLoader 的量測判定、繼承縮放、PIR/PRR 配對與各種不完整檔案的診斷；全部通過輸出 "PASS: N assertions" 並回傳 0。</summary>
 internal static class Program
 {
     /// <summary>測試進入點；任何未捕捉的例外視為失敗，輸出例外類型與訊息並回傳 1。</summary>
+    [STAThread]
     private static int Main()
     {
         try { return Run(); }
@@ -36,6 +43,7 @@ internal static class Program
         try { check(!loader.Load(empty).IsComplete, "空檔必須回報不完整"); }
         finally { File.Delete(empty); }
         TestSynthetic(loader, check);
+        TestTrend(check);
         Console.WriteLine("PASS: " + assertions + " assertions");
         return 0;
     }
@@ -93,6 +101,13 @@ internal static class Program
             check(!noMrr.IsComplete && noMrr.Diagnostics.Any(d => d.Contains("MRR")), "缺少 MRR 必須不完整");
             var orphan = LoadRecords(loader, new StdfRecord[] { new Far { CpuType = 2, StdfVersion = 4 }, new Prr { HeadNumber = 9, SiteNumber = 9 }, new Mrr { FinishTime = new DateTime(2026, 1, 1) } });
             check(!orphan.IsComplete && orphan.Diagnostics.Any(d => d.Contains("PRR")), "orphan PRR 必須診斷且不完整");
+            var orphanPtr = LoadRecords(loader, new StdfRecord[] { new Far { CpuType = 2, StdfVersion = 4 }, new Mir(), new Ptr { TestNumber = 1, HeadNumber = 9, SiteNumber = 9, Result = 4 }, new Mrr { FinishTime = new DateTime(2026, 1, 1) } });
+            check(!orphanPtr.IsComplete && orphanPtr.Diagnostics.Any(d => d.Contains("PTR")), "有結果的 orphan PTR 必須診斷且不完整");
+            check(orphanPtr.Measurements.Count == 1 && orphanPtr.Measurements[0].PartIndex == null && orphanPtr.Measurements[0].Value == 4, "orphan PTR 應保留數值供檢查，不捏造 part");
+            var invalidOrphanPtr = LoadRecords(loader, new StdfRecord[] { new Far { CpuType = 2, StdfVersion = 4 }, new Ptr { TestNumber = 1, TestFlags = 0x82, Result = null }, new Mrr { FinishTime = new DateTime(2026, 1, 1) } });
+            check(!invalidOrphanPtr.IsComplete && invalidOrphanPtr.Measurements.Count == 1 && invalidOrphanPtr.Measurements[0].Status == "Invalid", "已執行但無結果的 orphan PTR 不可誤當純預設而靜默略過");
+            var defaultPtr = LoadRecords(loader, new StdfRecord[] { new Far { CpuType = 2, StdfVersion = 4 }, new Mir(), new Ptr { TestNumber = 1, TestFlags = 0x12, Result = null, Units = "V", HighLimit = 10 }, new Pir { HeadNumber = 1, SiteNumber = 1 }, new Ptr { TestNumber = 1, HeadNumber = 1, SiteNumber = 1, Result = 8 }, new Prr { HeadNumber = 1, SiteNumber = 1 }, new Mrr { FinishTime = new DateTime(2026, 1, 1) } });
+            check(defaultPtr.IsComplete && defaultPtr.Measurements.Count == 1 && defaultPtr.Measurements[0].HighLimit == 10 && defaultPtr.Measurements[0].Units == "V", "PIR 外首筆純預設 PTR 合法且只供繼承，不算量測");
             var pending = LoadRecords(loader, new StdfRecord[] { new Far { CpuType = 2, StdfVersion = 4 }, new Pir { HeadNumber = 9, SiteNumber = 9 }, new Mrr { FinishTime = new DateTime(2026, 1, 1) } });
             check(!pending.IsComplete && pending.Parts[0].Status == "Unknown" && pending.Diagnostics.Any(d => d.Contains("PIR")), "未配對 PIR 必須保留 unknown 並不完整");
 
@@ -102,11 +117,77 @@ internal static class Program
                 using (var writer = new StdfFileWriter(big, Endian.Big)) writer.WriteRecords(new StdfRecord[] { new Far { CpuType = 1, StdfVersion = 4 }, new Mir { LotId = "BE" }, new Mrr { FinishTime = new DateTime(2026, 1, 1) } });
                 check(loader.Load(big).IsComplete, "big-endian FAR/MIR/MRR 應載入完整");
                 using (var stream = new FileStream(big, FileMode.Open, FileAccess.Write)) stream.SetLength(stream.Length - 2);
-                check(!loader.Load(big).IsComplete, "截斷檔應回報不完整");
+                var partial = loader.Load(big);
+                check(!partial.IsComplete, "截斷檔應回報不完整");
+                var exceptionProperty = partial.GetType().GetProperty("LoadException", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                var loadException = (Exception)exceptionProperty.GetValue(partial);
+                check(loadException != null && !string.IsNullOrWhiteSpace(loadException.StackTrace), "截斷檔 partial 結果保留原始例外與 stack");
+                string logDirectory = Path.Combine(Path.GetTempPath(), "StdfReaderPartialLog-" + Guid.NewGuid().ToString("N"));
+                var logger = Assembly.Load("CSTDF").GetType("STDF.TraceLogger", true);
+                var directoryProvider = logger.GetField("LogDirectoryProvider", BindingFlags.NonPublic | BindingFlags.Static);
+                var oldProvider = directoryProvider.GetValue(null);
+                try
+                {
+                    directoryProvider.SetValue(null, new Func<string>(() => logDirectory));
+                    var formType = Assembly.Load("StdfReader").GetType("StdfReader.MainForm", true);
+                    var form = (Form)Activator.CreateInstance(formType, new object[] { new string[0] });
+                    using (form)
+                    {
+                        formType.GetMethod("BeginLoad", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(form, new object[] { big });
+                        var deadline = DateTime.UtcNow.AddSeconds(10);
+                        while (!Directory.Exists(logDirectory) && DateTime.UtcNow < deadline) { Application.DoEvents(); Thread.Sleep(20); }
+                        while (Directory.Exists(logDirectory) && !Directory.GetFiles(logDirectory, "stdf-trace-*.log").Any() && DateTime.UtcNow < deadline) { Application.DoEvents(); Thread.Sleep(20); }
+                        while (Directory.Exists(logDirectory) && Directory.GetFiles(logDirectory, "stdf-trace-*.log").Any() && !File.ReadAllText(Directory.GetFiles(logDirectory, "stdf-trace-*.log").Single()).Contains("Load.Partial") && DateTime.UtcNow < deadline) { Application.DoEvents(); Thread.Sleep(20); }
+                        var dailyLog = Directory.GetFiles(logDirectory, "stdf-trace-*.log").Single();
+                        string logText = File.ReadAllText(dailyLog);
+                        check(logText.Contains("Load.Partial") && logText.Contains(loadException.GetType().FullName) && logText.Contains(loadException.StackTrace.Split(new[] { Environment.NewLine }, StringSplitOptions.None)[0]), "partial load 日誌保留例外原因與 stack");
+                        formType.GetMethod("BeginLoad", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(form, new object[] { big + ".missing" });
+                        var stateLabel = (Label)formType.GetField("stateLabel", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(form);
+                        var openButton = (Button)formType.GetField("openButton", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(form);
+                        deadline = DateTime.UtcNow.AddSeconds(10);
+                        while (!stateLabel.Text.StartsWith("載入失敗：", StringComparison.Ordinal) && DateTime.UtcNow < deadline) { Application.DoEvents(); Thread.Sleep(20); }
+                        check(stateLabel.Text.StartsWith("載入失敗：", StringComparison.Ordinal) && openButton.Enabled, "載入錯誤清除狀態並恢復開檔按鈕");
+                    }
+                }
+                finally
+                {
+                    directoryProvider.SetValue(null, oldProvider);
+                    if (Directory.Exists(logDirectory)) Directory.Delete(logDirectory, true);
+                }
             }
             finally { File.Delete(big); }
         }
         finally { File.Delete(path); }
+    }
+
+    private static void TestTrend(Action<bool, string> check)
+    {
+        var formType = Assembly.Load("StdfReader").GetType("StdfReader.MainForm", true);
+        using (var form = (Form)Activator.CreateInstance(formType, new object[] { new string[0] }))
+        {
+            var values = new List<MeasurementEntry> {
+                new MeasurementEntry { Sequence = 1, Value = 4, HighLimit = 5, Status = "Pass" },
+                new MeasurementEntry { Sequence = 2, Value = 8, LowLimit = 2, HighLimit = 10, Status = "Pass" },
+                new MeasurementEntry { Sequence = 3, Value = 7, Status = "Pass" }
+            };
+            formType.GetMethod("DrawTrend", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(form, new object[] { values });
+            var chart = (Chart)formType.GetField("trendChart", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(form);
+            var high = chart.Series["上限"].Points;
+            check(high.Count == 2 && high[0].XValue == 1 && high[0].YValues[0] == 5 && high[1].XValue == 2 && high[1].YValues[0] == 10, "圖表上限應逐筆顯示 5、10，缺值不延伸");
+            var low = chart.Series["下限"].Points;
+            check(low.Count == 1 && low[0].XValue == 2 && low[0].YValues[0] == 2, "圖表下限僅顯示有下限的量測");
+            check(chart.Series["有效 PTR"].Points.Count == 3, "不同界限不可遺失有效量測");
+            var evidence = Environment.GetEnvironmentVariable("STDF_TREND_EVIDENCE");
+            if (!string.IsNullOrEmpty(evidence))
+            {
+                form.Show();
+                var tabs = (TabControl)formType.GetField("tabs", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(form);
+                tabs.SelectedIndex = 2;
+                Application.DoEvents();
+                chart.SaveImage(evidence, ChartImageFormat.Png);
+                form.Close();
+            }
+        }
     }
 
     /// <summary>把記錄寫入暫存 STDF 檔（little-endian）後載入，回傳 StdfDocument 供驗證；結束時刪除暫存檔。</summary>

@@ -8,6 +8,7 @@ namespace StdfReader.Core
         public string FilePath { get; set; }
         /// <summary>檔案是否完整載入；任何診斷（格式錯誤、PIR/PRR 配對失敗、缺 MRR 等）都會設為 false。</summary>
         public bool IsComplete { get; set; }
+        public Exception LoadException { get; internal set; }
         /// <summary>不完整或警告原因的清單，與 IsComplete=false 對應。</summary>
         public List<string> Diagnostics { get; } = new List<string>();
         public List<RecordEntry> Records { get; } = new List<RecordEntry>();

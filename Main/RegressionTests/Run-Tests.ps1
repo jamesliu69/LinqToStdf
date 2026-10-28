@@ -25,4 +25,8 @@ if ($LASTEXITCODE -ne 0) {
 
 $testExecutable = Join-Path $PSScriptRoot "bin\$Configuration\LinqToStdf.RegressionTests.exe"
 & $testExecutable
+$testExitCode = $LASTEXITCODE
+$readerTestExecutable = Join-Path $PSScriptRoot "..\StdfReader.Tests\bin\$Configuration\StdfReader.Tests.exe"
+& $readerTestExecutable
+if ($testExitCode -ne 0) { exit $testExitCode }
 exit $LASTEXITCODE

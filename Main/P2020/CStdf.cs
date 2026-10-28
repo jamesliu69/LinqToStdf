@@ -113,6 +113,10 @@ namespace STDF
 				}
 
 				_fileParam = new CFileParam(summaryPath);
+				if(logFiles.Concat(new[] { summaryPath }).Any(path => string.Equals(Path.GetFullPath(path), Path.GetFullPath(_outputPath), StringComparison.OrdinalIgnoreCase)))
+				{
+					throw new InvalidOperationException("P2020 來源 Log/Summary 與 STDF 輸出檔不可相同。");
+				}
 				_fileParam.AnalyzeFile();
 			}
 			catch(Exception e)
@@ -582,7 +586,7 @@ namespace STDF
 
 							try
 							{
-								measurementValue = TryExtractFloat(chip.strMeasureValue) ?? TryExtractFloat(chip.strMaxMeasureValue) ?? TryExtractFloat(chip.strMinMeasureValue);
+								measurementValue = _csvInput ? ParseNullableFloat(chip.strMeasureValue, 0, "Meas") : TryExtractFloat(chip.strMeasureValue) ?? TryExtractFloat(chip.strMaxMeasureValue) ?? TryExtractFloat(chip.strMinMeasureValue);
 							}
 							catch(Exception ex)
 							{
@@ -593,12 +597,12 @@ namespace STDF
 							ptr.TestText = string.IsNullOrWhiteSpace(chip.ErrorText) ? chip.Comment : $"{chip.Comment}: {chip.ErrorText}";
 							ptr.AlarmId  = " ";
 
-							if(TryExtractFloat(chip.LowLimit) is float lowLimitValue)
+							if((_csvInput ? ParseNullableFloat(chip.LowLimit, 0, "Lower") : TryExtractFloat(chip.LowLimit)) is float lowLimitValue)
 							{
 								ptr.LowLimit = lowLimitValue;
 							}
 
-							if(TryExtractFloat(chip.HighLimit) is float highLimitValue)
+							if((_csvInput ? ParseNullableFloat(chip.HighLimit, 0, "Upper") : TryExtractFloat(chip.HighLimit)) is float highLimitValue)
 							{
 								ptr.HighLimit = highLimitValue;
 							}
@@ -971,11 +975,10 @@ namespace STDF
 			}
 		}
 
-		/// <summary>記錄異常資訊到追蹤日誌（擴充版本）   提供更豐富的異常記錄，包含工作流程階段、輸入輸出路徑等資訊</summary>
+		/// <summary>記錄異常資訊至每日追蹤日誌，包含工作流程階段、輸入輸出路徑及完整例外鏈。</summary>
 		private static void LogException(string operation, Exception ex, string filePath, string testItem, string site, string pin, string rawInputValue, string targetRecord, string stage = null, string inputFolder = null, string outputPath = null)
 		{
-			string safeMessage = ex?.Message?.Replace(Environment.NewLine, " ");
-			TraceLogger.WriteLine($"{LogTag} stage=\"{stage ?? "N/A"}\" op={operation} inputFolder=\"{inputFolder ?? "N/A"}\" outputPath=\"{outputPath ?? "N/A"}\" filePath=\"{filePath ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" target=\"{targetRecord ?? "N/A"}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
+			TraceLogger.Log("ERROR", operation, $"stage=\"{stage ?? "N/A"}\" inputFolder=\"{inputFolder ?? "N/A"}\" outputPath=\"{outputPath ?? "N/A"}\" filePath=\"{filePath ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" target=\"{targetRecord ?? "N/A"}\"", ex);
 		}
 
 		/// <summary>以 TraceLogger 輸出單行 bin 對照錯誤追蹤（op/filePath/binKey/tokens/reason）。</summary>

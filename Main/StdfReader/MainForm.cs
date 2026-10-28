@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 using Stdf;
 using StdfReader.Core;
+using STDF;
 
 namespace StdfReader
 {
@@ -179,9 +180,11 @@ namespace StdfReader
         /// <summary>載入 path 的進入點：呼叫 LoadFileAsync，失敗時清空畫面並顯示錯誤（表單已關閉則忽略）。</summary>
         private async void BeginLoad(string path)
         {
+            TraceLogger.Log("INFO", "Load.Start", "application=StdfReader input=\"" + path + "\"");
             try { await LoadFileAsync(path); }
             catch (Exception ex)
             {
+                TraceLogger.Log("ERROR", "Load.Failed", "application=StdfReader input=\"" + path + "\"", ex);
                 if (IsDisposed || Disposing) return;
                 document = null; ClearDocument();
                 ShowLoadError("載入失敗：" + ex.Message);
@@ -202,6 +205,7 @@ namespace StdfReader
                 document = loaded;
                 DisplayDocument(loaded);
                 stateLabel.Text = (loaded.IsComplete ? "載入完成：" : "部分載入：") + loaded.FilePath;
+                TraceLogger.Log(loaded.IsComplete ? "INFO" : "WARN", loaded.IsComplete ? "Load.Success" : "Load.Partial", "application=StdfReader input=\"" + path + "\" diagnostics=\"" + string.Join(" | ", loaded.Diagnostics) + "\"", loaded.LoadException);
             }
             finally
             {
@@ -290,7 +294,7 @@ namespace StdfReader
             DrawHistogram(currentMeasurements);
         }
 
-        /// <summary>以點圖繪出有效量測（序號 vs 數值），並以虛線加上下限（取第一筆有界限的量測）。</summary>
+        /// <summary>以點圖繪出有效量測及每筆量測自己的上下限，避免把不同測試條件的界限延伸到其他量測。</summary>
         private void DrawTrend(List<MeasurementEntry> values)
         {
             trendChart.Series.Clear();
@@ -298,23 +302,21 @@ namespace StdfReader
             var series = new Series("有效 PTR") { ChartType = SeriesChartType.Point, MarkerStyle = MarkerStyle.Circle, MarkerSize = 7, Color = Color.RoyalBlue, ChartArea = "Main" };
             foreach (var m in values.Where(m => m.Value.HasValue && IsValid(m))) series.Points.AddXY(m.Sequence, m.Value.Value);
             trendChart.Series.Add(series);
-            var limits = values.FirstOrDefault(m => m.LowLimit.HasValue || m.HighLimit.HasValue);
-            if (limits != null)
-            {
-                if (limits.LowLimit.HasValue) AddLimitLine(trendChart, "下限", limits.LowLimit.Value, values, Color.DarkOrange);
-                if (limits.HighLimit.HasValue) AddLimitLine(trendChart, "上限", limits.HighLimit.Value, values, Color.Firebrick);
-            }
+            AddLimitPoints(trendChart, "下限", values, m => m.LowLimit, Color.DarkOrange);
+            AddLimitPoints(trendChart, "上限", values, m => m.HighLimit, Color.Firebrick);
             ResetChartAxes(trendChart);
         }
 
-        /// <summary>在圖表加一條水平的上下限虛線，橫跨量測序號範圍（單點時外擴 ±0.5）。</summary>
-        private static void AddLimitLine(Chart chart, string name, double value, List<MeasurementEntry> values, Color color)
+        /// <summary>依量測序號繪製有界限的點；缺少界限的量測不補值或連線。</summary>
+        private static void AddLimitPoints(Chart chart, string name, List<MeasurementEntry> values, Func<MeasurementEntry, double?> selectLimit, Color color)
         {
-            var line = new Series(name) { ChartType = SeriesChartType.Line, BorderDashStyle = ChartDashStyle.Dash, BorderWidth = 2, Color = color, ChartArea = "Main" };
-            double min = values.Count == 0 ? 0 : values.Min(m => m.Sequence);
-            double max = values.Count == 0 ? 1 : values.Max(m => m.Sequence);
-            if (min == max) { min -= 0.5; max += 0.5; }
-            line.Points.AddXY(min, value); line.Points.AddXY(max, value); chart.Series.Add(line);
+            var limits = new Series(name) { ChartType = SeriesChartType.Point, MarkerStyle = MarkerStyle.Cross, MarkerSize = 9, Color = color, ChartArea = "Main" };
+            foreach (var m in values)
+            {
+                var limit = selectLimit(m);
+                if (limit.HasValue) limits.Points.AddXY(m.Sequence, limit.Value);
+            }
+            if (limits.Points.Count > 0) chart.Series.Add(limits);
         }
 
         /// <summary>繪有效量測的直方圖：bin 數 min(20, max(3, ceil(√n)))，單一數值時畫成單欄；並在下方標註有效樣本數。</summary>

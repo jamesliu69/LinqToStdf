@@ -7,7 +7,7 @@ namespace StdfConverter
 {
 	public partial class frmMain : Form
 	{
-		/// <summary>LogEntryPointException 寫入 Console.Error 時的行首標記，用於辨識 STDF 轉換流程的錯誤追蹤輸出。</summary>
+		/// <summary>LogEntryPointException 傳給共用每日追蹤日誌的操作標記。</summary>
 		private const    string LogTag              = "[STDF-TRACE-ERR]";
 		/// <summary>預設的 P2020 測試記錄資料夾路徑，作為資料夾模式的初始路徑與瀏覽對話框的備選路徑。</summary>
 		private readonly string _defaultInputFolder = @"D:\Pti_Doc\AutoScan Log\2026-04-01-16-39-45";
@@ -75,13 +75,15 @@ namespace StdfConverter
 
 			try
 			{
+				TraceLogger.Log("INFO", "Convert.Start", $"input=\"{inputPath}\" output=\"{outputPath}\"");
 				CStdf stdfConverter = new CStdf(inputPath, outputPath, csvInput);
 				stdfConverter.DoWork();
+				TraceLogger.Log("INFO", "Convert.Success", $"input=\"{inputPath}\" output=\"{outputPath}\"");
 				MessageBox.Show(this, $"STDF 產生完成。\n\n輸出檔案：{outputPath}", "STDF 產生器", MessageBoxButtons.OK, MessageBoxIcon.Information);
 			}
 			catch(Exception ex)
 			{
-				LogEntryPointException("btnGenerateStdf_Click", ex, inputPath, outputPath);
+				TraceLogger.Log("ERROR", "Convert.Failed", $"input=\"{inputPath}\" output=\"{outputPath}\"", ex);
 				MessageBox.Show(this, $"產生 STDF 失敗：{ex.Message}", "STDF 產生器", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}
 		}
@@ -105,11 +107,10 @@ namespace StdfConverter
 			txtInputFolder.Text = csvInput ? _lastCsvInputPath : _lastFolderInputPath;
 		}
 
-		/// <summary>把 UI 進入點的例外訊息與堆疊以單行結構化格式寫入 Console.Error；不寫入檔案日誌。</summary>
+		/// <summary>把 UI 進入點的操作、路徑與完整例外鏈寫入共用每日追蹤日誌。</summary>
 		private static void LogEntryPointException(string stage, Exception ex, string inputFolder, string outputPath)
 		{
-			string safeMessage = ex?.Message?.Replace(Environment.NewLine, " ");
-			Console.Error.WriteLine($"{LogTag} stage=\"{stage}\" op=UIEntryPoint inputFolder=\"{inputFolder ?? "N/A"}\" outputPath=\"{outputPath ?? "N/A"}\" target=\"DoWork\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
+			TraceLogger.Log("ERROR", stage, $"input=\"{inputFolder ?? "N/A"}\" output=\"{outputPath ?? "N/A"}\"", ex);
 		}
 
 		//選取 P2020 資料夾或單一 CSV 檔案

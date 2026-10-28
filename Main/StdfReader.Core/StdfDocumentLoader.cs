@@ -65,7 +65,7 @@ namespace StdfReader.Core
                     else if (record is Ptr ptr) AddMeasurement(doc, ptr, active, defaults);
                 }
             }
-            catch (Exception ex) { doc.IsComplete = false; doc.Diagnostics.Add(ex.Message); }
+            catch (Exception ex) { doc.IsComplete = false; doc.LoadException = ex; doc.Diagnostics.Add(ex.Message); }
             if (doc.EndTimeUtc == null) { doc.IsComplete = false; doc.Diagnostics.Add("缺少 MRR 結束記錄。"); }
             foreach (var index in active.Values.Distinct()) { doc.Parts[index].Status = "Unknown"; doc.Diagnostics.Add("PIR 沒有相符的 PRR：part " + index); doc.IsComplete = false; }
             return doc;
@@ -75,6 +75,13 @@ namespace StdfReader.Core
         private static void AddMeasurement(StdfDocument doc, Ptr p, Dictionary<string, int> active, Dictionary<uint, Ptr> defaults)
         {
             int part; int? partIndex = active.TryGetValue(Key(p.HeadNumber, p.SiteNumber), out part) ? (int?)part : null;
+            // STDF V4 允許首筆無結果 PTR 在 PIR 外提供預設值；它不是量測。
+            if (!partIndex.HasValue)
+            {
+                if ((p.TestFlags & 0x10) != 0 && p.ParametricFlags == 0 && !defaults.ContainsKey(p.TestNumber)) { defaults[p.TestNumber] = p; return; }
+                doc.IsComplete = false;
+                doc.Diagnostics.Add("PTR 沒有相符的 PIR (H" + p.HeadNumber + "/S" + p.SiteNumber + ")，TestNumber=" + p.TestNumber + ".");
+            }
             Ptr d; defaults.TryGetValue(p.TestNumber, out d);
             var resultScale = p.ResultScalingExponent ?? d?.ResultScalingExponent ?? (sbyte)0;
             var lowScale = p.LowLimitScalingExponent ?? d?.LowLimitScalingExponent ?? (sbyte)0;

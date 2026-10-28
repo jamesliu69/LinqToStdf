@@ -303,11 +303,10 @@ namespace STDF
 			return null;
 		}
 
-		/// <summary>把例外詳情（操作、檔案、區段、行號、原始輸入等）以單行結構化格式交由 TraceLogger 寫入檔案日誌與 Console.Error。</summary>
+		/// <summary>把例外詳情（操作、檔案、區段、行號、原始輸入及完整例外鏈）交由 TraceLogger 寫入每日檔案日誌。</summary>
 		private static void LogException(string operation, Exception ex, string filePath, string section, string testItem, string site, string pin, string rawInputValue, string keyRawValue, int lineNumber)
 		{
-			string safeMessage = ex?.Message?.Replace(Environment.NewLine, " ");
-			TraceLogger.WriteLine($"{LogTag} op={operation} filePath=\"{filePath ?? "N/A"}\" section=\"{section ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" line=\"{lineNumber}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" keyRaw=\"{keyRawValue ?? "N/A"}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
+			TraceLogger.Log("ERROR", operation, $"filePath=\"{filePath ?? "N/A"}\" section=\"{section ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" line=\"{lineNumber}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" keyRaw=\"{keyRawValue ?? "N/A"}\"", ex);
 		}
 	}
 }

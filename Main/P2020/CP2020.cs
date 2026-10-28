@@ -54,10 +54,13 @@ namespace STDF
 		}
 
 		/// <summary>選取項目變更事件</summary>
-		public event EventHandler? evtSelectItem;
+		// 保留 IAnalyze 的事件訂閱契約；目前解析器尚未發出這兩個事件。
+#pragma warning disable CS0067
+		public event EventHandler evtSelectItem;
 
 		/// <summary>錯誤發生事件</summary>
-		public event EventHandler? evtErrorArise;
+		public event EventHandler evtErrorArise;
+#pragma warning restore CS0067
 
 		/// <summary>儲存路徑，用於指定輸出檔案的儲存位置</summary>
 		public string SavePath { get; set; }
@@ -296,11 +299,10 @@ namespace STDF
 			}
 		}
 
-		/// <summary>記錄異常資訊到追蹤日誌   標準化的異常記錄方法，包含操作名稱、檔案路徑、區段資訊等詳細內容</summary>
+		/// <summary>將操作、檔案與完整例外鏈記錄至每日追蹤日誌。</summary>
 		private static void LogException(string operation, Exception ex, string filePath, string section, string testItem, string site, string pin, string rawInputValue, string keyRawValue, int lineNumber)
 		{
-			string safeMessage = ex?.Message?.Replace(Environment.NewLine, " ");
-			TraceLogger.WriteLine($"{LogTag} op={operation} filePath=\"{filePath ?? "N/A"}\" section=\"{section ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" line=\"{lineNumber}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" keyRaw=\"{keyRawValue ?? "N/A"}\" message=\"{safeMessage}\" stack=\"{ex?.StackTrace}\"");
+			TraceLogger.Log("ERROR", operation, $"filePath=\"{filePath ?? "N/A"}\" section=\"{section ?? "N/A"}\" testItem=\"{testItem ?? "N/A"}\" line=\"{lineNumber}\" site=\"{site ?? "N/A"}\" pin=\"{pin ?? "N/A"}\" rawInput=\"{rawInputValue ?? "N/A"}\" keyRaw=\"{keyRawValue ?? "N/A"}\"", ex);
 		}
 
 		/// <summary>釋放資源</summary>

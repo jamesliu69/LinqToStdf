@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using STDF;
 using Stdf;
 using Stdf.Records.V4;
@@ -50,6 +51,12 @@ namespace LinqToStdf.RegressionTests
 
 			Run("Converter construction preserves existing output", ConstructorPreservesOutput);
 			Run("Converter construction does not create output", ConstructorDoesNotCreateOutput);
+			Run("Daily trace log appends and uses date filenames", TraceLoggerDailyAppend);
+			Run("Daily trace log selects a new date file", TraceLoggerCrossDay);
+			Run("Daily trace log concurrent writes remain intact", TraceLoggerConcurrentWrites);
+			Run("Trace logger records complete inner exception chain", TraceLoggerExceptionChain);
+			Run("Trace logger failure does not mask original exception", TraceLoggerFailureDoesNotMask);
+			Run("P2020 cleanup log records complete exception chain", P2020CleanupExceptionChain);
 			Run("Analysis failure preserves output", AnalysisFailurePreservesOutput);
 			Run("Analysis failure releases output", AnalysisFailureReleasesOutput);
 			Run("Late failure preserves output and cleans temporary files", LateFailurePreservesOutput);
@@ -60,6 +67,8 @@ namespace LinqToStdf.RegressionTests
 			Run("Locked destination remains intact and can be retried", LockedDestination);
 			Run("Relative output path works", RelativeOutputPath);
 			Run("Long output filename works", LongOutputFilename);
+			Run("P2020 source log and summary cannot be overwritten", SourceFilesPreserved);
+			Run("CSV numeric syntax survives raw PTR serialization", CsvNumericSyntax);
 			Run("CSV DETAIL round trip preserves source results", () => CsvRoundTrip("DETAIL_LOG_TEST-502_001.csv", 23, 18, 3, 2));
 			Run("CSV Taiwan local time is written as UTC epoch seconds", CsvTimestampWriting);
 			Run("CSV RESULT round trip remains a separate subset", () => CsvRoundTrip("RESULT_LOG_TEST-502_001.csv", 5, 0, 3, 2));
@@ -94,6 +103,86 @@ namespace LinqToStdf.RegressionTests
 				_failed++;
 				Console.WriteLine($"FAIL {name}: {ex.GetType().Name}: {ex.Message}");
 			}
+		}
+
+		private static void TraceLoggerDailyAppend()
+		{
+			WithTraceLogDirectory(directory => {
+				string path = Path.Combine(directory, "stdf-trace-2026-10-28.log");
+				TraceLogger.WriteLine("logger-test-first"); TraceLogger.WriteLine("logger-test-second");
+				string content = File.ReadAllText(path);
+				if(!content.Contains("logger-test-first") || !content.Contains("logger-test-second")) throw new InvalidOperationException("Expected both entries in the dated log.");
+				if(content.IndexOf("logger-test-first", StringComparison.Ordinal) > content.IndexOf("logger-test-second", StringComparison.Ordinal)) throw new InvalidOperationException("Log append order changed.");
+			});
+		}
+
+		private static void TraceLoggerConcurrentWrites()
+		{
+			WithTraceLogDirectory(directory => {
+				Parallel.For(0, 40, i => TraceLogger.WriteLine("logger-concurrent-" + i.ToString("D2")));
+				string[] lines = File.ReadAllLines(Path.Combine(directory, "stdf-trace-2026-10-28.log")).Where(line => line.Contains("logger-concurrent-")).ToArray();
+				if(lines.Length != 40) throw new InvalidOperationException("Concurrent log entries were lost or interleaved.");
+			});
+		}
+
+		private static void TraceLoggerCrossDay()
+		{
+			WithTraceLogDirectory(directory => {
+				var field = typeof(TraceLogger).GetField("NowProvider", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+				if(field == null) throw new InvalidOperationException("TraceLogger test clock is unavailable.");
+				var original = field.GetValue(null); DateTime first = new DateTime(2026, 10, 27, 23, 59, 59);
+				try { field.SetValue(null, new Func<DateTime>(() => first)); TraceLogger.WriteLine("logger-cross-day-first"); first = first.AddDays(1); TraceLogger.WriteLine("logger-cross-day-second"); }
+				finally { field.SetValue(null, original); }
+				foreach(var expected in new[] { "stdf-trace-2026-10-27.log", "stdf-trace-2026-10-28.log" })
+					if(!File.Exists(Path.Combine(directory, expected))) throw new InvalidOperationException("Missing daily file " + expected);
+			});
+		}
+
+		private static void TraceLoggerExceptionChain()
+		{
+			WithTraceLogDirectory(directory => {
+				var ex = new InvalidOperationException("outer logger sentinel", new IOException("inner logger sentinel"));
+				TraceLogger.Log("ERROR", "logger-test-exception", "operation=sentinel", ex);
+				string content = File.ReadAllText(Path.Combine(directory, "stdf-trace-2026-10-28.log"));
+				if(!content.Contains("outer logger sentinel") || !content.Contains("inner logger sentinel") || !content.Contains(typeof(IOException).FullName)) throw new InvalidOperationException("Complete exception chain was not recorded.");
+			});
+		}
+
+		private static void TraceLoggerFailureDoesNotMask()
+		{
+			WithTraceLogDirectory(directory => {
+				Directory.CreateDirectory(directory); Directory.Delete(directory); File.WriteAllText(directory, "occupy expected directory path");
+				TextWriter original = Console.Error;
+				try { Console.SetError(new ThrowingTextWriter()); TraceLogger.Log("ERROR", "logger-test-failure", "operation=sentinel", new InvalidOperationException("original failure sentinel")); }
+				finally { Console.SetError(original); File.Delete(directory); }
+			});
+		}
+
+		private static void P2020CleanupExceptionChain()
+		{
+			WithTraceLogDirectory(directory => {
+				var helper = typeof(CStdf).GetMethod("LogException", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+				var exception = new IOException("cleanup outer sentinel", new UnauthorizedAccessException("cleanup inner sentinel"));
+				helper.Invoke(null, new object[] { "DeleteTemporaryOutput", exception, "owned-temp-path", null, null, null, null, "TemporaryOutput", "cleanup-test", null, null });
+				string content = File.ReadAllText(Path.Combine(directory, "stdf-trace-2026-10-28.log"));
+				if(!content.Contains("cleanup outer sentinel") || !content.Contains("cleanup inner sentinel") || !content.Contains("UnauthorizedAccessException")) throw new InvalidOperationException("P2020 cleanup log omitted the complete exception chain.");
+			});
+		}
+
+		private static void WithTraceLogDirectory(Action<string> test)
+		{
+			string directory = Path.Combine(Path.GetTempPath(), "LinqToStdf-TraceLogger-" + Guid.NewGuid().ToString("N"));
+			var field = typeof(TraceLogger).GetField("LogDirectoryProvider", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+			var clock = typeof(TraceLogger).GetField("NowProvider", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+			if(field == null || clock == null) throw new InvalidOperationException("TraceLogger test seams are unavailable.");
+			object oldDirectory = field.GetValue(null), oldClock = clock.GetValue(null);
+			try { field.SetValue(null, new Func<string>(() => directory)); clock.SetValue(null, new Func<DateTime>(() => new DateTime(2026, 10, 28, 12, 0, 0))); test(directory); }
+			finally { field.SetValue(null, oldDirectory); clock.SetValue(null, oldClock); if(Directory.Exists(directory)) Directory.Delete(directory, true); if(File.Exists(directory)) File.Delete(directory); }
+		}
+
+		private sealed class ThrowingTextWriter : StringWriter
+		{
+			public override void WriteLine(string value) { throw new IOException("stderr sentinel"); }
 		}
 
 		/// <summary>以固定模式（i%3==0 或最後一位元）填 BitArray，用 Stdf.BinaryWriter 寫出後比對預期的 2 位元組長度前綴＋打包位元，再以 BinaryReader 讀回驗證每個位元；長度 0 期望讀回 null。</summary>
@@ -619,6 +708,65 @@ namespace LinqToStdf.RegressionTests
 				Check(mrrFinish == expectedFinish, $"Expected MRR raw UTC epoch seconds {expectedFinish}, got {mrrFinish}.");
 			}
 			finally { Directory.Delete(root, true); }
+		}
+
+		/// <summary>拒絕以來源 Log 或兩種 Summary 格式為輸出，並逐位元組確認來源保留。</summary>
+		private static void SourceFilesPreserved()
+		{
+			WithFixture((root, output) =>
+			{
+				File.Move(Path.Combine(root, "test_Summary.log"), Path.Combine(root, "summary.txt"));
+				foreach(string name in new[] { "test.log", "summary.txt" })
+				{
+					string path = Path.Combine(root, name);
+					byte[] before = File.ReadAllBytes(path);
+					ExpectThrows<InvalidOperationException>(() => new CStdf(root, Path.Combine(root, ".", name.ToUpperInvariant())).DoWork());
+					Check(before.SequenceEqual(File.ReadAllBytes(path)), "P2020 source bytes changed: " + name);
+					Check(!Directory.GetFiles(root, ".stdf-*.tmp").Any(), "Source rejection left temporary output.");
+				}
+				File.Move(Path.Combine(root, "summary.txt"), Path.Combine(root, "test_Summary.log"));
+				string summary = Path.Combine(root, "test_Summary.log");
+				byte[] original = File.ReadAllBytes(summary);
+				ExpectThrows<InvalidOperationException>(() => new CStdf(root, summary).DoWork());
+				Check(original.SequenceEqual(File.ReadAllBytes(summary)), "Summary log bytes changed.");
+			});
+		}
+
+		/// <summary>科學記號的量測值及上下限須在解析後與原始 PTR bytes 中保持一致。</summary>
+		private static void CsvNumericSyntax()
+		{
+			WithFixture((root, output) =>
+			{
+				string path = Path.Combine(root, "input.csv");
+				foreach(string number in new[] { "1.e-3", "-2.E+2", ".5E-1", "+3.25e+1" })
+				{
+					WriteSyntheticCsv(path, 1, 2, true);
+					string[] lines = File.ReadAllLines(path);
+					string[] fields = lines[1].Split(',');
+					fields[17] = fields[19] = fields[20] = number;
+					File.WriteAllLines(path, new[] { lines[0], string.Join(",", fields) });
+					new CStdf(path, output, true).DoWork();
+					float expected = float.Parse(number, System.Globalization.CultureInfo.InvariantCulture);
+					Ptr ptr = new StdfFile(output).GetRecordsEnumerable().OfType<Ptr>().Single();
+					Check(ptr.Result == expected && ptr.LowLimit == expected && ptr.HighLimit == expected, "CSV result/limits changed for " + number);
+					using(System.IO.BinaryReader reader = new System.IO.BinaryReader(File.OpenRead(output)))
+					{
+						while(reader.BaseStream.Position < reader.BaseStream.Length)
+						{
+							ushort length = reader.ReadUInt16();
+							byte type = reader.ReadByte(), subtype = reader.ReadByte();
+							byte[] payload = reader.ReadBytes(length);
+							if(type == 15 && subtype == 10)
+							{
+								Check(BitConverter.ToSingle(payload, 8) == expected, "Raw PTR result changed for " + number);
+								int limits = 12 + 1 + payload[12];
+								limits += 1 + payload[limits] + 4;
+								Check(BitConverter.ToSingle(payload, limits) == expected && BitConverter.ToSingle(payload, limits + 4) == expected, "Raw PTR limits changed for " + number);
+							}
+						}
+					}
+				}
+			});
 		}
 
 		/// <summary>產生合成 CSV（CP950 編碼）：oneRow=false 時含 7 列身分鍵變化（座標/DUT/Retest/Serial 各自不同），供 attempt 與哨兵值測試使用。</summary>

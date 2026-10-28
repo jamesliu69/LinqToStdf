@@ -23,7 +23,7 @@ error MSB3644: 找不到 .NETFramework,Version=v4.5.2 的參考組件
 補充事實：
 
 - 安裝 4.5.2 Developer Pack 需要系統管理員權限，且該目標套件僅存在於開發者機器，無法隨儲存庫散布。
-- .NET Framework 4.5.2 已於 2016-01 終止支援。
+- .NET Framework 4.5.2 已於 2022-04-26 終止支援。
 - 方案的實際交付物 `WindowsFormsApp1.exe` 原本就需要 4.7.2 執行階段，因此沒有任何部署因這次調整而失去支援。
 
 ## 決策

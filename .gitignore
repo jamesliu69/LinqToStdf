@@ -20,3 +20,4 @@ Main/Backup/70ea all pin data.txt
 
 # 自動加入的忽略規則
 *.log
+/.github
