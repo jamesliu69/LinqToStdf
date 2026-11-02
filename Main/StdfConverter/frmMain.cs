@@ -12,7 +12,7 @@ namespace StdfConverter
 		/// <summary>預設的 P2020 測試記錄資料夾路徑，作為資料夾模式的初始路徑與瀏覽對話框的備選路徑。</summary>
 		private readonly string _defaultInputFolder = @"D:\Pti_Doc\AutoScan Log\2026-04-01-16-39-45";
 		/// <summary>以執行檔目錄向上兩層推算的範例 DETAIL CSV 路徑，作為 CSV 模式的初始路徑與開檔對話框的備選路徑。</summary>
-		private readonly string _defaultCsvPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\SampleLog\DETAIL_LOG_TEST-502_001.csv"));
+		private readonly string _defaultCsvPath = ResolveDefaultCsvPath();
 		/// <summary>記錄套用目前介面前的輸入格式是否為 CSV，決定切換時輸入框路徑回存到 _lastCsvInputPath 或 _lastFolderInputPath。</summary>
 		private bool _lastCsvInput;
 		/// <summary>輸入格式是否已套用過一次；首次套用不回存輸入路徑，之後切換格式才回存。</summary>
@@ -34,6 +34,17 @@ namespace StdfConverter
 			txtOutputPath.Text  = _defaultOutputPath;
 		}
 
+		/// <summary>優先使用儲存庫根目錄的 DETAIL_LOG，找不到時回退至程式內建範例。</summary>
+		private static string ResolveDefaultCsvPath()
+		{
+			string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+			string fileName = "DETAIL_LOG_TEST-502_001.csv";
+			string sourcePath = Path.GetFullPath(Path.Combine(baseDirectory, @"..\..\..\..\SampleLog", fileName));
+			return File.Exists(sourcePath)
+				? sourcePath
+				: Path.GetFullPath(Path.Combine(baseDirectory, @"..\..\SampleLog", fileName));
+		}
+
 		/// <summary>驗證輸入路徑與輸出路徑後，建立 CStdf 執行轉換；過程以對話框回報成功或失敗，失敗時先寫入錯誤追蹤日誌。</summary>
 		private void btnGenerateStdf_Click(object sender, EventArgs e)
 		{
@@ -42,7 +53,7 @@ namespace StdfConverter
 
 			if(string.IsNullOrWhiteSpace(inputPath))
 			{
-				MessageBox.Show(this, cboInputFormat.SelectedIndex == 1 ? "請先選取 CSV 檔案。" : "請先選取資料夾。", "STDF 產生器", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+				MessageBox.Show(this, cboInputFormat.SelectedIndex == 1 ? "請先選取 DETAIL_LOG CSV 檔案。" : "請先選取資料夾。", "STDF 產生器", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 				txtInputFolder.Focus();
 				return;
 			}
@@ -56,7 +67,15 @@ namespace StdfConverter
 			bool csvInput = cboInputFormat.SelectedIndex == 1;
 			if(csvInput ? !File.Exists(inputPath) : !Directory.Exists(inputPath))
 			{
-				MessageBox.Show(this, csvInput ? $"找不到 CSV 檔案：{inputPath}" : $"找不到資料夾：{inputPath}", "STDF 產生器", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+				MessageBox.Show(this, csvInput ? $"找不到 DETAIL_LOG CSV 檔案：{inputPath}" : $"找不到資料夾：{inputPath}", "STDF 產生器", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+				txtInputFolder.Focus();
+				return;
+			}
+			if(csvInput &&
+			   (!Path.GetFileName(inputPath).StartsWith("DETAIL_LOG", StringComparison.OrdinalIgnoreCase) ||
+			    !string.Equals(Path.GetExtension(inputPath), ".csv", StringComparison.OrdinalIgnoreCase)))
+			{
+				MessageBox.Show(this, "CSV 分析轉檔僅接受 DETAIL_LOG*.csv，請選取 DETAIL_LOG 檔案。", "STDF 產生器", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 				txtInputFolder.Focus();
 				return;
 			}
@@ -99,11 +118,11 @@ namespace StdfConverter
 			}
 			_lastCsvInput = csvInput;
 			_inputFormatInitialized = true;
-			lblInputFolder.Text = csvInput ? "CSV 測試資料" : "P2020 測試記錄資料夾";
+			lblInputFolder.Text = csvInput ? "DETAIL_LOG CSV" : "P2020 測試記錄資料夾";
 			lblInputHint.Text = csvInput
-				? "選取單一 DETAIL 或 RESULT CSV；DETAIL 含完整測項，RESULT 可能只有部分結果。"
+				? "選取單一 DETAIL_LOG CSV 進行分析轉檔。"
 				: "選取包含 P2020 測試記錄與摘要檔的資料夾。";
-			btnBrowseInputFolder.Text = csvInput ? "選擇 CSV…" : "選擇資料夾…";
+			btnBrowseInputFolder.Text = csvInput ? "選擇 DETAIL_LOG…" : "選擇資料夾…";
 			txtInputFolder.Text = csvInput ? _lastCsvInputPath : _lastFolderInputPath;
 		}
 
@@ -113,15 +132,15 @@ namespace StdfConverter
 			TraceLogger.Log("ERROR", stage, $"input=\"{inputFolder ?? "N/A"}\" output=\"{outputPath ?? "N/A"}\"", ex);
 		}
 
-		//選取 P2020 資料夾或單一 CSV 檔案
+		/// <summary>依目前輸入格式開啟 P2020 資料夾或 DETAIL_LOG CSV 選擇器。</summary>
 		private void btnBrowseInputFolder_Click(object sender, EventArgs e)
 		{
 			if(cboInputFormat.SelectedIndex == 1)
 			{
 				using(OpenFileDialog dialog = new OpenFileDialog())
 				{
-					dialog.Title = "選取 CSV 檔案";
-					dialog.Filter = "CSV 檔案 (*.csv)|*.csv|所有檔案 (*.*)|*.*";
+				dialog.Title = "選取 DETAIL_LOG CSV 檔案";
+				dialog.Filter = "DETAIL_LOG CSV 檔案 (DETAIL_LOG*.csv)|DETAIL_LOG*.csv";
 					dialog.CheckFileExists = true;
 					dialog.FileName = File.Exists(txtInputFolder.Text) ? txtInputFolder.Text : _defaultCsvPath;
 					if(dialog.ShowDialog(this) == DialogResult.OK)

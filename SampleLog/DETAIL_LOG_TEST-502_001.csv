@@ -1,0 +1,25 @@
+Date,Time,LotNo,MachineNo,FOUP ID,2D ID,Serial,ModelNameMecha,ModelNameTester,DataStatus,StepJudge,PieceX,PieceY,PressCount,Step,Direction,Retest,Dut,Item,Pin1,Pin2,No,Point,PJudge,Result,Meas,Unit,Lower,Upper,Lower2,Upper2,Error
+UNIT檢查結束日期,UNIT檢查結束時間,Lot號碼,裝置識別 ID,FOUP ID,面板識別用 2D 碼,各工作表相對應的編號,Gats 模型名稱（硬體）,測試機模組名稱（軟體）,STEP狀態,STEP判斷結果。,面板上UNIT位於X位置,面板上UNIT位於Y位置,重試次數,現在的STEP檢查No.,面板的旋轉角度,實施再對位及再檢查的檢查次數,DUT編號,檢查項目,Pin 號碼 1,Pin 號碼 2,測試點編號 or 每筆FAIL的連續編號,點位編號,點位結果,詳細結果,測定值,測定值的單位,最低界限值,最高界限值,最低界限值2,最高界限值2,錯誤訊息
+ 2026/10/08, 17:32:09, TEST-502,1, , ,1, HighMaster, 1X1, Test done, LSL,1,1,1,1,180,0,1, SILVER,1400,1403,1,"  -F1400,S1401+F1403,S1402", L_NG, 50.00m,5.00E-02, ohm,1.00E-02,2.00E-01,0.00E+00,0.00E+00, 
+ 2026/10/08, 17:32:09, TEST-502,1, , ,1, HighMaster, 1X1, Test done, LSL,1,1,1,1,180,0,1, SILVER,1404,17,2,"  -F1404,S13+F17,S15", L_NG, 50.00m,5.00E-02, ohm,1.00E-02,2.00E-01,0.00E+00,0.00E+00, 
+ 2026/10/08, 17:32:10, TEST-502,1, , ,1, HighMaster, 1X1, Test done, LSL,1,1,1,2,180,0,1, SILVER,11,17,1,"  -F11,S13+F17,S15", L_NG, 50.00m,5.00E-02, ohm,1.00E-02,2.00E-01,0.00E+00,0.00E+00, 
+ 2026/10/08, 17:32:09, TEST-502,1, , ,1, HighMaster, 1X1, Test done, LSL,1,1,1,1,180,0,1, Cap-IRe,559,565,1,"  -F559,S561+F565,S563", PASS, >200M,2.00E+08, ohm,2.00E+05,0.00E+00,,, 
+ 2026/10/08, 17:32:10, TEST-502,1, , ,1, HighMaster, 1X1, Test done, LSL,1,1,1,2,180,0,1, Cap-IRe,559,565,1,"  -F559,S561+F565,S563", PASS, >200M,2.00E+08, ohm,2.00E+05,0.00E+00,,, 
+ 2026/10/08, 17:32:09, TEST-502,1, , ,1, HighMaster, 1X1, Test done, LSL,1,1,1,1,180,0,1, LCR,2200,2203,1,"  -F2200,S2201+F2203,S2202", PASS, (Cp)1.0000nF,1.00E-09, F,0.00E+00,0.00E+00,,, 
+ 2026/10/08, 17:32:09, TEST-502,1, , ,1, HighMaster, 1X1, Test done, LSL,1,1,1,1,180,0,1, LCR,2200,2203,1,"  -F2200,S2201+F2203,S2202", PASS, (Rp)0.0000ohm,0.00E+00, ohm,0.00E+00,0.00E+00,,, 
+ 2026/10/08, 17:32:09, TEST-502,1, , ,1, HighMaster, 1X1, Test done, LSL,1,1,1,1,180,0,1, LCR,2204,9,2,"  -F2204,S5+F9,S7", PASS, (Cp)1.0000nF,1.00E-09, F,0.00E+00,0.00E+00,,, 
+ 2026/10/08, 17:32:09, TEST-502,1, , ,1, HighMaster, 1X1, Test done, LSL,1,1,1,1,180,0,1, LCR,2204,9,2,"  -F2204,S5+F9,S7", PASS, (Rp)0.0000ohm,0.00E+00, ohm,0.00E+00,0.00E+00,,, 
+ 2026/10/08, 17:32:10, TEST-502,1, , ,1, HighMaster, 1X1, Test done, LSL,1,1,1,2,180,0,1, LCR,3,9,1,"  -F3,S5+F9,S7", PASS, (Cp)1.0000nF,1.00E-09, F,0.00E+00,0.00E+00,,, 
+ 2026/10/08, 17:32:10, TEST-502,1, , ,1, HighMaster, 1X1, Test done, LSL,1,1,1,2,180,0,1, LCR,3,9,1,"  -F3,S5+F9,S7", PASS, (Rp)0.0000ohm,0.00E+00, ohm,0.00E+00,0.00E+00,,, 
+ 2026/10/08, 17:32:09, TEST-502,1, , ,1, HighMaster, 1X1, Test done, LSL,1,1,1,1,180,0,1, IC-SHORT,559,565,1,"  -F559,S561+F565,S563", PASS, 0u,0.00E+00, A,0.00E+00,2.50E-06,,, 
+ 2026/10/08, 17:32:10, TEST-502,1, , ,1, HighMaster, 1X1, Test done, LSL,1,1,1,2,180,0,1, IC-SHORT,559,565,1,"  -F559,S561+F565,S563", PASS, 0u,0.00E+00, A,0.00E+00,2.50E-06,,, 
+ 2026/10/08, 17:32:11, TEST-502,1, , ,1, HighMaster, 1X1, Test done, svOther,1,1,1,1,270,0,1, SILVER,3,9,1,"  -F3,S5+F9,S7", MS_ER, [range no decision],1.00E+100, ohm,0.00E+00,1.00E-01,0.00E+00,0.00E+00, [range no decision]
+ 2026/10/08, 17:32:14, TEST-502,1, , ,1, HighMaster, 1X1, Test done, svOther,1,1,1,2,270,0,1, SILVER,3,9,1,"  -F3,S5+F9,S7", MS_ER, [range no decision],1.00E+100, ohm,0.00E+00,1.00E-01,0.00E+00,0.00E+00, [range no decision]
+ 2026/10/08, 17:32:11, TEST-502,1, , ,1, HighMaster, 1X1, Test done, svOther,1,1,1,1,270,0,1, Cap-IRe,559,565,1,"  -F559,S561+F565,S563", PASS, >200M,2.00E+08, ohm,2.00E+05,0.00E+00,,, 
+ 2026/10/08, 17:32:14, TEST-502,1, , ,1, HighMaster, 1X1, Test done, svOther,1,1,1,2,270,0,1, Cap-IRe,559,565,1,"  -F559,S561+F565,S563", PASS, >200M,2.00E+08, ohm,2.00E+05,0.00E+00,,, 
+ 2026/10/08, 17:32:11, TEST-502,1, , ,1, HighMaster, 1X1, Test done, svOther,1,1,1,1,270,0,1, LCR,3,9,1,"  -F3,S5+F9,S7", PASS, (Cp)1.0000nF,1.00E-09, F,0.00E+00,0.00E+00,,, 
+ 2026/10/08, 17:32:11, TEST-502,1, , ,1, HighMaster, 1X1, Test done, svOther,1,1,1,1,270,0,1, LCR,3,9,1,"  -F3,S5+F9,S7", PASS, (Rp)0.0000ohm,0.00E+00, ohm,0.00E+00,0.00E+00,,, 
+ 2026/10/08, 17:32:14, TEST-502,1, , ,1, HighMaster, 1X1, Test done, svOther,1,1,1,2,270,0,1, LCR,3,9,1,"  -F3,S5+F9,S7", PASS, (Cp)1.0000nF,1.00E-09, F,0.00E+00,0.00E+00,,, 
+ 2026/10/08, 17:32:14, TEST-502,1, , ,1, HighMaster, 1X1, Test done, svOther,1,1,1,2,270,0,1, LCR,3,9,1,"  -F3,S5+F9,S7", PASS, (Rp)0.0000ohm,0.00E+00, ohm,0.00E+00,0.00E+00,,, 
+ 2026/10/08, 17:32:11, TEST-502,1, , ,1, HighMaster, 1X1, Test done, svOther,1,1,1,1,270,0,1, IC-SHORT,559,565,1,"  -F559,S561+F565,S563", PASS, 0u,0.00E+00, A,0.00E+00,2.50E-06,,, 
+ 2026/10/08, 17:32:14, TEST-502,1, , ,1, HighMaster, 1X1, Test done, svOther,1,1,1,2,270,0,1, IC-SHORT,559,565,1,"  -F559,S561+F565,S563", PASS, 0u,0.00E+00, A,0.00E+00,2.50E-06,,, 
