@@ -90,6 +90,8 @@ namespace StdfReader
             recordPage.Controls.Add(recordsToolbar);
             tabs.TabPages.Add(new TabPage("量測與圖表") { Name = "MeasurementsTab" });
             tabs.TabPages[tabs.TabPages.Count - 1].Controls.Add(BuildMeasurementsContainer());
+            // 量測與圖表頁籤暫時下架：TabControl 不支援隱藏頁籤標頭，改為自集合移除（保留控制項供日後加回）。
+            tabs.TabPages.Remove(tabs.TabPages["MeasurementsTab"]);
         }
 
         /// <summary>建立摘要頁的 7 列標籤/值表（檔案、Lot ID、起訖時間、Part 統計、原始記錄統計、Diagnostics）。</summary>
