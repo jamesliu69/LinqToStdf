@@ -21,5 +21,29 @@ namespace StdfConverter.Properties {
                 return defaultInstance;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string LastFolderInputPath {
+            get {
+                return ((string)(this["LastFolderInputPath"]));
+            }
+            set {
+                this["LastFolderInputPath"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string LastCsvInputPath {
+            get {
+                return ((string)(this["LastCsvInputPath"]));
+            }
+            set {
+                this["LastCsvInputPath"] = value;
+            }
+        }
     }
 }

@@ -24,12 +24,14 @@ namespace StdfConverter
 		/// <summary>預設輸出檔路徑（桌面 testSTDF.stdf），輸出路徑空白時以此值補上。</summary>
 		private readonly string _defaultOutputPath  = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "testSTDF.stdf");
 
-		/// <summary>初始化表單元件、以預設路徑初始化兩種輸入格式的上次路徑、預選第一個輸入格式並填入預設輸出路徑。</summary>
+		/// <summary>初始化表單元件、以已保存或預設路徑初始化兩種輸入格式、預選第一個輸入格式並填入預設輸出路徑。</summary>
 		public frmMain()
 		{
 			InitializeComponent();
-			_lastFolderInputPath = _defaultInputFolder;
-			_lastCsvInputPath = _defaultCsvPath;
+			_lastFolderInputPath = Properties.Settings.Default.LastFolderInputPath;
+			if(string.IsNullOrWhiteSpace(_lastFolderInputPath)) _lastFolderInputPath = _defaultInputFolder;
+			_lastCsvInputPath = Properties.Settings.Default.LastCsvInputPath;
+			if(string.IsNullOrWhiteSpace(_lastCsvInputPath)) _lastCsvInputPath = _defaultCsvPath;
 			cboInputFormat.SelectedIndex = 0;
 			txtOutputPath.Text  = _defaultOutputPath;
 		}
@@ -132,6 +134,15 @@ namespace StdfConverter
 			TraceLogger.Log("ERROR", stage, $"input=\"{inputFolder ?? "N/A"}\" output=\"{outputPath ?? "N/A"}\"", ex);
 		}
 
+		/// <summary>左鍵雙擊輸入路徑時，沿用目前輸入格式的選擇器。</summary>
+		private void txtInputFolder_MouseDoubleClick(object sender, MouseEventArgs e)
+		{
+			if(e.Button == MouseButtons.Left)
+			{
+				btnBrowseInputFolder_Click(sender, e);
+			}
+		}
+
 		/// <summary>依目前輸入格式開啟 P2020 資料夾或 DETAIL_LOG CSV 選擇器。</summary>
 		private void btnBrowseInputFolder_Click(object sender, EventArgs e)
 		{
@@ -142,11 +153,27 @@ namespace StdfConverter
 				dialog.Title = "選取 DETAIL_LOG CSV 檔案";
 				dialog.Filter = "DETAIL_LOG CSV 檔案 (DETAIL_LOG*.csv)|DETAIL_LOG*.csv";
 					dialog.CheckFileExists = true;
-					dialog.FileName = File.Exists(txtInputFolder.Text) ? txtInputFolder.Text : _defaultCsvPath;
+					string inputPath = txtInputFolder.Text?.Trim();
+					bool inputFileExists = File.Exists(inputPath);
+					string csvPath = inputFileExists ? Path.GetFullPath(inputPath) : _defaultCsvPath;
+					string initialDirectory = inputFileExists
+						? Path.GetDirectoryName(csvPath)
+						: Directory.Exists(inputPath) ? Path.GetFullPath(inputPath) : Path.GetDirectoryName(csvPath);
+					if(Directory.Exists(initialDirectory))
+					{
+						dialog.InitialDirectory = initialDirectory;
+						dialog.FileName = Path.GetFileName(csvPath);
+					}
+					else
+					{
+						dialog.FileName = csvPath;
+					}
 					if(dialog.ShowDialog(this) == DialogResult.OK)
 					{
 						 txtInputFolder.Text = dialog.FileName;
 						 _lastCsvInputPath = dialog.FileName;
+						 Properties.Settings.Default.LastCsvInputPath = dialog.FileName;
+						 Properties.Settings.Default.Save();
 					}
 				}
 				return;
@@ -155,12 +182,18 @@ namespace StdfConverter
 			{
 				dialog.Description         = "請選取 P2020 測試資料夾";
 				dialog.ShowNewFolderButton = false;
-				dialog.SelectedPath        = Directory.Exists(txtInputFolder.Text) ? txtInputFolder.Text : _defaultInputFolder;
+				string inputPath = txtInputFolder.Text?.Trim();
+				string selectedPath = Directory.Exists(inputPath)
+					? Path.GetFullPath(inputPath)
+					: File.Exists(inputPath) ? Path.GetDirectoryName(Path.GetFullPath(inputPath)) : Path.GetFullPath(_defaultInputFolder);
+				dialog.SelectedPath = selectedPath;
 
 				if(dialog.ShowDialog(this) == DialogResult.OK)
 				{
 					txtInputFolder.Text = dialog.SelectedPath;
 					_lastFolderInputPath = dialog.SelectedPath;
+					Properties.Settings.Default.LastFolderInputPath = dialog.SelectedPath;
+					Properties.Settings.Default.Save();
 				}
 			}
 		}

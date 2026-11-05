@@ -58,6 +58,7 @@ namespace StdfConverter
 			this.txtInputFolder.Name = "txtInputFolder";
 			this.txtInputFolder.Size = new System.Drawing.Size(480, 22);
 			this.txtInputFolder.TabIndex = 1;
+			this.txtInputFolder.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.txtInputFolder_MouseDoubleClick);
 			//
 			// txtOutputPath
 			//
