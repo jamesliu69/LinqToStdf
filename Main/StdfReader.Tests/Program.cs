@@ -39,6 +39,7 @@ internal static class Program
         check(doc.Measurements.Count(m => m.Status == "Invalid") == 2, "sample 應有 2 個 invalid");
         check(doc.Measurements.Count(m => m.Value.HasValue && Math.Abs(m.Value.Value - 1e-9) < 1e-16) == 5, "sample 應保留 5 個 Cp=1E-9");
         check(doc.StartTimeUtc.HasValue && doc.StartTimeUtc.Value.Hour == 9 && doc.StartTimeUtc.Value.Minute == 32, "MIR 開始時間應為 UTC 09:32");
+        TestRecordPresentation(loader, doc, check);
         string empty = Path.GetTempFileName();
         try { check(!loader.Load(empty).IsComplete, "空檔必須回報不完整"); }
         finally { File.Delete(empty); }
@@ -46,6 +47,143 @@ internal static class Program
         TestTrend(check);
         Console.WriteLine("PASS: " + assertions + " assertions");
         return 0;
+    }
+
+    private static void TestRecordPresentation(StdfDocumentLoader loader, StdfDocument sample, Action<bool, string> check)
+    {
+        var formType = Assembly.Load("StdfReader").GetType("StdfReader.MainForm", true);
+        using (var form = (Form)Activator.CreateInstance(formType, new object[] { new string[0] }))
+        {
+            formType.GetField("document", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(form, sample);
+            formType.GetMethod("DisplayDocument", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(form, new object[] { sample });
+            var tree = (TreeView)formType.GetField("recordTree", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(form);
+            var fields = (DataGridView)formType.GetField("fieldGrid", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(form);
+            var nodes = Flatten(tree.Nodes).ToArray();
+            var recordNodes = nodes.Where(n => n.Tag is StdfReader.Core.RecordEntry).ToArray();
+            var ptrNodes = recordNodes.Where(n => ((StdfReader.Core.RecordEntry)n.Tag).Record is Ptr).ToArray();
+            Action showSelected = () => formType.GetMethod("ShowSelectedRecord", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(form, null);
+            check(ptrNodes.Length == 23, "記錄樹應保留並顯示全部 23 筆 PTR (tree=" + ptrNodes.Length + ", records=" + sample.Records.Count + ")");
+
+            var mirNode = recordNodes.First(n => ((StdfReader.Core.RecordEntry)n.Tag).Record is Mir);
+            tree.SelectedNode = mirNode;
+            showSelected();
+            check(FieldValue(fields, "REC_TYP") == "1" && FieldValue(fields, "REC_SUB") == "10", "MIR 應列出 REC_TYP/REC_SUB 標準代碼 (" + FieldValue(fields, "REC_TYP") + "/" + FieldValue(fields, "REC_SUB") + ")");
+            check(FieldValue(fields, "LOT_ID") == ((Mir)((StdfReader.Core.RecordEntry)mirNode.Tag).Record).LotId, "MIR LOT_ID 應顯示解析值");
+            check(FieldValue(fields, "PART_TYP") == "未提供／預設", "缺少 MIR 字串欄位不得冒出 0");
+
+            var cpNode = ptrNodes.FirstOrDefault(n => (((Ptr)((StdfReader.Core.RecordEntry)n.Tag).Record).TestText ?? "").Contains("(Cp)"));
+            if (cpNode != null)
+            {
+                tree.SelectedNode = cpNode;
+                showSelected();
+                double cpValue;
+                check(double.TryParse(FieldValue(fields, "RESULT"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out cpValue) && Math.Abs(cpValue - 1e-9) < 1e-16, "Cp 結果需保留科學記號精度");
+            }
+            var invalidNode = ptrNodes.FirstOrDefault(n => ((((Ptr)((StdfReader.Core.RecordEntry)n.Tag).Record).TestFlags & 0x02) != 0));
+            check(invalidNode != null, "sample 應含 invalid PTR 供 raw 值驗證");
+            if (invalidNode != null)
+            {
+                tree.SelectedNode = invalidNode;
+                showSelected();
+                check(FieldValue(fields, "RESULT") == "0E+0", "invalid PTR 的原始 RESULT=0 不得被抹成未提供");
+                check(FieldNote(fields, "RESULT").Contains("TEST_FLG=0x"), "invalid PTR 的說明需包含 TEST_FLG");
+            }
+        }
+
+        string tsrPath = Path.ChangeExtension(Path.GetTempFileName(), ".stdf");
+        try
+        {
+            var rawTsr = new List<byte> { 2, 0, 0, 10, 2, 4 };
+            rawTsr.AddRange(RawTsrRecord(1, null, null));
+            rawTsr.AddRange(RawTsrRecord(2, 4, 1.5f));
+            File.WriteAllBytes(tsrPath, rawTsr.ToArray());
+            var tsrDoc = loader.Load(tsrPath);
+            using (var form = (Form)Activator.CreateInstance(formType, new object[] { new string[0] }))
+            {
+                formType.GetField("document", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(form, tsrDoc);
+                formType.GetMethod("DisplayDocument", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(form, new object[] { tsrDoc });
+                var tree = (TreeView)formType.GetField("recordTree", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(form);
+                var fields = (DataGridView)formType.GetField("fieldGrid", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(form);
+                var nodes = Flatten(tree.Nodes).Where(n => n.Tag is StdfReader.Core.RecordEntry && ((StdfReader.Core.RecordEntry)n.Tag).Record is Tsr).ToArray();
+                check(nodes.Length == 2, "合成 TSR 紀錄應出現在樹中");
+                if (nodes.Length == 2)
+                {
+                    tree.SelectedNode = nodes.First(n => ((Tsr)((StdfReader.Core.RecordEntry)n.Tag).Record).TestNumber == 1);
+                    formType.GetMethod("ShowSelectedRecord", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(form, null);
+                    check(FieldValue(fields, "OPT_FLAG") == "未提供／預設" && FieldNote(fields, "OPT_FLAG") == "原始紀錄未提供 OPT_FLAG", "TSR 尾端合法省略 OPT_FLAG 應標示未提供");
+                    tree.SelectedNode = nodes.First(n => ((Tsr)((StdfReader.Core.RecordEntry)n.Tag).Record).TestNumber == 2);
+                    formType.GetMethod("ShowSelectedRecord", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(form, null);
+                    check(FieldValue(fields, "OPT_FLAG") == "4" && FieldNote(fields, "OPT_FLAG") == "原始位元組", "TSR OPT_FLAG 應顯示實際原始位元組");
+                }
+            }
+        }
+        finally { File.Delete(tsrPath); }
+
+        var paired = LoadRecords(loader, new StdfRecord[] {
+            new Far { CpuType = 2, StdfVersion = 4 }, new Mir { LotId = "TREE" },
+            new Pir { HeadNumber = 1, SiteNumber = 1 }, new Pir { HeadNumber = 2, SiteNumber = 1 }, new Pir { HeadNumber = 1, SiteNumber = 2 },
+            new Ptr { TestNumber = 11, HeadNumber = 1, SiteNumber = 1, Result = 1, TestFlags = 0 },
+            new Ptr { TestNumber = 22, HeadNumber = 2, SiteNumber = 1, Result = 2, TestFlags = 0 },
+            new Ptr { TestNumber = 33, HeadNumber = 1, SiteNumber = 2, Result = 3, TestFlags = 0 },
+            new Prr { HeadNumber = 1, SiteNumber = 1, PartId = "A", Failed = false },
+            new Prr { HeadNumber = 2, SiteNumber = 1, PartId = "B", Failed = false },
+            new Prr { HeadNumber = 1, SiteNumber = 2, PartId = "C", Failed = false },
+            new Mrr { FinishTime = new DateTime(2026, 1, 1) }
+        });
+        using (var form = (Form)Activator.CreateInstance(formType, new object[] { new string[0] }))
+        {
+            formType.GetField("document", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(form, paired);
+            formType.GetMethod("DisplayDocument", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(form, new object[] { paired });
+            var tree = (TreeView)formType.GetField("recordTree", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(form);
+            var filter = (ComboBox)formType.GetField("recordFilter", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(form);
+            filter.SelectedItem = "Ptr";
+            var branches = tree.Nodes.Cast<TreeNode>().Where(n => n.Text.StartsWith("Part ", StringComparison.Ordinal)).ToArray();
+            check(branches.Length == 3, "PTR 類型篩選需保留三個 Part 上下文");
+            check(branches.All(n =>
+            {
+                if (n.Nodes.Count != 1) return false;
+                var p = (Ptr)((StdfReader.Core.RecordEntry)n.Nodes[0].Tag).Record;
+                return n.Text.Contains("Part A") ? p.HeadNumber == 1 && p.SiteNumber == 1 : n.Text.Contains("Part B") ? p.HeadNumber == 2 && p.SiteNumber == 1 : p.HeadNumber == 1 && p.SiteNumber == 2;
+            }), "PTR 篩選下仍須依實際 Head/Site 掛回正確 Part");
+        }
+    }
+
+    private static IEnumerable<TreeNode> Flatten(TreeNodeCollection nodes)
+    {
+        foreach (TreeNode node in nodes)
+        {
+            yield return node;
+            foreach (var child in Flatten(node.Nodes)) yield return child;
+        }
+    }
+
+    private static byte[] RawTsrRecord(uint testNumber, byte? optionalFlags, float? testTime)
+    {
+        var payload = new List<byte> { 1, 1, (byte)'P' };
+        payload.AddRange(BitConverter.GetBytes(testNumber));
+        payload.AddRange(BitConverter.GetBytes(1u));
+        payload.AddRange(BitConverter.GetBytes(0u));
+        payload.AddRange(BitConverter.GetBytes(0u));
+        if (optionalFlags.HasValue)
+        {
+            payload.AddRange(new byte[] { 0, 0, 0, optionalFlags.Value });
+            if (testTime.HasValue) payload.AddRange(BitConverter.GetBytes(testTime.Value));
+        }
+        var record = new List<byte> { (byte)payload.Count, (byte)(payload.Count >> 8), 10, 30 };
+        record.AddRange(payload);
+        return record.ToArray();
+    }
+
+    private static string FieldValue(DataGridView grid, string code)
+    {
+        foreach (DataGridViewRow row in grid.Rows) if (Convert.ToString(row.Cells[0].Value) == code) return Convert.ToString(row.Cells[2].Value);
+        return null;
+    }
+
+    private static string FieldNote(DataGridView grid, string code)
+    {
+        foreach (DataGridViewRow row in grid.Rows) if (Convert.ToString(row.Cells[0].Value) == code) return Convert.ToString(row.Cells[3].Value);
+        return null;
     }
 
     /// <summary>以多種旗標組合（TEST_FLG/PARM_FLG、no-limit、NaN/Infinity、重複 PIR、非 V4、缺 MRR、orphan PRR/PIR、big-endian、截斷檔）合成 STDF 驗證載入器的判定與診斷。</summary>

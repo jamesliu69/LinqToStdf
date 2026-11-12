@@ -22,8 +22,10 @@ namespace StdfReader
         private readonly TabControl tabs = new TabControl { Name = "MainTabs", Dock = DockStyle.Fill };
         private readonly Label alertLabel = new Label { Name = "DocumentAlertLabel", AutoSize = true, Dock = DockStyle.Top, Padding = new Padding(8), BackColor = Color.LemonChiffon, Visible = false };
         private readonly Label[] summaryValues = new Label[7];
-        private readonly DataGridView recordGrid = new DataGridView { Name = "RecordsGrid", Dock = DockStyle.Fill, ReadOnly = true, AllowUserToAddRows = false, AllowUserToDeleteRows = false, AutoGenerateColumns = false, SelectionMode = DataGridViewSelectionMode.FullRowSelect, MultiSelect = false, RowHeadersVisible = false, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill };
+        private readonly TreeView recordTree = new TreeView { Name = "RecordsTreeView", Dock = DockStyle.Fill, HideSelection = false, ShowNodeToolTips = true };
+        private readonly DataGridView fieldGrid = new DataGridView { Name = "RecordFieldsGrid", Dock = DockStyle.Fill, ReadOnly = true, AllowUserToAddRows = false, AllowUserToDeleteRows = false, AutoGenerateColumns = false, RowHeadersVisible = false, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill, AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells, ScrollBars = ScrollBars.Both };
         private readonly PropertyGrid propertyGrid = new PropertyGrid { Name = "RecordProperties", Dock = DockStyle.Fill, ToolbarVisible = true, HelpVisible = true };
+        private readonly CheckBox advancedProperties = new CheckBox { Name = "AdvancedRecordProperties", Text = "進階 PropertyGrid", AutoSize = true, Padding = new Padding(8, 4, 8, 0) };
         private readonly FlowLayoutPanel recordsToolbar = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, Padding = new Padding(8), WrapContents = true };
         private readonly ComboBox recordFilter = new ComboBox { Name = "RecordTypeFilter", DropDownStyle = ComboBoxStyle.DropDownList, Width = 220 };
         private readonly ComboBox groupSelector = new ComboBox { Name = "TestSelector", DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill, DropDownWidth = 720, Margin = new Padding(3) };
@@ -55,7 +57,8 @@ namespace StdfReader
             BuildLayout();
             openButton.Click += (s, e) => OpenFile();
             recordFilter.SelectedIndexChanged += (s, e) => ApplyRecordFilter();
-            recordGrid.SelectionChanged += (s, e) => ShowSelectedRecord();
+            recordTree.AfterSelect += (s, e) => ShowSelectedRecord();
+            advancedProperties.CheckedChanged += (s, e) => { propertyGrid.Visible = advancedProperties.Checked; fieldGrid.Visible = !advancedProperties.Checked; };
             groupSelector.SelectedIndexChanged += (s, e) => { UpdateTestSelectorToolTip(); RefreshMeasurements(); };
             partSelector.SelectedIndexChanged += (s, e) => RefreshMeasurements();
             DragEnter += OnDragEnterFile;
@@ -84,8 +87,12 @@ namespace StdfReader
             tabs.TabPages.Add(new TabPage("記錄") { Name = "RecordsTab" });
             var recordPage = tabs.TabPages[tabs.TabPages.Count - 1];
             var recordSplit = new SplitContainer { Name = "RecordSplitContainer", Size = new Size(1200, 700), Dock = DockStyle.Fill, SplitterDistance = 620, Orientation = Orientation.Vertical };
-            recordSplit.Panel1.Controls.Add(recordGrid);
-            recordSplit.Panel2.Controls.Add(propertyGrid);
+            recordSplit.Panel1.Controls.Add(recordTree);
+            var recordDetails = new Panel { Dock = DockStyle.Fill };
+            recordDetails.Controls.Add(fieldGrid);
+            recordDetails.Controls.Add(propertyGrid);
+            propertyGrid.Visible = false;
+            recordSplit.Panel2.Controls.Add(recordDetails);
             recordPage.Controls.Add(recordSplit);
             recordPage.Controls.Add(recordsToolbar);
             tabs.TabPages.Add(new TabPage("量測與圖表") { Name = "MeasurementsTab" });
@@ -111,21 +118,18 @@ namespace StdfReader
             }
         }
 
-        /// <summary>建立記錄頁工具列（類型篩選下拉）與記錄表的三個資料行（Offset/類型/記錄摘要）。</summary>
+        /// <summary>建立記錄頁工具列與 STDF 欄位明細表。</summary>
         private void BuildRecordsPage()
         {
             recordsToolbar.Controls.Clear();
             recordsToolbar.Controls.Add(new Label { Text = "記錄類型：", AutoSize = true, Padding = new Padding(0, 6, 0, 0) });
             recordsToolbar.Controls.Add(recordFilter);
-            recordGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "OffsetColumn", HeaderText = "Offset", DataPropertyName = "Offset", FillWeight = 25 });
-            recordGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "TypeColumn", HeaderText = "類型", DataPropertyName = "Name", FillWeight = 35 });
-            recordGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "RecordColumn", HeaderText = "記錄", DataPropertyName = "Summary", FillWeight = 40 });
-            recordGrid.CellFormatting += (s, e) =>
-            {
-                if (e.RowIndex < 0 || e.ColumnIndex != 2) return;
-                var item = recordGrid.Rows[e.RowIndex].DataBoundItem as RecordRow;
-                if (item != null) e.Value = item.Summary;
-            };
+            recordsToolbar.Controls.Add(advancedProperties);
+            fieldGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "CodeColumn", HeaderText = "Code", DataPropertyName = "Code", FillWeight = 20 });
+            fieldGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "PropertyColumn", HeaderText = "屬性", DataPropertyName = "Property", FillWeight = 25 });
+            fieldGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "ValueColumn", HeaderText = "欄位值", DataPropertyName = "Value", FillWeight = 30 });
+            fieldGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "NoteColumn", HeaderText = "說明", DataPropertyName = "Note", FillWeight = 25 });
+            fieldGrid.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
         }
 
         /// <summary>設定量測表的資料行與趨勢/直方圖兩張圖表的標題與軸；趨勢圖 Y 軸使用科學記號格式。</summary>
@@ -252,7 +256,7 @@ namespace StdfReader
         private void ClearDocument()
         {
             foreach (var label in summaryValues) label.Text = "未提供";
-            currentRecords.Clear(); recordGrid.DataSource = null; propertyGrid.SelectedObject = null;
+            currentRecords.Clear(); recordTree.Nodes.Clear(); fieldGrid.DataSource = null; propertyGrid.SelectedObject = null;
             groupSelector.Items.Clear(); partSelector.Items.Clear(); measurementGrid.DataSource = null;
             trendChart.Series.Clear();
             ResetChartAxes(trendChart); histogramChart.Series.Clear(); histogramNote.Text = "";
@@ -263,18 +267,34 @@ namespace StdfReader
         {
             if (document == null) return;
             string filter = recordFilter.SelectedItem as string;
-            var filtered = string.IsNullOrEmpty(filter) || filter == "全部類型" ? currentRecords : currentRecords.Where(r => (r.Name ?? r.Record.GetType().Name) == filter).ToList();
-            recordGrid.DataSource = filtered.Select(r => new RecordRow(r)).ToList();
-            if (recordGrid.Rows.Count > 0) recordGrid.Rows[0].Selected = true;
-            ShowSelectedRecord();
+            recordTree.BeginUpdate();
+            recordTree.Nodes.Clear();
+            recordTree.Nodes.AddRange(RecordDisplayBuilder.BuildTree(currentRecords, filter));
+            recordTree.EndUpdate();
+            recordTree.ExpandAll();
+            var first = FindFirstRecordNode(recordTree.Nodes);
+            if (first != null) recordTree.SelectedNode = first;
+            else { fieldGrid.DataSource = null; propertyGrid.SelectedObject = null; }
         }
 
         /// <summary>把目前選取的記錄以唯讀方式顯示於 PropertyGrid；UnknownRecord 改用 UnknownRecordView（含原始 hex）。</summary>
         private void ShowSelectedRecord()
         {
-            var row = recordGrid.CurrentRow == null ? null : recordGrid.CurrentRow.DataBoundItem as RecordRow;
-            if (row == null) { propertyGrid.SelectedObject = null; return; }
-            propertyGrid.SelectedObject = row.Entry.Record is UnknownRecord ? (object)new UnknownRecordView(row.Entry.Record as UnknownRecord) : new ReadOnlyRecordView(row.Entry.Record);
+            var entry = recordTree.SelectedNode == null ? null : recordTree.SelectedNode.Tag as RecordEntry;
+            if (entry == null) { fieldGrid.DataSource = null; propertyGrid.SelectedObject = null; return; }
+            fieldGrid.DataSource = RecordDisplayBuilder.BuildFields(entry, document == null ? null : document.FilePath);
+            propertyGrid.SelectedObject = entry.Record is UnknownRecord ? (object)new UnknownRecordView(entry.Record as UnknownRecord) : new ReadOnlyRecordView(entry.Record);
+        }
+
+        private static TreeNode FindFirstRecordNode(TreeNodeCollection nodes)
+        {
+            foreach (TreeNode node in nodes)
+            {
+                if (node.Tag is RecordEntry) return node;
+                var child = FindFirstRecordNode(node.Nodes);
+                if (child != null) return child;
+            }
+            return null;
         }
 
         /// <summary>把目前測試群組的完整標籤設為下拉的 ToolTip。</summary>
@@ -385,15 +405,6 @@ namespace StdfReader
         private sealed class GroupChoice { public string Key; public string Label; public override string ToString() { return Label; } }
         /// <summary>Part 下拉的選項（Part 索引 + 顯示標籤）。</summary>
         private sealed class PartChoice { public int Index; public string Label; public override string ToString() { return Label; } }
-        /// <summary>記錄表的資料列：包裝 RecordEntry 提供 Offset/名稱/記錄摘要（合成記錄加註）。</summary>
-        private sealed class RecordRow
-        {
-            public RecordEntry Entry { get; private set; }
-            public long Offset { get { return Entry.Offset; } }
-            public string Name { get { return Entry.Name ?? Entry.Record.GetType().Name; } }
-            public string Summary { get { return Entry.Record.RecordType + (Entry.Record.Synthesized ? "（合成）" : ""); } }
-            public RecordRow(RecordEntry entry) { Entry = entry; }
-        }
         /// <summary>量測表的資料列：包裝 MeasurementEntry，數值/界限以科學記號顯示，繼承欄位加註「（繼承）」並彙整明細。</summary>
         private sealed class MeasurementRow
         {
